@@ -1,0 +1,247 @@
+openapi: 3.0.0
+info:
+  title: Codeplain API
+  version: 1.0.0
+  description: API for Codeplain functionality
+servers:
+  - url: http://localhost:5000
+paths:
+  /healthcheck:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:    
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /plain_sections:
+    post:
+      summary: Get plain sections
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plain_source:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Definitions:
+                    type: string
+                  Non-Functional Requirements:
+                    type: string
+                  Functional Requirements:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /render_functional_requirement:
+    post:
+      summary: Render functional requirement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                frid:
+                  type: integer
+                plain_sections:
+                  type: object
+                  properties:
+                    Definitions:
+                      type: string
+                    Non-Functional Requirements:
+                      type: string
+                    Functional Requirements:
+                      type: array
+                      items:
+                        type: string
+                existing_files_content:
+                  type: object
+                  additionalProperties:
+                    type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /fix_unittests_issue:
+    post:
+      summary: Fix unit tests issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                frid:
+                  type: integer
+                plain_sections:
+                  type: object
+                  properties:
+                    Definitions:
+                      type: string
+                    Non-Functional Requirements:
+                      type: string
+                    Functional Requirements:
+                      type: array
+                      items:
+                        type: string
+                existing_files_content:
+                  type: object
+                  additionalProperties:
+                    type: string
+                unittests_issue:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /risk_factor_analysis:
+    post:
+      summary: Risk factor analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                frid:
+                  type: integer
+                plain_sections:
+                  type: object
+                  properties:
+                    Definitions:
+                      type: string
+                    Non-Functional Requirements:
+                      type: string
+                    Functional Requirements:
+                      type: array
+                      items:
+                        type: string
+                files_diff:
+                  type: object
+                  additionalProperties:
+                    type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /fix_confirmed_risk:
+    post:
+      summary: Fix confirmed risk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                frid:
+                  type: integer
+                plain_sections:
+                  type: object
+                  properties:
+                    Definitions:
+                      type: string
+                    Non-Functional Requirements:
+                      type: string
+                    Functional Requirements:
+                      type: array
+                      items:
+                        type: string
+                existing_files_content:
+                  type: object
+                  additionalProperties:
+                    type: string
+                file_name:
+                  type: string
+                python_script:
+                  type: string
+                risk_factor:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
