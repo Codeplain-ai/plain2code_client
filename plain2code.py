@@ -5,7 +5,7 @@ import shutil
 import requests
 import subprocess
 
-API_URL = "http://api.codeplain.ai"
+API_URL = "https://api.codeplain.ai"
 
 def get_plain_sections(plain_source):
     """
