@@ -1,0 +1,7 @@
+***Definitions:***
+
+***Non-Functional Requirements:***
+- Implementation should be in Go lang.
+
+***Functional Requirements:***
+- Display "hello, world"
