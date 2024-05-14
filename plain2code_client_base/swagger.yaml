@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: API for Codeplain functionality
 servers:
-  - url: http://localhost:5000
+  - url: http://api.codeplain.ai
 paths:
   /healthcheck:
     get:
