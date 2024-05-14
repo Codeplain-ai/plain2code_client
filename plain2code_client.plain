@@ -6,7 +6,7 @@
 - The App should be implemented in Python.
 - The main executable code file should be called plain2code.py
 - Use argparse to parse command line parameters.
-- The API runs at http://localhost:5000
+- The API runs at http://api.codeplain.ai
 - The file swagger.yaml describes endpoints of The API. Do not change this file in any way!
 - The default logging level should be WARN. Do not use logging for verbose output.
 - Please note that frid parameter of render_functional_requirement endpoint of The API starts at 1.
