@@ -25,6 +25,12 @@
                         "schema": {
                             "$ref": "#/definitions/FixConfirmedRiskInput"
                         }
+                    },
+                    {
+                        "in": "header",
+                        "description": "API key",
+                        "name": "X-API-KEY",
+                        "type": "string"
                     }
                 ],
                 "tags": [
@@ -55,6 +61,12 @@
                         "schema": {
                             "$ref": "#/definitions/FixUnittestsIssueInput"
                         }
+                    },
+                    {
+                        "in": "header",
+                        "description": "API key",
+                        "name": "X-API-KEY",
+                        "type": "string"
                     }
                 ],
                 "tags": [
@@ -99,6 +111,12 @@
                         "schema": {
                             "$ref": "#/definitions/PlainText"
                         }
+                    },
+                    {
+                        "in": "header",
+                        "description": "API key",
+                        "name": "X-API-KEY",
+                        "type": "string"
                     }
                 ],
                 "tags": [
@@ -129,6 +147,12 @@
                         "schema": {
                             "$ref": "#/definitions/RenderFunctionalRequirementInput"
                         }
+                    },
+                    {
+                        "in": "header",
+                        "description": "API key",
+                        "name": "X-API-KEY",
+                        "type": "string"
                     }
                 ],
                 "tags": [
@@ -159,6 +183,12 @@
                         "schema": {
                             "$ref": "#/definitions/RiskFactorAnalysisInput"
                         }
+                    },
+                    {
+                        "in": "header",
+                        "description": "API key",
+                        "name": "X-API-KEY",
+                        "type": "string"
                     }
                 ],
                 "tags": [
@@ -229,12 +259,7 @@
                     "description": "Functional requirement ID"
                 },
                 "plain_sections": {
-                    "description": "Plain sections",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/PlainSections"
-                        }
-                    ]
+                    "$ref": "#/definitions/PlainSections"
                 },
                 "existing_files_content": {
                     "type": "object",
@@ -264,12 +289,7 @@
                     "description": "Functional requirement ID"
                 },
                 "plain_sections": {
-                    "description": "Plain sections",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/PlainSections"
-                        }
-                    ]
+                    "$ref": "#/definitions/PlainSections"
                 },
                 "existing_files_content": {
                     "type": "object",
@@ -277,7 +297,7 @@
                 },
                 "unittests_issue": {
                     "type": "string",
-                    "description": "Unit tests issue"
+                    "description": "Unit tests issue description"
                 }
             },
             "type": "object"
@@ -294,12 +314,7 @@
                     "description": "Functional requirement ID"
                 },
                 "plain_sections": {
-                    "description": "Plain sections",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/PlainSections"
-                        }
-                    ]
+                    "$ref": "#/definitions/PlainSections"
                 },
                 "files_diff": {
                     "type": "object",
@@ -323,12 +338,7 @@
                     "description": "Functional requirement ID"
                 },
                 "plain_sections": {
-                    "description": "Plain sections",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/PlainSections"
-                        }
-                    ]
+                    "$ref": "#/definitions/PlainSections"
                 },
                 "existing_files_content": {
                     "type": "object",
