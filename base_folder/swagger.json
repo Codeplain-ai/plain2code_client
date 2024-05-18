@@ -1,0 +1,361 @@
+{
+    "swagger": "2.0",
+    "basePath": "/",
+    "paths": {
+        "/fix_confirmed_risk": {
+            "post": {
+                "responses": {
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/Files"
+                        }
+                    }
+                },
+                "summary": "Fix a confirmed risk",
+                "operationId": "fix_confirmed_risk",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/FixConfirmedRiskInput"
+                        }
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/fix_unittests_issue": {
+            "post": {
+                "responses": {
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/Files"
+                        }
+                    }
+                },
+                "summary": "Fix issues with unit tests",
+                "operationId": "fix_unittests_issue",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/FixUnittestsIssueInput"
+                        }
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/healthcheck": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "summary": "Check if the service is healthy",
+                "operationId": "healthcheck",
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/plain_sections": {
+            "post": {
+                "responses": {
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/PlainSections"
+                        }
+                    }
+                },
+                "summary": "Get plain sections from plain text",
+                "operationId": "plain_sections",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/PlainText"
+                        }
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/render_functional_requirement": {
+            "post": {
+                "responses": {
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/Files"
+                        }
+                    }
+                },
+                "summary": "Render a functional requirement",
+                "operationId": "render_functional_requirement",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/RenderFunctionalRequirementInput"
+                        }
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/risk_factor_analysis": {
+            "post": {
+                "responses": {
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/Files"
+                        }
+                    }
+                },
+                "summary": "Perform risk factor analysis",
+                "operationId": "risk_factor_analysis",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/RiskFactorAnalysisInput"
+                        }
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        }
+    },
+    "info": {
+        "title": "Codeplain API",
+        "version": "1.0",
+        "description": "API for Codeplain functionality"
+    },
+    "produces": [
+        "application/json"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "tags": [
+        {
+            "name": "default",
+            "description": "Default namespace"
+        }
+    ],
+    "definitions": {
+        "PlainText": {
+            "required": [
+                "plain_text"
+            ],
+            "properties": {
+                "plain_text": {
+                    "type": "string",
+                    "description": "Plain text input"
+                }
+            },
+            "type": "object"
+        },
+        "PlainSections": {
+            "properties": {
+                "Definitions:": {
+                    "type": "string",
+                    "description": "Definitions section"
+                },
+                "Non-Functional Requirements:": {
+                    "type": "string",
+                    "description": "Non-functional requirements section"
+                },
+                "Functional Requirements:": {
+                    "type": "array",
+                    "description": "List of functional requirements",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "type": "object"
+        },
+        "RenderFunctionalRequirementInput": {
+            "required": [
+                "existing_files_content",
+                "frid",
+                "plain_sections"
+            ],
+            "properties": {
+                "frid": {
+                    "type": "integer",
+                    "description": "Functional requirement ID"
+                },
+                "plain_sections": {
+                    "description": "Plain sections",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/PlainSections"
+                        }
+                    ]
+                },
+                "existing_files_content": {
+                    "type": "object",
+                    "description": "Existing files content"
+                }
+            },
+            "type": "object"
+        },
+        "Files": {
+            "properties": {
+                "files": {
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "FixUnittestsIssueInput": {
+            "required": [
+                "existing_files_content",
+                "frid",
+                "plain_sections",
+                "unittests_issue"
+            ],
+            "properties": {
+                "frid": {
+                    "type": "integer",
+                    "description": "Functional requirement ID"
+                },
+                "plain_sections": {
+                    "description": "Plain sections",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/PlainSections"
+                        }
+                    ]
+                },
+                "existing_files_content": {
+                    "type": "object",
+                    "description": "Existing files content"
+                },
+                "unittests_issue": {
+                    "type": "string",
+                    "description": "Unit tests issue"
+                }
+            },
+            "type": "object"
+        },
+        "RiskFactorAnalysisInput": {
+            "required": [
+                "files_diff",
+                "frid",
+                "plain_sections"
+            ],
+            "properties": {
+                "frid": {
+                    "type": "integer",
+                    "description": "Functional requirement ID"
+                },
+                "plain_sections": {
+                    "description": "Plain sections",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/PlainSections"
+                        }
+                    ]
+                },
+                "files_diff": {
+                    "type": "object",
+                    "description": "Files diff"
+                }
+            },
+            "type": "object"
+        },
+        "FixConfirmedRiskInput": {
+            "required": [
+                "existing_files_content",
+                "file_name",
+                "frid",
+                "plain_sections",
+                "python_script",
+                "risk_factor"
+            ],
+            "properties": {
+                "frid": {
+                    "type": "integer",
+                    "description": "Functional requirement ID"
+                },
+                "plain_sections": {
+                    "description": "Plain sections",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/PlainSections"
+                        }
+                    ]
+                },
+                "existing_files_content": {
+                    "type": "object",
+                    "description": "Existing files content"
+                },
+                "file_name": {
+                    "type": "string",
+                    "description": "File name"
+                },
+                "python_script": {
+                    "type": "string",
+                    "description": "Python script"
+                },
+                "risk_factor": {
+                    "type": "string",
+                    "description": "Risk factor"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "responses": {
+        "ParseError": {
+            "description": "When a mask can't be parsed"
+        },
+        "MaskError": {
+            "description": "When any error occurs on mask"
+        }
+    }
+}
