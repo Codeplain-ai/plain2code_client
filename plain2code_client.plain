@@ -1,38 +1,66 @@
 ***Definitions:***
+
 - The App renders plain code to software code.
+
 - The API is REST API that exposes Codeplain functionality.
 
+
 ***Non-Functional Requirements:***
+
 - The App should be implemented in Python.
+
 - The main executable code file should be called plain2code.py
+
 - Use argparse to parse command line parameters.
+
 - The API runs at https://api.codeplain.ai
-- The file swagger.yaml describes endpoints of The API. Do not change this file in any way!
+
+- The API should be accessed using user's API key which is provided as environmental variable CLAUDE_API_KEY.
+
+- The file swagger.json describes endpoints of The API. Do not change this file in any way!
+
 - The default logging level should be WARN. Do not use logging for verbose output.
+
 - Please note that frid parameter of render_functional_requirement endpoint of The API starts at 1.
 
-***Functional Requirements:***
-- Implement skeleton of a console application (The App).
-- The App should take Plain source file (The Plain Source) name as the only positional argument.
-- There should be a command line option to turn on verbose output (The Verbose Flag).
-- There should be an optional command line option to specify the location of a folder that contains rendered software code (The Build Folder). The default name of The Build Folder should be "build".
-- Make sure that at the start of the rendering process The Build Folder doesn't include any files from the previous rendering run.
-- There should be an optional command line option to specify the location of a folder that contains files that shoud be copied verbatim and without any changes to The Build Folder (The Base Folder).
-- Use get_plain_sections endpoint of The API to get Plain Sections (The Sections) from The Plain Source.
-- Display to the console output the following information:
-  """
-  Rendering <The Plain Source file> to target code."
-  
-  "Definitions:"
-  <"Definitions:" section from The Sections>
 
-  "Non-Functional Requirements:"
-  <"Non-Functional Requirements:" section from The Sections>
-  """
+***Functional Requirements:***
+
+- Implement skeleton of a console application (The App).
+
+- The App should take Plain source file (The Plain Source) name as the only positional argument.
+
+- There should be a command line option to turn on verbose output (The Verbose Flag).
+
+- There should be an optional command line option to specify the location of a folder that contains rendered software code (The Build Folder). The default name of The Build Folder should be "build".
+
+- Make sure that at the start of the rendering process The Build Folder doesn't include any files from the previous rendering run.
+
+- There should be an optional command line option to specify the location of a folder that contains files that shoud be copied verbatim and without any changes to The Build Folder (The Base Folder).
+
+- Use get_plain_sections endpoint of The API to get Plain Sections (The Sections) from The Plain Source.
+
+- Display to the console output the following information:
+
+    ```
+    Rendering <The Plain Source file name> to target code.
+
+    "Definitions:"
+    <"Definitions:" section from The Sections>
+
+    "Non-Functional Requirements:"
+    <"Non-Functional Requirements:" section from The Sections>
+    ```
   
-  - The "Definitions:" and "Non-Functional Requirements:" should only be shown when The Verbose Flag is set.
-  - Please note that the colon : punctuation mark is essential part of an identifier of a section in The Sections.
+    - The "Definitions:" and "Non-Functional Requirements:" should only be shown when The Verbose Flag is set.
+    - Please note that the colon (:) punctuation mark is essential part of an identifier of a section in The Sections.
+
 - Load all the existing files in The Build Folder (The Existing Files).
+
 - Use render_functional_requirement endpoint of The API to render the first functional requirement to software code.
+
 - There should be an optional command line option to specify a shell script to run unit tests. The shell script takes The Build Folder as its parameter.
-- Render the rest of functional requirements one by one to software code . After each run unit tests.
+
+- Render the rest of functional requirements one by one to software code. After each run unit tests.
+
+- If any of the unit tests fails, use fix_unittests_issue endpoint of The API to fix the issues. After 5 unsuccessful attemps at fixing the issues, terminate The App.
