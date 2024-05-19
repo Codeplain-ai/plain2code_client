@@ -42,6 +42,22 @@ options:
                         Path to shell script for running unit tests
 ```
 
+## Examples
+
+### Hello, world
+
+Python:
+
+`python plain2code.py hello_world_python.plain -v`
+
+Go lang:
+
+`python plain2code.py hello_world_golang.plain -v`
+
+### plain2code_client
+
+`python plain2code.py plain2code_client.plain --unit-test-script=./run_unittests_python.sh --base-folder=base_folder --build-folder=plain2code_client -v`
+
 ## About Plain programming language
 
 Plain is a novel programming language for a generative AI age. It uses large language models (LLM) to render software code from Plain source, freeing developers from the constraints of traditional compilers and fully separating functional specifications from implementation details.
