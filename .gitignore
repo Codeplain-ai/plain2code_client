@@ -1,3 +1,5 @@
+.DS_Store
+
 # Plain
 build/
 plain2code_build*/
