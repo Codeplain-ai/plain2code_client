@@ -43,7 +43,7 @@
 - Display to the console output the following information:
 
     ```
-    Rendering <The Plain Source file name> to target code.
+    Rendering <The Plain Source file name> to software code.
 
     "Definitions:"
     <"Definitions:" section from The Sections>
