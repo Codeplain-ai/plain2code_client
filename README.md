@@ -13,11 +13,7 @@ To have the hash generated use the following command:
 ## Setup
 
 1. Clone this repository
-2. Install the required Python packages:
-   ```
-   pip install -r requirements.txt
-   ```
-3. Set your Codeplain API key as an environment variable:
+2. Set your Codeplain API key as an environment variable:
    ```
    export CLAUDE_API_KEY=your_api_key_here
    ```
