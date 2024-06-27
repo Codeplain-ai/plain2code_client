@@ -38,7 +38,7 @@
 
 - There should be an optional command line option to specify the location of a folder that contains files that shoud be copied verbatim and without any changes to The Build Folder (The Base Folder).
 
-- Use get_plain_sections endpoint of The API to get Plain Sections (The Sections) from The Plain Source.
+- Use plain_sections endpoint of The API to get Plain Sections (The Sections) from The Plain Source.
 
 - Display to the console output the following information:
 
