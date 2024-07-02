@@ -40,21 +40,6 @@
 
 - Use plain_sections endpoint of The API to get Plain Sections (The Sections) from The Plain Source.
 
-- Display to the console output the following information:
-
-    ```
-    Rendering <The Plain Source file name> to software code.
-
-    "Definitions:"
-    <"Definitions:" section from The Sections>
-
-    "Non-Functional Requirements:"
-    <"Non-Functional Requirements:" section from The Sections>
-    ```
-  
-    - The "Definitions:" and "Non-Functional Requirements:" should only be shown when The Verbose Flag is set.
-    - Please note that the colon (:) punctuation mark is essential part of an identifier of a section in The Sections.
-
 - Load all the existing files in The Build Folder (The Existing Files).
 
 - Use render_functional_requirement endpoint of The API to render the first functional requirement to software code.
@@ -64,3 +49,19 @@
 - Render the rest of functional requirements one by one to software code. After each run unit tests.
 
 - If any of the unit tests fails, use fix_unittests_issue endpoint of The API to fix the issues. After 5 unsuccessful attemps at fixing the issues, terminate The App.
+
+- Display to the console output the following information:
+
+    ```
+    Rendering <The Plain Source file name> to software code.
+
+    Rendering 1st functional requirement:
+    <description of the 1st requirement>
+    
+    Rendering 2nd functional requirement:
+    <description of the 1st requirement>
+    
+    ...
+
+    Rendering finished!
+    ```
