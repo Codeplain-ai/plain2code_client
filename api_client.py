@@ -44,7 +44,7 @@ def render_functional_requirement(api_key, frid, plain_sections, existing_files)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as e:
-        raise RuntimeError(f"Error calling render_functional_requirement API: {str(e)}") from e
+        raise RuntimeError(f"Error calling render_functional_requirement API: {str(response.json())}") from e
 
 def fix_unittests_issue(api_key, frid, sections, existing_files, error_message):
     url = "https://api.codeplain.ai/fix_unittests_issue"

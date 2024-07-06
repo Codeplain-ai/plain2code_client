@@ -47,7 +47,6 @@ def render_and_test_functional_requirements(api_key, sections, existing_files, b
                     update_build_folder(build_folder, fix_result)
                     existing_files.update(fix_result.get('files', {}))
         except RuntimeError as e:
-            logger.error(f"Error processing requirement {frid}: {str(e)}")
             raise
         except Exception as e:
             logger.error(f"Error processing requirement {frid}: {str(e)}")
@@ -83,7 +82,7 @@ def main(args):
         
         logger.info("Application executed successfully")
     except Exception as e:
-        logger.error(f"An error occurred: {str(e)}", exc_info=True)
+        logger.error(f"An error occurred: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":
