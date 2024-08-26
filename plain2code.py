@@ -1,97 +1,121 @@
 #!/usr/bin/env python3
 import argparse
 import logging
+import os
 import sys
 import subprocess
-import json
-from api_client import get_api_key, get_plain_sections, render_functional_requirement, fix_unittests_issue
-from file_operations import read_plain_source, ensure_build_folder, clear_build_folder, copy_base_folder, load_existing_files, update_build_folder
-from logging_setup import setup_logging
+from api_client import ApiClient
+from file_operations import (
+    create_build_folder,
+    clear_build_folder,
+    copy_base_files,
+    load_existing_files,
+    write_rendered_files
+)
 
-def run_unit_tests(test_script, build_folder, logger):
-    if test_script:
-        try:
-            result = subprocess.run([test_script, build_folder], check=True, capture_output=True, text=True)
-            logger.info(f"Unit tests completed successfully. Output:\n{result.stdout}")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Unit tests failed. Error output:\n{e.stderr}")
-            raise RuntimeError("Unit tests failed") from e
-        except Exception as e:
-            logger.error(f"Error running unit tests: {str(e)}")
-            raise RuntimeError(f"Error running unit tests: {str(e)}") from e
+# Set up logging
+logging.basicConfig(level=logging.WARN, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-def render_and_test_functional_requirements(api_key, sections, existing_files, build_folder, test_script, logger, input_file):
-    print(f"Rendering {input_file} to software code.\n")
-    for frid, requirement in enumerate(sections.get('Functional Requirements:', []), start=1):
-        logger.info(f"Rendering functional requirement {frid}: {requirement}")
-        print(f"Rendering {frid}{'st' if frid == 1 else 'nd' if frid == 2 else 'th'} functional requirement:")
-        print(f"{requirement}\n")
-        try:
-            rendered_files = render_functional_requirement(api_key, frid, sections, existing_files)
-            update_build_folder(build_folder, rendered_files)
-            existing_files.update(rendered_files.get('files', {}))
-            
-            attempts = 0
-            while attempts < 5:
-                try:
-                    run_unit_tests(test_script, build_folder, logger)
-                    logger.info(f"Successfully rendered and tested requirement {frid}")
-                    break
-                except RuntimeError as e:
-                    attempts += 1
-                    if attempts == 5:
-                        logger.error(f"Failed to fix unit test issues after 5 attempts for requirement {frid}")
-                        raise
-                    logger.warning(f"Attempt {attempts}: Fixing unit test issues for requirement {frid}")
-                    fix_result = fix_unittests_issue(api_key, frid, sections, existing_files, str(e))
-                    update_build_folder(build_folder, fix_result)
-                    existing_files.update(fix_result.get('files', {}))
-        except RuntimeError as e:
-            raise
-        except Exception as e:
-            logger.error(f"Error processing requirement {frid}: {str(e)}")
-    print("Rendering finished!")
-
-def main(args):
-    logger = setup_logging(args.verbose)
-    
+def run_unit_tests(test_script, build_folder):
+    """Run the specified unit test script with the build folder as its parameter."""
     try:
-        api_key = get_api_key()
-        
-        build_folder = ensure_build_folder(args.build_folder)
-        logger.info(f"Using build folder: {build_folder}")
+        result = subprocess.run([test_script, build_folder], capture_output=True, text=True, check=True)
+        logger.info("Unit tests completed successfully.")
+        logger.info(f"Test output:\n{result.stdout}")
+        return True
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Unit tests failed with exit code {e.returncode}")
+        logger.error(f"Test output:\n{e.stdout}")
+        logger.error(f"Test error:\n{e.stderr}")
+        return False
+    except Exception as e:
+        logger.error(f"Error running unit tests: {str(e)}")
+        sys.exit(1)
 
-        clear_build_folder(build_folder)
-        logger.info(f"Cleared The Build Folder: {build_folder}")
+def display_rendering_progress(frid, requirement_description):
+    """Display the rendering progress for each functional requirement."""
+    ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
+    print(f"\nRendering {ordinal(frid)} functional requirement:")
+    print(requirement_description)
 
-        copy_base_folder(args.base_folder, build_folder)
+def get_requirement_description(sections, frid):
+    """Get the description of a specific functional requirement."""
+    return sections.get("Functional Requirements:", [])[frid - 1] if frid <= len(sections.get("Functional Requirements:", [])) else ""
+
+def render_all_requirements(api_client, sections, existing_files, build_folder, test_script):
+    """Render all functional requirements and run tests after each."""
+    total_requirements = api_client.get_total_functional_requirements(sections)
+    for frid in range(1, total_requirements + 1):
+        try:
+            rendered_files = api_client.render_functional_requirement(sections, existing_files, frid)
+            requirement_description = get_requirement_description(sections, frid)
+            display_rendering_progress(frid, requirement_description)
+            write_rendered_files(build_folder, rendered_files)
+            logger.info(f"Rendered functional requirement {frid}")
+            if test_script:
+                tests_passed = run_unit_tests(test_script, build_folder)
+                if not tests_passed:
+                    fix_attempts = 0
+                    while not tests_passed and fix_attempts < 5:
+                        logger.info(f"Attempting to fix unit test issues (attempt {fix_attempts + 1})")
+                        fix_result = api_client.fix_unittest_issues(sections, existing_files, frid, build_folder)
+                        write_rendered_files(build_folder, fix_result)
+                        tests_passed = run_unit_tests(test_script, build_folder)
+                        fix_attempts += 1
+                    
+                    if not tests_passed:
+                        logger.error("Failed to fix unit test issues after 5 attempts. Terminating the app.")
+                        sys.exit(1)
+            existing_files = load_existing_files(build_folder)
+        except Exception as e:
+            logger.error(f"Error rendering functional requirement {frid}: {str(e)}")
+            sys.exit(1)
+
+def main():
+    parser = argparse.ArgumentParser(description="Plain2Code: Convert plain text to software code.")
+    parser.add_argument('plain_source', help="Path to The Plain Source file.")
+    parser.add_argument('-v', '--verbose', action='store_true', help="Enable verbose output.")
+    parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0')
+    parser.add_argument('-b', '--build-folder', default='build',
+                        help="Specify the location of the build folder (default: build)")
+    parser.add_argument('-B', '--base-folder',
+                        help="Specify the location of the base folder containing files to be copied to the build folder")
+    parser.add_argument('-t', '--test-script',
+                        help="Specify a shell script to run unit tests. The script will receive the build folder as its parameter.")
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        logger.setLevel(logging.INFO)
+
+    try:
+        logger.info("Starting Plain2Code conversion process.")
+        api_client = ApiClient()
+        clear_build_folder(args.build_folder)
+        if args.base_folder:
+            copy_base_files(args.base_folder, args.build_folder)
+
+        existing_files = load_existing_files(args.build_folder)
+        logger.info(f"Loaded {len(existing_files)} existing files from the build folder.")
+
+        sections = api_client.get_plain_sections(args.plain_source)
+        print(f"Rendering {args.plain_source} to software code.")
+
+        logger.info(f"The Plain Source file: {args.plain_source}")
         
-        plain_source_content = read_plain_source(args.input)
-        logger.info(f"Successfully read The Plain Source file: {args.input}")
-        logger.debug(f"Plain source content: {plain_source_content[:100]}...")  # Debug log example
+        render_all_requirements(api_client, sections, existing_files, args.build_folder, args.test_script)
+
+        if args.test_script:
+            run_unit_tests(args.test_script, args.build_folder)
         
-        existing_files = load_existing_files(build_folder)
-        logger.info(f"Loaded {len(existing_files)} existing files from The Build Folder")
-        logger.debug(f"Existing files: {json.dumps(list(existing_files.keys()), indent=2)}")
-        
-        sections = get_plain_sections(api_key, plain_source_content)
-        logger.info("Successfully retrieved Plain Sections from the API")
-        logger.debug(f"Received sections: {json.dumps(sections, indent=2)}")
-        
-        render_and_test_functional_requirements(api_key, sections, existing_files, build_folder, args.unit_test_script, logger, args.input)
-        
-        logger.info("Application executed successfully")
+        print("\nRendering finished!")
+        logger.info("Plain2Code conversion process completed successfully.")
+
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
+        logger.debug("Exception details:", exc_info=True)
         sys.exit(1)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Plain2Code: Render plain code to software code")
-    parser.add_argument('input', help='The Plain Source file name')
-    parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
-    parser.add_argument('-b', '--build-folder', default='build', help='Specify the location of the build folder (default: build)')
-    parser.add_argument('--base-folder', help='Specify the location of the base folder to be copied to the build folder')
-    parser.add_argument('--unit-test-script', help='Specify a shell script to run unit tests')
-    args = parser.parse_args()
-    
-    main(args)
+    main()

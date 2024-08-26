@@ -1,45 +1,53 @@
 import os
+import sys
 import pathlib
 import shutil
-import distutils.dir_util
 import logging
 
-def read_plain_source(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            return file.read()
-    except IOError as e:
-        raise IOError(f"Error reading The Plain Source file: {str(e)}") from e
+logger = logging.getLogger(__name__)
 
-def ensure_build_folder(build_folder):
+def create_build_folder(build_folder):
+    """Create the build folder if it doesn't exist."""
     try:
-        build_path = pathlib.Path(build_folder)
-        build_path.mkdir(parents=True, exist_ok=True)
-        return str(build_path.resolve())
+        pathlib.Path(build_folder).mkdir(parents=True, exist_ok=True)
+        logger.info(f"Build folder created or already exists: {build_folder}")
     except Exception as e:
-        raise IOError(f"Error creating or accessing The Build Folder: {str(e)}") from e
+        logger.error(f"Failed to create build folder: {str(e)}")
+        sys.exit(1)
 
 def clear_build_folder(build_folder):
+    """Clear the build folder of all files and subdirectories."""
     try:
-        build_path = pathlib.Path(build_folder)
-        if build_path.exists():
-            for item in build_path.iterdir():
-                if item.is_dir():
-                    shutil.rmtree(item)
-                else:
-                    item.unlink()
+        if os.path.exists(build_folder):
+            for item in os.listdir(build_folder):
+                item_path = os.path.join(build_folder, item)
+                if os.path.isfile(item_path):
+                    os.unlink(item_path)
+                elif os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+            logger.info(f"Build folder cleared: {build_folder}")
+        create_build_folder(build_folder)
     except Exception as e:
-        raise IOError(f"Error clearing The Build Folder: {str(e)}") from e
+        logger.error(f"Failed to clear build folder: {str(e)}")
+        sys.exit(1)
 
-def copy_base_folder(base_folder, build_folder):
+def copy_base_files(base_folder, build_folder):
+    """Copy files from The Base Folder to The Build Folder."""
     try:
-        if base_folder:
-            distutils.dir_util.copy_tree(base_folder, build_folder)
-            logging.info(f"Copied contents from The Base Folder: {base_folder} to The Build Folder: {build_folder}")
+        if os.path.exists(base_folder):
+            for item in os.listdir(base_folder):
+                src = os.path.join(base_folder, item)
+                dst = os.path.join(build_folder, item)
+                if os.path.isfile(src):
+                    shutil.copy2(src, dst)
+                elif os.path.isdir(src):
+                    shutil.copytree(src, dst)
+            logger.info(f"Files copied from {base_folder} to {build_folder}")
     except Exception as e:
-        raise IOError(f"Error copying from The Base Folder to The Build Folder: {str(e)}") from e
+        logger.error(f"Failed to copy files from base folder: {str(e)}")
 
 def load_existing_files(build_folder):
+    """Load all existing files in The Build Folder."""
     existing_files = {}
     try:
         for root, _, files in os.walk(build_folder):
@@ -48,19 +56,22 @@ def load_existing_files(build_folder):
                 relative_path = os.path.relpath(file_path, build_folder)
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
-                        existing_files[relative_path] = f.read()
+                        content = f.read()
+                    existing_files[relative_path] = content
                 except Exception as e:
-                    logging.warning(f"Error reading file {file_path}: {str(e)}")
+                    logger.warning(f"Failed to read file {file_path}: {str(e)}")
         return existing_files
     except Exception as e:
-        raise RuntimeError(f"Error loading existing files from {build_folder}: {str(e)}") from e
+        logger.error(f"Failed to load existing files: {str(e)}")
+        return {}
 
-def update_build_folder(build_folder, rendered_files):
-    for file_name, content in rendered_files.get('files', {}).items():
-        file_path = os.path.join(build_folder, file_name)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+def write_rendered_files(build_folder, rendered_files):
+    """Write the rendered files to the build folder."""
+    for file in rendered_files:
+        file_path = os.path.join(build_folder, file)
         try:
             with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-        except Exception as e:
-            logging.warning(f"Error writing file {file_path}: {str(e)}")
+                f.write(rendered_files[file])
+            logger.info(f"Written rendered file: {file}")
+        except IOError as e:
+            logger.error(f"Error writing rendered file {file['file_name']}: {str(e)}")
