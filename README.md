@@ -45,11 +45,12 @@ options:
 
 Python:
 
-`python plain2code.py hello_world_python.plain -v`
+`python plain2code.py hello_world_python.plain`
 
 Go lang:
 
-`python plain2code.py hello_world_golang.plain -v`
+`python plain2code.py hello_world_golang.plain`
+
 
 ### plain2code_client
 
