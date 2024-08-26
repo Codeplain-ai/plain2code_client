@@ -63,7 +63,10 @@ The routine for hashing the api key (see [Prerequisites](#prerequisites)).
 
 ### plain2code_client
 
-`python plain2code.py plain2code_client.plain --unit-test-script=./run_unittests_python.sh --base-folder=base_folder --build-folder=plain2code_client -v`
+The Plain source of the plain2code client itself.
+
+`python plain2code.py example_plain2code_client/plain2code_client.plain --test-script=./run_unittests_python.sh --base-folder=example_plain2code_client/base_folder --build-folder=example_plain2code_client/plain2code_client`
+
 
 ## About Plain programming language
 
