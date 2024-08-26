@@ -43,6 +43,8 @@ options:
 
 ### Hello, world
 
+Obligatory "Hello, world" example.
+
 Python:
 
 `python plain2code.py hello_world_python.plain`
@@ -50,6 +52,13 @@ Python:
 Go lang:
 
 `python plain2code.py hello_world_golang.plain`
+
+
+### hash_api_key
+
+The routine for hashing the api key (see [Prerequisites](#prerequisites)).
+
+`python plain2code.py example_hash_api_key/hash_key.plain --build-folder=example_hash_api_key/build`
 
 
 ### plain2code_client
