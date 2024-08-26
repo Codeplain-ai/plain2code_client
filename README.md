@@ -20,22 +20,23 @@ To have the hash generated use the following command:
 
 ## Usage
 ```
-python plain2code.py [-h] [-v] [-b BUILD_FOLDER] [-s BASE_FOLDER] [-t UNIT_TEST_SCRIPT] plain_source
+python plain2code.py [-h] [-v] [-V] [-b BUILD_FOLDER] [-B BASE_FOLDER] [-t TEST_SCRIPT] plain_source
 
-Render software code from Plain source using the Codeplain API
+Plain2Code: Convert plain text to software code.
 
 positional arguments:
-  plain_source          Path to The Plain Source file
+  plain_source          Path to The Plain Source file.
 
 options:
   -h, --help            show this help message and exit
-  -v, --verbose         Enable verbose output
+  -v, --verbose         Enable verbose output.
+  -V, --version         show program's version number and exit
   -b BUILD_FOLDER, --build-folder BUILD_FOLDER
-                        Path to The Build Folder (default: build)
-  -s BASE_FOLDER, --base-folder BASE_FOLDER
-                        Path to The Base Folder containing files to copy verbatim to the build folder
-  -t UNIT_TEST_SCRIPT, --unit-test-script UNIT_TEST_SCRIPT
-                        Path to shell script for running unit tests
+                        Specify the location of the build folder (default: build)
+  -B BASE_FOLDER, --base-folder BASE_FOLDER
+                        Specify the location of the base folder containing files to be copied to the build folder
+  -t TEST_SCRIPT, --test-script TEST_SCRIPT
+                        Specify a shell script to run unit tests. The script will receive the build folder as its parameter.
 ```
 
 ## Examples
