@@ -70,8 +70,9 @@ def write_rendered_files(build_folder, rendered_files):
     for file in rendered_files:
         file_path = os.path.join(build_folder, file)
         try:
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(rendered_files[file])
-            logger.info(f"Written rendered file: {file}")
+            logger.error(f"Error writing rendered file {file}: {str(e)}")
         except IOError as e:
             logger.error(f"Error writing rendered file {file['file_name']}: {str(e)}")
