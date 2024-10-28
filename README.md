@@ -1,16 +1,14 @@
 # Codeplain plain2code renderer
 
-Render software code from Plain source using the Codeplain API.
+Render Plain source to software code using the Codeplain API.
 
 ## About Plain programming language
 
-Plain is a novel programming language for a generative AI age. It uses large language models (LLM) to render software code from Plain source, freeing developers from the constraints of traditional compilers and fully separating functional specifications from implementation details.
-
-The goal of the Plain programming language is to enhance productivity and innovation by enabling programmers to focus on creating more complex, intelligent applications with the support of AI.
+Plain is a novel programming language that helps abstracting away complexity of using large language models for code generation.
 
 ## Prerequisites
 
-Please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic Claude API key added to the list of authorized keys.
+For now you need to bring your own LLM (Anthropic Claude) API key to use Codeplain API. Please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic Claude API key added to the list of authorized API keys.
 
 To have the hash generated use the following command:
 
@@ -26,49 +24,40 @@ To have the hash generated use the following command:
 
 ## Usage
 ```
-python plain2code.py [-h] [-v] [-V] [-b BUILD_FOLDER] [-B BASE_FOLDER] [-t TEST_SCRIPT] plain_source
+plain2code.py [-h] [--verbose] [--debug] [--base-folder BASE_FOLDER] [--build-folder BUILD_FOLDER]
+    [--render-range RENDER_RANGE] [--unittests-script UNITTESTS_SCRIPT] [--e2e-tests-folder E2E_TESTS_FOLDER]
+    [--e2e-tests-script E2E_TESTS_SCRIPT] [--api [API]] filename
 
-Plain2Code: Convert plain text to software code.
+Render Plain source to software code.
 
 positional arguments:
-  plain_source          Path to The Plain Source file.
+  filename              Path to The Plain Source file.
 
 options:
-  -h, --help            show this help message and exit
-  -v, --verbose         Enable verbose output.
-  -V, --version         show program's version number and exit
-  -b BUILD_FOLDER, --build-folder BUILD_FOLDER
-                        Specify the location of the build folder (default: build)
-  -B BASE_FOLDER, --base-folder BASE_FOLDER
-                        Specify the location of the base folder containing files to be copied to the build folder
-  -t TEST_SCRIPT, --test-script TEST_SCRIPT
-                        Specify a shell script to run unit tests. The script will receive the build folder as its parameter.
+  -h, --help            Show this help message and exit.
+  --verbose, -v         Enable verbose output.
+  --debug               Enable debug information.
+  --base-folder BASE_FOLDER
+                        Location of a folder whose content shoud be copied to the build folder
+                        at the start of the rendering.
+  --build-folder BUILD_FOLDER
+                        Location of the build folder (default: build)
+  --render-range RENDER_RANGE
+                        Range of functional requirements to be renered
+                        (e.g. "3,6" renders functional requirements 3, 4, 5, and 6).
+  --unittests-script UNITTESTS_SCRIPT
+                        Name of a shell script to run unit tests. The script will receive
+                        the build folder as its parameter.
+  --e2e-tests-folder E2E_TESTS_FOLDER
+                        Location of the folder where generated end-to-end test files will be written.
+  --e2e-tests-script E2E_TESTS_SCRIPT
+                        Name of a shell script to run end-to-end tests. The script will receive
+                        the build folder and the end-to-end tests subfolder as its parameters.
+  --api [API]           Force using the API (for internal use).
 ```
 
 ## Examples
 
-### Hello, world
+The examples reside in "examples" folder and can be run with the following shell script:
 
-Obligatory "Hello, world" example.
-
-Python:
-
-`python plain2code.py hello_world_python.plain`
-
-Go lang:
-
-`python plain2code.py hello_world_golang.plain`
-
-
-### hash_api_key
-
-The routine for hashing the api key (see [Prerequisites](#prerequisites)).
-
-`python plain2code.py example_hash_api_key/hash_key.plain --build-folder=example_hash_api_key/build`
-
-
-### plain2code_client
-
-The Plain source of the plain2code client itself.
-
-`python plain2code.py example_plain2code_client/plain2code_client.plain --test-script=./run_unittests_python.sh --base-folder=example_plain2code_client/base_folder --build-folder=example_plain2code_client/plain2code_client`
+`sh run.sh`

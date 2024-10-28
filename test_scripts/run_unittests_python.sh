@@ -17,7 +17,7 @@ fi
 
 # Execute all Python unittests in the subfolder
 echo "Running Python unittests in $1..."
-python -m unittest discover
+python -m unittest discover -b 2>&1
 
 # Note: The 'discover' option automatically identifies and runs all unittests in the current directory and subdirectories
 # Ensure that your Python files are named according to the unittest discovery pattern (test*.py by default)

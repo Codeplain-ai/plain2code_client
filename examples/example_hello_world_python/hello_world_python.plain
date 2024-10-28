@@ -1,0 +1,16 @@
+***Definitions:***
+
+> "hello, world" doesn't need any definitions.
+> (This is an example of a comment in Plain)
+
+
+***Non-Functional Requirements:***
+
+- Implementation should be in Python.
+
+- The main executable code file should be called hello_world.py
+
+
+***Functional Requirements:***
+
+- Display "hello, world"

@@ -1,0 +1,19 @@
+***Definitions:***
+
+> "hello, world" doesn't need any definitions.
+> (This is an example of a comment in Plain)
+
+
+***Non-Functional Requirements:***
+
+- Implementation should be written in TypeScript, using React as a web framework.
+
+
+***Test Requirements:***
+
+- End-to-end tests should be written in TypeScript, using Cypress as the end-to-end testing framework.
+
+
+***Functional Requirements:***
+
+- Display "hello, world"
