@@ -2,4 +2,10 @@ __pycache__
 .DS_Store
 
 # Plain
-build/
+examples/**/build*/
+examples/**/e2e_tests/
+examples/**/node_build/
+examples/**/node_e2e_tests/
+examples/**/package-lock.json
+examples/**/node_modules/
+examples/**/node_harness_tests/
