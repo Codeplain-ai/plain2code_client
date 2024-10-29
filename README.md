@@ -26,7 +26,7 @@ To have the hash generated use the following command:
 ```
 plain2code.py [-h] [--verbose] [--debug] [--base-folder BASE_FOLDER] [--build-folder BUILD_FOLDER]
     [--render-range RENDER_RANGE] [--unittests-script UNITTESTS_SCRIPT] [--e2e-tests-folder E2E_TESTS_FOLDER]
-    [--e2e-tests-script E2E_TESTS_SCRIPT] [--api [API]] filename
+    [--e2e-tests-script E2E_TESTS_SCRIPT] [--api [API]] [--api-key API_KEY] filename
 
 Render Plain source to software code.
 
@@ -54,6 +54,8 @@ options:
                         Name of a shell script to run end-to-end tests. The script will receive
                         the build folder and the end-to-end tests subfolder as its parameters.
   --api [API]           Force using the API (for internal use).
+  --api-key API_KEY     API key used to access the API. If not provided, the CLAUDE_API_KEY
+                        environment variable is used.
 ```
 
 ## Examples

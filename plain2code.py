@@ -281,7 +281,7 @@ def render(args):
     with open(args.filename, "r") as fin:
         plain_source = fin.read()
 
-    codeplainAPI = codeplain_api.CodeplainAPI(CLAUDE_API_KEY)
+    codeplainAPI = codeplain_api.CodeplainAPI(args.api_key)
     codeplainAPI.debug = args.debug
     codeplainAPI.verbose = args.verbose
 
@@ -432,7 +432,8 @@ if __name__ == "__main__":
     parser.add_argument('--unittests-script', type=str, help='a script to run unit tests')
     parser.add_argument('--e2e-tests-folder', type=non_empty_string, default=DEFAULT_E2E_TESTS_FOLDER, help='folder for e2e test files')
     parser.add_argument('--e2e-tests-script', type=str, help='a script to run e2e tests')
-    parser.add_argument('--api', type=str, nargs='?', const="https://api.codeplain.ai", default="https://api.codeplain.ai", help='force using the API (for internal use)')
+    parser.add_argument('--api', type=str, nargs='?', const="https://api.codeplain.ai", help='force using the API (for internal use)')
+    parser.add_argument('--api-key', type=str, default=CLAUDE_API_KEY, help='API key used to access the API. If not provided, the CLAUDE_API_KEY environment variable is used.')
 
     args = parser.parse_args()
 
@@ -443,10 +444,15 @@ if __name__ == "__main__":
 
     codeplain_api_spec = importlib.util.find_spec(codeplain_api_module_name)
     if args.api or codeplain_api_spec is None:
+        if not args.api:
+            args.api = "https://api.codeplain.ai"
         print(f"Running plain2code using REST API at {args.api }\n")
         import codeplain_REST_api as codeplain_api
     else:
         print(f"Running plain2code using local API.\n")
         codeplain_api = importlib.import_module(codeplain_api_module_name)
 
-    render(args)
+    try:
+        render(args)
+    except Exception as e:
+        print(f"Error rendering plain code: {str(e)}")

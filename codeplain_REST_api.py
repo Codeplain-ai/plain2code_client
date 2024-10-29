@@ -10,6 +10,10 @@ class ConflictingRequirements(Exception):
     pass
 
 
+class CreditBalanceTooLow(Exception):
+    pass
+
+
 class CodeplainAPI:
     
     def __init__(self, api_key):
@@ -24,6 +28,26 @@ class CodeplainAPI:
     @api_url.setter
     def api_url(self, value):
         self._api_url = value
+
+
+    def post_request(self, endpoint_url, headers, payload):
+        response = requests.post(endpoint_url, headers=headers, json=payload)
+
+        response_json = response.json()
+        if response.status_code == requests.codes.bad_request and "error_code" in response_json:
+            
+            if response_json["error_code"] == 'FunctionalRequirementTooComplex':
+                raise FunctionalRequirementTooComplex(response_json['message'])
+            
+            if response_json["error_code"] == 'ConflictingRequirements':
+                raise ConflictingRequirements(response_json['message'])
+            
+            if response_json["error_code"] == 'CreditBalanceTooLow':
+                raise CreditBalanceTooLow(response_json['message'])
+
+        response.raise_for_status()
+
+        return response_json
 
 
     def get_plain_sections(self, plain_source):
@@ -60,7 +84,7 @@ class CodeplainAPI:
             The "Definitions," "Functional Requirements," and "Non-Functional Requirements" 
             labeled sections are required, while others are optional.
         """
-        api_url = f"{self.api_url}/plain_sections"
+        endpoint_url = f"{self.api_url}/plain_sections"
         headers = {
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
@@ -68,9 +92,7 @@ class CodeplainAPI:
         
         payload = {"plain_source": plain_source}
         
-        response = requests.post(api_url, headers=headers, json=payload)
-        response.raise_for_status()
-        return response.json()
+        return self.post_request(endpoint_url, headers, payload)
 
 
     def render_functional_requirement(self, frid, plain_sections, existing_files_content):
@@ -94,7 +116,7 @@ class CodeplainAPI:
         Raises:
             ValueError: If the frid is invalid or the necessary sections cannot be found.
         """
-        api_url = f"{self.api_url}/render_functional_requirement"
+        endpoint_url = f"{self.api_url}/render_functional_requirement"
         headers = {
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
@@ -106,21 +128,11 @@ class CodeplainAPI:
             "existing_files_content": existing_files_content
         }
         
-        response = requests.post(api_url, headers=headers, json=payload)
-
-        response_json = response.json()
-        if response.status_code == requests.codes.bad_request:
-            
-            if response_json["error_code"] == 'FunctionalRequirementTooComplex':
-                raise FunctionalRequirementTooComplex(response_json['message'])
-
-        response.raise_for_status()
-
-        return response_json  
+        return self.post_request(endpoint_url, headers, payload)
 
 
     def fix_unittests_issue(self, frid, plain_sections, existing_files_content, unittests_issue):
-        api_url = f"{self.api_url}/fix_unittests_issue"
+        endpoint_url = f"{self.api_url}/fix_unittests_issue"
         headers = {
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
@@ -133,13 +145,11 @@ class CodeplainAPI:
             "unittests_issue": unittests_issue
         }
         
-        response = requests.post(api_url, headers=headers, json=payload)
-        response.raise_for_status()
-        return response.json()
+        return self.post_request(endpoint_url, headers, payload)
 
 
     def refactor_source_files_if_needed(self, files_to_check, existing_files_content):
-        api_url = f"{self.api_url}/refactor_source_files_if_needed"
+        endpoint_url = f"{self.api_url}/refactor_source_files_if_needed"
         headers = {
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
@@ -150,13 +160,11 @@ class CodeplainAPI:
             "existing_files_content": existing_files_content
         }
 
-        response = requests.post(api_url, headers=headers, json=payload)
-        response.raise_for_status()
-        return response.json()
+        return self.post_request(endpoint_url, headers, payload)
 
 
     def render_e2e_tests(self, frid, plain_sections, existing_files_content):
-        api_url = f"{self.api_url}/render_e2e_tests"
+        endpoint_url = f"{self.api_url}/render_e2e_tests"
         headers = {
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
@@ -168,13 +176,11 @@ class CodeplainAPI:
             "existing_files_content": existing_files_content
         }
         
-        response = requests.post(api_url, headers=headers, json=payload)
-        response.raise_for_status()
-        return response.json()
+        return self.post_request(endpoint_url, headers, payload)
 
 
     def generate_folder_name_from_functional_requirement(self, functional_requirement, existing_folder_names):
-        api_url = f"{self.api_url}/generate_folder_name_from_functional_requirement"
+        endpoint_url = f"{self.api_url}/generate_folder_name_from_functional_requirement"
         headers = {
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
@@ -185,13 +191,11 @@ class CodeplainAPI:
             "existing_folder_names": existing_folder_names
         }
         
-        response = requests.post(api_url, headers=headers, json=payload)
-        response.raise_for_status()
-        return response.json()
+        return self.post_request(endpoint_url, headers, payload)
 
 
     def fix_e2e_tests_issue(self, frid, functional_requirement_id, plain_sections, existing_files_content, code_diff, e2e_tests_files, e2e_tests_issue, implementation_fix_count):
-        api_url = f"{self.api_url}/fix_e2e_tests_issue"
+        endpoint_url = f"{self.api_url}/fix_e2e_tests_issue"
         headers = {
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
@@ -208,14 +212,4 @@ class CodeplainAPI:
             "implementation_fix_count": implementation_fix_count
         }
         
-        response = requests.post(api_url, headers=headers, json=payload)
-
-        response_json = response.json()
-        if response.status_code == requests.codes.bad_request:
-            
-            if response_json["error_code"] == 'ConflictingRequirements':
-                raise ConflictingRequirements(response_json['message'])
-
-        response.raise_for_status()
-
-        return response_json
+        return self.post_request(endpoint_url, headers, payload)
