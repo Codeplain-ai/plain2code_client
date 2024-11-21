@@ -1,3 +1,4 @@
+import sys
 import os
 import subprocess
 import argparse
@@ -92,7 +93,7 @@ def run_unittests(args, codeplainAPI, frid, plain_sections, existing_files):
 
         if unit_test_run_count > MAX_UNITTEST_FIX_ATTEMPTS:
             print(f"Unit tests still failed after {unit_test_run_count - 1} attemps at fixing issues. Please fix the issues manually.")
-            exit()
+            sys.exit(1)
 
         existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
@@ -189,11 +190,11 @@ def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sec
             exit()
         except Exception as e:
             print(f"Error fixing end-to-end tests issue: {str(e)}")
-            exit()
+            sys.exit(1)
 
     if e2e_tests_issue:
         print(f"End-to-end tests script {args.e2e_tests_script} for {e2e_tests_folder_name} still failed after {e2e_test_fix_count - 1} attemps at fixing issues. Please fix the issues manually.")
-        exit()
+        sys.exit(1)
     
     return [False, existing_files]
 
@@ -242,7 +243,7 @@ def end_to_end_testing(args, codeplainAPI, frid, plain_sections, existing_files,
         return e2e_tests
 
     print(f"End-to-end tests still failed after {e2e_tests_run_count - 1} attemps at fixing issues. Please fix the issues manually.")
-    exit()
+    sys.exit(1)
 
 
 class IndentedFormatter(logging.Formatter):
@@ -344,7 +345,7 @@ def render(args):
             # - If the functional requirement changes multiple entities, first limit the changes to a single representative entity and then to all entities.
             # - Move the functional requirement higher up, that is, to come earlier in the rendering order.
             print(f"Too many files or code lines generated. You should break down the functional requirement into smaller parts ({str(e)}).")
-            exit()
+            sys.exit(1)
 
         if previous_build_folder:
             for file_name in existing_files:
