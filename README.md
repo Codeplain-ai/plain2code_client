@@ -6,6 +6,8 @@ Render Plain source to software code using the Codeplain API.
 
 Plain is a novel programming language that helps abstracting away complexity of using large language models for code generation.
 
+See [Plain language specification](Plain-language-specification.md) for documentation how to use Plain language.
+
 ## Prerequisites
 
 For now you need to bring your own LLM (Anthropic Claude) API key to use Codeplain API. Please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic Claude API key added to the list of authorized API keys.
