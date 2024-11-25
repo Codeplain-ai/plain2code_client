@@ -125,7 +125,7 @@ Functional requirements are rendered incrementally one by one. Consequently earl
 
 ## Test Requirements
 
-The top level section `***Test Requirements:***` is a list of instructions that implementation of end-to-end tests and provide details of testing environment.
+The top level section `***Test Requirements:***` is a list of instructions that steer implementation of end-to-end tests and provide details of testing environment.
 
 Here's an example specification of test requirements.
 
