@@ -64,4 +64,4 @@ options:
 
 The examples reside in "examples" folder and can be run with the following shell script:
 
-`sh run.sh`
+`sh run.sh -v`
