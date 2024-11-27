@@ -145,6 +145,9 @@ def store_response_files(target_folder, response_files, existing_files):
             if os.path.exists(full_file_name):
                 os.remove(full_file_name)
                 existing_files.remove(file_name)
+            else:
+                print(f"WARNING! Cannot delete file! File {full_file_name} does not exist.")
+
             continue
 
         os.makedirs(os.path.dirname(full_file_name), exist_ok=True)
@@ -156,3 +159,40 @@ def store_response_files(target_folder, response_files, existing_files):
             existing_files.append(file_name)
 
     return existing_files
+
+
+def collect_linked_resources(plain_sections):
+    linked_resources = []
+
+    if isinstance(plain_sections, dict):
+        for key, value in plain_sections.items():
+            if key == 'linked_resources':
+                linked_resources.extend(value)
+            else:
+                linked_resources.extend(collect_linked_resources(value))
+    elif isinstance(plain_sections, list):
+        for item in plain_sections:
+            linked_resources.extend(collect_linked_resources(item))
+
+    return linked_resources
+
+
+def load_linked_resources(folder_name, file_names):
+    linked_resources = {}
+    for file_name in file_names:
+        if file_name in linked_resources:
+            continue
+
+        full_file_name = os.path.join(folder_name, file_name)
+        if not os.path.isfile(full_file_name):
+            raise FileNotFoundError(f"The file '{full_file_name}' does not exist.")
+    
+
+        with open(full_file_name, 'rb') as f:
+            content = f.read()
+            try:
+                linked_resources[file_name] = content.decode('utf-8')
+            except UnicodeDecodeError:
+                print(f"WARNING! Error loading {file_name}. File is not a text file. Skipping it.")
+
+    return linked_resources

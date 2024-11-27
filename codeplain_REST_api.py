@@ -95,7 +95,7 @@ class CodeplainAPI:
         return self.post_request(endpoint_url, headers, payload)
 
 
-    def render_functional_requirement(self, frid, plain_sections, existing_files_content):
+    def render_functional_requirement(self, frid, plain_sections, linked_resources, existing_files_content):
         """
         Renders the content of a functional requirement based on the provided ID, 
         corresponding sections from a Plain document, and existing files' content.
@@ -104,10 +104,10 @@ class CodeplainAPI:
             frid (str): The unique identifier for the functional requirement to be rendered.
             plain_sections (list of str): A list of sections from the Plain document that 
                                         are relevant to the functional requirement.
-            existing_files_content (dict): A dictionary where the keys represent filenames 
-                                        and the values are the content of those files, 
-                                        used to cross-reference or augment the rendering 
-                                        of the functional requirement.
+            linked_resources (dict): A dictionary where the keys represent resource names 
+                                    and the values are the content of those resources.
+            existing_files_content (dict): A dictionary where the keys represent code base
+                                        filenames and the values are the content of those files.
 
         Returns:
             str: A string containing the rendered functional requirement, formatted 
@@ -125,13 +125,14 @@ class CodeplainAPI:
         payload = {
             "frid": frid,
             "plain_sections": plain_sections,
+            "linked_resources": linked_resources,
             "existing_files_content": existing_files_content
         }
         
         return self.post_request(endpoint_url, headers, payload)
 
 
-    def fix_unittests_issue(self, frid, plain_sections, existing_files_content, unittests_issue):
+    def fix_unittests_issue(self, frid, plain_sections, linked_resources, existing_files_content, unittests_issue):
         endpoint_url = f"{self.api_url}/fix_unittests_issue"
         headers = {
             "X-API-Key": self.api_key,
@@ -141,6 +142,7 @@ class CodeplainAPI:
         payload = {
             "frid": frid,
             "plain_sections": plain_sections,
+            "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
             "unittests_issue": unittests_issue
         }
@@ -163,7 +165,7 @@ class CodeplainAPI:
         return self.post_request(endpoint_url, headers, payload)
 
 
-    def render_e2e_tests(self, frid, plain_sections, existing_files_content):
+    def render_e2e_tests(self, frid, plain_sections, linked_resources, existing_files_content):
         endpoint_url = f"{self.api_url}/render_e2e_tests"
         headers = {
             "X-API-Key": self.api_key,
@@ -173,6 +175,7 @@ class CodeplainAPI:
         payload = {
             "frid": frid,
             "plain_sections": plain_sections,
+            "linked_resources": linked_resources,
             "existing_files_content": existing_files_content
         }
         
@@ -194,7 +197,7 @@ class CodeplainAPI:
         return self.post_request(endpoint_url, headers, payload)
 
 
-    def fix_e2e_tests_issue(self, frid, functional_requirement_id, plain_sections, existing_files_content, code_diff, e2e_tests_files, e2e_tests_issue, implementation_fix_count):
+    def fix_e2e_tests_issue(self, frid, functional_requirement_id, plain_sections, linked_resources, existing_files_content, code_diff, e2e_tests_files, e2e_tests_issue, implementation_fix_count):
         endpoint_url = f"{self.api_url}/fix_e2e_tests_issue"
         headers = {
             "X-API-Key": self.api_key,
@@ -205,6 +208,7 @@ class CodeplainAPI:
             "frid": frid,
             "functional_requirement_id": functional_requirement_id,
             "plain_sections": plain_sections,
+            "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
             "code_diff": code_diff,
             "e2e_tests_files": e2e_tests_files,

@@ -1,5 +1,6 @@
 import sys
 import os
+import copy
 import subprocess
 import argparse
 import json
@@ -69,7 +70,7 @@ def execute_test_script(test_script, scripts_args, verbose):
         return None
     
 
-def run_unittests(args, codeplainAPI, frid, plain_sections, existing_files):
+def run_unittests(args, codeplainAPI, frid, plain_sections, linked_resources, existing_files):
 
     changed_files = set()
     
@@ -97,7 +98,7 @@ def run_unittests(args, codeplainAPI, frid, plain_sections, existing_files):
 
         existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
-        response_files = codeplainAPI.fix_unittests_issue(frid, plain_sections, existing_files_content, unittests_issue)
+        response_files = codeplainAPI.fix_unittests_issue(frid, plain_sections, linked_resources, existing_files_content, unittests_issue)
 
         changed_files.update(response_files.keys())
 
@@ -108,9 +109,9 @@ def run_unittests(args, codeplainAPI, frid, plain_sections, existing_files):
     return existing_files, changed_files
 
 
-def generate_end_to_end_tests(args, codeplainAPI, frid, plain_sections, existing_files, e2e_tests_folder_name):
+def generate_end_to_end_tests(args, codeplainAPI, frid, plain_sections, linked_resources, existing_files, e2e_tests_folder_name):
     if args.verbose:
-        print(f"\nImplementing test requirements:\n{plain_sections[plain_spec.TEST_REQUIREMENTS]}")
+        print(f"\nImplementing test requirements:\n{plain_sections[plain_spec.TEST_REQUIREMENTS]['markdown']}")
 
     if not e2e_tests_folder_name:
         try:
@@ -119,7 +120,7 @@ def generate_end_to_end_tests(args, codeplainAPI, frid, plain_sections, existing
             existing_folder_names = []
     
         fr_subfolder_name = codeplainAPI.generate_folder_name_from_functional_requirement(
-            plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][frid - 1],
+            plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][frid - 1]['markdown'],
             existing_folder_names
         )
 
@@ -132,7 +133,7 @@ def generate_end_to_end_tests(args, codeplainAPI, frid, plain_sections, existing
 
     existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
-    response_files = codeplainAPI.render_e2e_tests(frid, plain_sections, existing_files_content)
+    response_files = codeplainAPI.render_e2e_tests(frid, plain_sections, linked_resources, existing_files_content)
 
     e2e_tests_files = file_utils.store_response_files(e2e_tests_folder_name, response_files, [])
 
@@ -140,12 +141,12 @@ def generate_end_to_end_tests(args, codeplainAPI, frid, plain_sections, existing
     print('\n'.join(["- " + file_name for file_name in response_files.keys()]) + '\n')
 
     return {
-        'functional_requirement': plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][frid - 1],
+        'functional_requirement': plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][frid - 1]['markdown'],
         'folder_name' : e2e_tests_folder_name
     }
 
 
-def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sections, existing_files, existing_files_content, code_diff, e2e_tests_folder_name):
+def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sections, linked_resources, existing_files, existing_files_content, code_diff, e2e_tests_folder_name):
     e2e_test_fix_count = 0
     implementation_fix_count = 1
     e2e_tests_files = file_utils.list_all_files(e2e_tests_folder_name)
@@ -164,7 +165,7 @@ def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sec
 
         try:
             [e2e_tests_fixed, response_files] = codeplainAPI.fix_e2e_tests_issue(
-                frid, functional_requirement_id, plain_sections, existing_files_content, code_diff, e2e_tests_files_content, e2e_tests_issue, implementation_fix_count
+                frid, functional_requirement_id, plain_sections, linked_resources, existing_files_content, code_diff, e2e_tests_files_content, e2e_tests_issue, implementation_fix_count
             )
 
             if e2e_tests_fixed:
@@ -179,7 +180,7 @@ def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sec
                     print("Files fixed:")
                     print_response_files_summary(response_files)
 
-                    [existing_files, _] = run_unittests(args, codeplainAPI, frid, plain_sections, existing_files)
+                    [existing_files, _] = run_unittests(args, codeplainAPI, frid, plain_sections, linked_resources, existing_files)
 
                     return [True, existing_files]
 
@@ -199,7 +200,7 @@ def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sec
     return [False, existing_files]
 
 
-def end_to_end_testing(args, codeplainAPI, frid, plain_sections, existing_files, e2e_tests):
+def end_to_end_testing(args, codeplainAPI, frid, plain_sections, linked_resources, existing_files, e2e_tests):
     e2e_tests_run_count = 0
     while e2e_tests_run_count < MAX_E2E_TEST_RUNS:
         e2e_tests_run_count += 1
@@ -221,18 +222,18 @@ def end_to_end_testing(args, codeplainAPI, frid, plain_sections, existing_files,
         for functional_requirement_id in range(1, frid + 1):
             if (functional_requirement_id == frid) and \
                 (str(frid) not in e2e_tests or \
-                 e2e_tests[str(frid)]['functional_requirement'] != plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][frid - 1]):
+                 e2e_tests[str(frid)]['functional_requirement'] != plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][frid - 1]['markdown']):
 
                 if str(frid) in e2e_tests:
                     e2e_tests_folder_name = e2e_tests[str(frid)]['folder_name']
                 else:
                     e2e_tests_folder_name = None
 
-                e2e_tests[str(frid)] = generate_end_to_end_tests(args, codeplainAPI, frid, plain_sections, existing_files, e2e_tests_folder_name)
+                e2e_tests[str(frid)] = generate_end_to_end_tests(args, codeplainAPI, frid, plain_sections, linked_resources, existing_files, e2e_tests_folder_name)
 
             e2e_tests_folder_name = e2e_tests[str(functional_requirement_id)]['folder_name']
 
-            [implementation_code_has_changed, existing_files] = run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sections, existing_files, existing_files_content, code_diff, e2e_tests_folder_name)
+            [implementation_code_has_changed, existing_files] = run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sections, linked_resources, existing_files, existing_files_content, code_diff, e2e_tests_folder_name)
 
             if implementation_code_has_changed:
                 break
@@ -294,8 +295,21 @@ def render(args):
     print(f"Rendering {args.filename} to target code.\n")
 
     if args.verbose:
-        print(f"Definitions:\n{plain_sections[plain_spec.DEFINITIONS]}")
-        print(f"Non-Functional Requirements:\n{plain_sections[plain_spec.NON_FUNCTIONAL_REQUIREMENTS]}")
+        print(f"Definitions:\n{plain_sections[plain_spec.DEFINITIONS]['markdown']}")
+        if 'linked_resources' in plain_sections[plain_spec.DEFINITIONS]:
+            print(f"\tLinked resources:\n{plain_sections[plain_spec.DEFINITIONS]['linked_resources']}")
+
+        print(f"Non-Functional Requirements:\n{plain_sections[plain_spec.NON_FUNCTIONAL_REQUIREMENTS]['markdown']}")
+        if 'linked_resources' in plain_sections[plain_spec.NON_FUNCTIONAL_REQUIREMENTS]:
+            print(f"\tLinked resources:\n{plain_sections[plain_spec.NON_FUNCTIONAL_REQUIREMENTS]['linked_resources']}")
+
+        if plain_spec.TEST_REQUIREMENTS in plain_sections:
+            print(f"Test Requirements:\n{plain_sections[plain_spec.TEST_REQUIREMENTS]['markdown']}")
+            if 'linked_resources' in plain_sections[plain_spec.TEST_REQUIREMENTS]:
+                print(f"\tLinked resources:\n{plain_sections[plain_spec.TEST_REQUIREMENTS]['linked_resources']}")
+
+    resource_file_names = file_utils.collect_linked_resources(plain_sections)
+    all_linked_resources = file_utils.load_linked_resources(os.path.dirname(args.filename), resource_file_names)
 
     e2e_tests_definition_file_name = os.path.join(args.e2e_tests_folder, E2E_TESTS_DEFINITION_FILE_NAME)
     try:
@@ -325,7 +339,12 @@ def render(args):
             previous_build_folder = args.build_folder + "." + str(frid - 1)
             if not os.path.exists(previous_build_folder):
                 raise Exception(f"Build folder {previous_build_folder} not found: ")
-        
+
+        rendering_plain_sections = copy.deepcopy(plain_sections)
+        rendering_plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS] = rendering_plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][:frid]
+        resource_file_names = file_utils.collect_linked_resources(rendering_plain_sections)
+        linked_resources = {key: value for key, value in all_linked_resources.items() if key in resource_file_names}
+
         if previous_build_folder:
             existing_files = file_utils.list_all_files(previous_build_folder)
             existing_files_content = file_utils.get_existing_files_content(previous_build_folder, existing_files)
@@ -335,10 +354,10 @@ def render(args):
 
         if args.verbose:
             print("\nImplementing functional requirement:")
-            print(plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][frid - 1])
+            print(plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][frid - 1]['markdown'])
 
         try:
-            response_files = codeplainAPI.render_functional_requirement(frid, plain_sections, existing_files_content, )
+            response_files = codeplainAPI.render_functional_requirement(frid, plain_sections, linked_resources, existing_files_content, )
         except codeplain_api.FunctionalRequirementTooComplex as e:
             # TODO: Suggest how to break down the functional requirement. Identified options are:
             # - Split the functional requirement into smaller parts.
@@ -362,7 +381,7 @@ def render(args):
         print("Files generated:")
         print('\n'.join(["- " + file_name for file_name in response_files.keys()]))
 
-        [existing_files, tmp_changed_files] = run_unittests(args, codeplainAPI, frid, plain_sections, existing_files)
+        [existing_files, tmp_changed_files] = run_unittests(args, codeplainAPI, frid, plain_sections, linked_resources, existing_files)
 
         changed_files.update(tmp_changed_files)
 
@@ -394,11 +413,11 @@ def render(args):
             print("Files refactored:")
             print('\n'.join(response_files.keys()))
 
-            [existing_files, tmp_changed_files] = run_unittests(args, codeplainAPI, frid, plain_sections, existing_files)
+            [existing_files, tmp_changed_files] = run_unittests(args, codeplainAPI, frid, plain_sections, linked_resources, existing_files)
             changed_files.update(tmp_changed_files)
 
         if args.e2e_tests_script and plain_spec.TEST_REQUIREMENTS in plain_sections and plain_sections[plain_spec.TEST_REQUIREMENTS]:
-            e2e_tests = end_to_end_testing(args, codeplainAPI, frid, plain_sections, existing_files, e2e_tests)
+            e2e_tests = end_to_end_testing(args, codeplainAPI, frid, plain_sections, linked_resources, existing_files, e2e_tests)
 
             if os.path.exists(args.e2e_tests_folder):
                 if args.verbose:
