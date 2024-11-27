@@ -142,3 +142,15 @@ Lines starting with `>` are ignored when rendering software code.
 ```plain
 > This is an example of a comment in Plain
 ```
+
+## Linked Resources
+
+If you include a link using the markdown syntax, the linked resource will be passed along with the Plain specification to the renderer.
+
+Here's an example of a linked resource (see Task manager example application for the full specification).
+
+```plain
+- Show The Task List. The details of the user interface are provided in the file [task_list_ui_specification.yaml](task_list_ui_specification.yaml).
+```
+
+Please note that only links to files in the same folder (and its subfolders) as the Plain specification are supported. Links to external resources are not supported.
