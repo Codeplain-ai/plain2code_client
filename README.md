@@ -8,6 +8,19 @@ Plain is a novel programming language that helps abstracting away complexity of 
 
 See [Plain language specification](Plain-language-specification.md) for documentation how to use Plain language.
 
+## Examples
+
+### "hello, world"
+
+The "hello, world" examples reside in [examples](examples) folder and can be run with the following shell script:
+
+`sh run.sh -v`
+
+
+### Task manager
+
+For example application how to implement task manager in Plain see [example-task-manager](https://github.com/Codeplain-ai/example-task-manager) repository.
+
 ## Prerequisites
 
 For now you need to bring your own LLM (Anthropic Claude) API key to use Codeplain API. Please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic Claude API key added to the list of authorized API keys.
@@ -59,16 +72,3 @@ options:
   --api-key API_KEY     API key used to access the API. If not provided, the CLAUDE_API_KEY
                         environment variable is used.
 ```
-
-## Examples
-
-### "hello, world"
-
-The "hello, world" examples reside in "examples" folder and can be run with the following shell script:
-
-`sh run.sh -v`
-
-
-### Task manager
-
-For example application how to implement task manager in Plain see [example-task-manager](https://github.com/Codeplain-ai/example-task-manager) repository.
