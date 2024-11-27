@@ -62,6 +62,13 @@ options:
 
 ## Examples
 
-The examples reside in "examples" folder and can be run with the following shell script:
+### "hello, world"
+
+The "hello, world" examples reside in "examples" folder and can be run with the following shell script:
 
 `sh run.sh -v`
+
+
+### Task manager
+
+For example application how to implement task manager in Plain see [example-task-manager](https://github.com/Codeplain-ai/example-task-manager) repository.
