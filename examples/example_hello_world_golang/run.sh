@@ -1,4 +1,10 @@
-python ../../plain2code.py hello_world_golang.plain
+if [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
+  VERBOSE=1
+
+  echo "Running Python hello world example in verbose mode."
+fi
+
+python ../../plain2code.py hello_world_golang.plain ${VERBOSE:+-v}
 
 # Check if the plain2code command failed
 if [ $? -ne 0 ]; then
