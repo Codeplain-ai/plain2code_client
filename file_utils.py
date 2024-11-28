@@ -161,25 +161,41 @@ def store_response_files(target_folder, response_files, existing_files):
     return existing_files
 
 
-def collect_linked_resources(plain_sections):
+def collect_linked_resources(plain_section):
     linked_resources = []
 
-    if isinstance(plain_sections, dict):
-        for key, value in plain_sections.items():
+    if isinstance(plain_section, dict):
+        for key, value in plain_section.items():
             if key == 'linked_resources':
                 linked_resources.extend(value)
             else:
                 linked_resources.extend(collect_linked_resources(value))
-    elif isinstance(plain_sections, list):
-        for item in plain_sections:
+    elif isinstance(plain_section, list):
+        for item in plain_section:
             linked_resources.extend(collect_linked_resources(item))
 
     return linked_resources
 
 
-def load_linked_resources(folder_name, file_names):
+def get_linked_resources(plain_sections):
+    if not isinstance(plain_sections, dict):
+        raise ValueError("plain_sections must be a dictionary.")
+    
+    linked_resources_map = {}
+    for key, value in plain_sections.items():
+        linked_resources = collect_linked_resources(value)
+        for resource in linked_resources:
+            if resource in linked_resources_map:
+                linked_resources_map[resource].append(key)
+            else:
+                linked_resources_map[resource] = [key]
+
+    return linked_resources_map
+
+
+def load_linked_resources(folder_name, resources_map):
     linked_resources = {}
-    for file_name in file_names:
+    for file_name in resources_map.keys():
         if file_name in linked_resources:
             continue
 
@@ -191,7 +207,10 @@ def load_linked_resources(folder_name, file_names):
         with open(full_file_name, 'rb') as f:
             content = f.read()
             try:
-                linked_resources[file_name] = content.decode('utf-8')
+                linked_resources[file_name] = {
+                    'content': content.decode('utf-8'),
+                    'sections': resources_map[file_name]
+                }
             except UnicodeDecodeError:
                 print(f"WARNING! Error loading {file_name}. File is not a text file. Skipping it.")
 

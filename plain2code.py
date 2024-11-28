@@ -258,6 +258,12 @@ class IndentedFormatter(logging.Formatter):
         return super().format(record)
     
 
+def print_linked_resources(plain_section):
+    if 'linked_resources' in plain_section:
+        linked_resources_str = "\n".join(["- " + resource_name for resource_name in plain_section['linked_resources']])
+        print(f"Linked resources:\n{linked_resources_str}\n\n")
+
+
 def render(args):
 
     if args.verbose:
@@ -296,21 +302,18 @@ def render(args):
 
     if args.verbose:
         print(f"Definitions:\n{plain_sections[plain_spec.DEFINITIONS]['markdown']}")
-        if 'linked_resources' in plain_sections[plain_spec.DEFINITIONS]:
-            print(f"\tLinked resources:\n{plain_sections[plain_spec.DEFINITIONS]['linked_resources']}")
+        print_linked_resources(plain_sections[plain_spec.DEFINITIONS])
 
         print(f"Non-Functional Requirements:\n{plain_sections[plain_spec.NON_FUNCTIONAL_REQUIREMENTS]['markdown']}")
-        if 'linked_resources' in plain_sections[plain_spec.NON_FUNCTIONAL_REQUIREMENTS]:
-            print(f"\tLinked resources:\n{plain_sections[plain_spec.NON_FUNCTIONAL_REQUIREMENTS]['linked_resources']}")
+        print_linked_resources(plain_sections[plain_spec.NON_FUNCTIONAL_REQUIREMENTS])
 
         if plain_spec.TEST_REQUIREMENTS in plain_sections:
             print(f"Test Requirements:\n{plain_sections[plain_spec.TEST_REQUIREMENTS]['markdown']}")
-            if 'linked_resources' in plain_sections[plain_spec.TEST_REQUIREMENTS]:
-                print(f"\tLinked resources:\n{plain_sections[plain_spec.TEST_REQUIREMENTS]['linked_resources']}")
+            print_linked_resources(plain_sections[plain_spec.TEST_REQUIREMENTS])
 
-    resource_file_names = file_utils.collect_linked_resources(plain_sections)
-    all_linked_resources = file_utils.load_linked_resources(os.path.dirname(args.filename), resource_file_names)
-
+    resources_map = file_utils.get_linked_resources(plain_sections)
+    all_linked_resources = file_utils.load_linked_resources(os.path.dirname(args.filename), resources_map)
+    
     e2e_tests_definition_file_name = os.path.join(args.e2e_tests_folder, E2E_TESTS_DEFINITION_FILE_NAME)
     try:
         with open(e2e_tests_definition_file_name, 'r') as f:
@@ -342,8 +345,14 @@ def render(args):
 
         rendering_plain_sections = copy.deepcopy(plain_sections)
         rendering_plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS] = rendering_plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][:frid]
-        resource_file_names = file_utils.collect_linked_resources(rendering_plain_sections)
-        linked_resources = {key: value for key, value in all_linked_resources.items() if key in resource_file_names}
+        resources_map = file_utils.get_linked_resources(rendering_plain_sections)
+
+        linked_resources = {}
+        for key, value in resources_map.items():
+            linked_resources[key] = {
+                'content': all_linked_resources[key]['content'],
+                'sections': value
+            }
 
         if previous_build_folder:
             existing_files = file_utils.list_all_files(previous_build_folder)
