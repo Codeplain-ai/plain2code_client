@@ -6,6 +6,7 @@ import argparse
 import json
 import importlib.util
 import logging
+import traceback
 
 import plain_spec
 import file_utils
@@ -188,7 +189,7 @@ def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sec
                 implementation_fix_count += 1
         except codeplain_api.ConflictingRequirements as e:
             print(f"Conflicting requirements. {str(e)}.")
-            exit()
+            sys.exit(1)
         except Exception as e:
             print(f"Error fixing end-to-end tests issue: {str(e)}")
             sys.exit(1)
@@ -484,4 +485,5 @@ if __name__ == "__main__":
     try:
         render(args)
     except Exception as e:
-        print(f"Error rendering plain code: {str(e)}")
+        print(f"Error rendering plain code: {str(e)}\n")
+        traceback.print_exc()
