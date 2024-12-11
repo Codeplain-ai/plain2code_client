@@ -17,7 +17,21 @@ fi
 
 # Execute all Python unittests in the subfolder
 echo "Running Python unittests in $1..."
-python -m unittest discover -b 2>&1
+
+output=$(timeout 60s python -m unittest discover -b 2>&1)
+exit_code=$?
+
+# Check if the command timed out
+if [ $exit_code -eq 124 ]; then
+    printf "\nError: Unittests timed out after 60 seconds.\n"
+    exit 3
+fi
+
+# Echo the original output
+echo "$output"
+
+# Return the exit code of the unittest command
+exit $exit_code
 
 # Note: The 'discover' option automatically identifies and runs all unittests in the current directory and subdirectories
 # Ensure that your Python files are named according to the unittest discovery pattern (test*.py by default)
