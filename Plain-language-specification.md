@@ -154,3 +154,7 @@ Here's an example of a linked resource (see Task manager example application for
 ```
 
 Please note that only links to files in the same folder (and its subfolders) as the Plain specification are supported. Links to external resources are not supported.
+
+## Liquid templates
+
+Plain supports Liquid templates. Liquid is an open-source template language created by Shopify (https://shopify.github.io/liquid/).
