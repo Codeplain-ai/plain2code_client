@@ -158,3 +158,5 @@ Please note that only links to files in the same folder (and its subfolders) as 
 ## Liquid templates
 
 Plain supports Liquid templates. Liquid is an open-source template language created by Shopify (https://shopify.github.io/liquid/).
+
+For a sample use of Liquid templates see [example-saas-connectors](https://github.com/Codeplain-ai/example-saas-connectors) repository.
