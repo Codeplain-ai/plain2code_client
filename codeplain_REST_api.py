@@ -14,6 +14,10 @@ class CreditBalanceTooLow(Exception):
     pass
 
 
+class MissingResource(Exception):
+    pass
+
+
 class CodeplainAPI:
     
     def __init__(self, api_key):
@@ -44,6 +48,9 @@ class CodeplainAPI:
             
             if response_json["error_code"] == 'CreditBalanceTooLow':
                 raise CreditBalanceTooLow(response_json['message'])
+
+            if response_json["error_code"] == 'MissingResource':
+                raise MissingResource(response_json['message'])
 
         response.raise_for_status()
 
