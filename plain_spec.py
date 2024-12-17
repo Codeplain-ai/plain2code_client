@@ -1,3 +1,6 @@
+import copy
+
+
 DEFINITIONS = 'Definitions:'
 NON_FUNCTIONAL_REQUIREMENTS = 'Non-Functional Requirements:'
 TEST_REQUIREMENTS = 'Test Requirements:'
@@ -20,12 +23,16 @@ def collect_linked_resources(plain_section):
     return linked_resources
 
 
-def get_linked_resources(plain_sections):
+def get_linked_resources(plain_sections, frid=None):
     if not isinstance(plain_sections, dict):
         raise ValueError("plain_sections must be a dictionary.")
+
+    rendering_plain_sections = copy.deepcopy(plain_sections)
+    if frid:
+        rendering_plain_sections[FUNCTIONAL_REQUIREMENTS] = rendering_plain_sections[FUNCTIONAL_REQUIREMENTS][:frid]
     
     linked_resources_list = []
-    for key, value in plain_sections.items():
+    for key, value in rendering_plain_sections.items():
         linked_resources = collect_linked_resources(value)
         for resource in linked_resources:
             resource_found = False

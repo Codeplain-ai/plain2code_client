@@ -346,9 +346,7 @@ def render(args):
             if not os.path.exists(previous_build_folder):
                 raise Exception(f"Build folder {previous_build_folder} not found: ")
 
-        rendering_plain_sections = copy.deepcopy(plain_sections)
-        rendering_plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS] = rendering_plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][:frid]
-        resources_list = plain_spec.get_linked_resources(rendering_plain_sections)
+        resources_list = plain_spec.get_linked_resources(plain_sections, frid)
 
         linked_resources = {}
         for resource in resources_list:
