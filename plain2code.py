@@ -261,7 +261,7 @@ class IndentedFormatter(logging.Formatter):
 
 def print_linked_resources(plain_section):
     if 'linked_resources' in plain_section:
-        linked_resources_str = "\n".join(["- " + resource_name for resource_name in plain_section['linked_resources']])
+        linked_resources_str = "\n".join([f"- {resource_name['text']} ({resource_name['target']})"  for resource_name in plain_section['linked_resources']])
         print(f"Linked resources:\n{linked_resources_str}\n\n")
 
 
@@ -290,6 +290,8 @@ def render(args):
     with open(args.filename, "r") as fin:
         plain_source = fin.read()
 
+    loaded_templates = file_utils.get_loaded_templates(os.path.dirname(args.filename), plain_source)
+
     codeplainAPI = codeplain_api.CodeplainAPI(args.api_key)
     codeplainAPI.debug = args.debug
     codeplainAPI.verbose = args.verbose
@@ -297,7 +299,7 @@ def render(args):
     if args.api:
         codeplainAPI.api_url = args.api
     
-    plain_sections = codeplainAPI.get_plain_sections(plain_source)
+    plain_sections = codeplainAPI.get_plain_sections(plain_source, loaded_templates)
 
     print(f"Rendering {args.filename} to target code.\n")
 
@@ -312,8 +314,8 @@ def render(args):
             print(f"Test Requirements:\n{plain_sections[plain_spec.TEST_REQUIREMENTS]['markdown']}")
             print_linked_resources(plain_sections[plain_spec.TEST_REQUIREMENTS])
 
-    resources_map = file_utils.get_linked_resources(plain_sections)
-    all_linked_resources = file_utils.load_linked_resources(os.path.dirname(args.filename), resources_map)
+    resources_list = plain_spec.get_linked_resources(plain_sections)
+    all_linked_resources = file_utils.load_linked_resources(os.path.dirname(args.filename), resources_list)
     
     e2e_tests_definition_file_name = os.path.join(args.e2e_tests_folder, E2E_TESTS_DEFINITION_FILE_NAME)
     try:
@@ -346,14 +348,11 @@ def render(args):
 
         rendering_plain_sections = copy.deepcopy(plain_sections)
         rendering_plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS] = rendering_plain_sections[plain_spec.FUNCTIONAL_REQUIREMENTS][:frid]
-        resources_map = file_utils.get_linked_resources(rendering_plain_sections)
+        resources_list = plain_spec.get_linked_resources(rendering_plain_sections)
 
         linked_resources = {}
-        for key, value in resources_map.items():
-            linked_resources[key] = {
-                'content': all_linked_resources[key]['content'],
-                'sections': value
-            }
+        for resource in resources_list:
+            linked_resources[resource['target']] = all_linked_resources[resource['target']]
 
         if previous_build_folder:
             existing_files = file_utils.list_all_files(previous_build_folder)

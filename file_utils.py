@@ -2,6 +2,9 @@ import os
 
 import difflib
 
+from liquid import Environment, FileSystemLoader, StrictUndefined
+from liquid.exceptions import UndefinedError
+
 BINARY_FILE_EXTENSIONS = ['.pyc']
 
 
@@ -161,41 +164,10 @@ def store_response_files(target_folder, response_files, existing_files):
     return existing_files
 
 
-def collect_linked_resources(plain_section):
-    linked_resources = []
-
-    if isinstance(plain_section, dict):
-        for key, value in plain_section.items():
-            if key == 'linked_resources':
-                linked_resources.extend(value)
-            else:
-                linked_resources.extend(collect_linked_resources(value))
-    elif isinstance(plain_section, list):
-        for item in plain_section:
-            linked_resources.extend(collect_linked_resources(item))
-
-    return linked_resources
-
-
-def get_linked_resources(plain_sections):
-    if not isinstance(plain_sections, dict):
-        raise ValueError("plain_sections must be a dictionary.")
-    
-    linked_resources_map = {}
-    for key, value in plain_sections.items():
-        linked_resources = collect_linked_resources(value)
-        for resource in linked_resources:
-            if resource in linked_resources_map:
-                linked_resources_map[resource].append(key)
-            else:
-                linked_resources_map[resource] = [key]
-
-    return linked_resources_map
-
-
-def load_linked_resources(folder_name, resources_map):
+def load_linked_resources(folder_name, resources_list):
     linked_resources = {}
-    for file_name in resources_map.keys():
+    for resource in resources_list:
+        file_name = resource['target']
         if file_name in linked_resources:
             continue
 
@@ -207,11 +179,36 @@ def load_linked_resources(folder_name, resources_map):
         with open(full_file_name, 'rb') as f:
             content = f.read()
             try:
-                linked_resources[file_name] = {
-                    'content': content.decode('utf-8'),
-                    'sections': resources_map[file_name]
-                }
+                linked_resources[file_name] = content.decode('utf-8')
             except UnicodeDecodeError:
-                print(f"WARNING! Error loading {file_name}. File is not a text file. Skipping it.")
+                print(f"WARNING! Error loading {resource['text']} ({resource['target']}). File is not a text file. Skipping it.")
 
     return linked_resources
+
+
+class TrackingFileSystemLoader(FileSystemLoader):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loaded_templates = {}
+
+    def get_source(self, environment, template_name):
+        source = super().get_source(environment, template_name)
+        self.loaded_templates[template_name] = source.source
+        return source
+
+
+def get_loaded_templates(source_path, plain_source):
+    # Render the plain source with Liquid templating engine
+    # to identify the templates that are being loaded
+    liquid_loader = TrackingFileSystemLoader(source_path)
+    liquid_env = Environment(
+        loader=liquid_loader,
+        undefined=StrictUndefined
+    )
+    plain_source_template = liquid_env.from_string(plain_source)
+    try:
+        plain_source_template.render()
+    except UndefinedError as e:
+        raise Exception(f"Undefined liquid variable: {str(e)}")
+
+    return liquid_loader.loaded_templates

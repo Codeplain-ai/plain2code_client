@@ -50,7 +50,7 @@ class CodeplainAPI:
         return response_json
 
 
-    def get_plain_sections(self, plain_source):
+    def get_plain_sections(self, plain_source, loaded_templates):
         """
         Extracts labeled sections from the given plain text source in Markdown format.
 
@@ -68,6 +68,7 @@ class CodeplainAPI:
                                 are optional but will be parsed if present. The input should be 
                                 non-empty and formatted using consistent Markdown syntax with 
                                 the required labels to ensure successful parsing and extraction.
+            loaded_templates (dict): A dictionary containing the loaded templates.
 
         Returns:
             list: A list of labeled sections extracted from the plain source. Each section is 
@@ -90,7 +91,10 @@ class CodeplainAPI:
             "Content-Type": "application/json"
         }
         
-        payload = {"plain_source": plain_source}
+        payload = {
+            "plain_source": plain_source,
+            "loaded_templates": loaded_templates
+        }
         
         return self.post_request(endpoint_url, headers, payload)
 
