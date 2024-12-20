@@ -2,9 +2,22 @@
 
 Render Plain source to software code using the Codeplain API.
 
-## About Plain programming language
+## About Codeplain.ai
 
-Plain is a novel programming language that helps abstracting away complexity of using large language models for code generation.
+Codeplain is a platform that helps you to generate software code using large language models based on requirements specified in Plain specification language.
+
+Schematic overview of the Codeplain's code generation service
+
+<img src="resources/codeplain_overview.png" width="50%" height="50%">
+
+## About Plain specification language
+
+Plain is a novel specification language that helps abstracting away complexity of using large language models for code generation.
+
+An example application in Plain
+
+<img src="resources/plain_example.png" width="50%" height="50%">
+
 
 See [Plain language specification](Plain-language-specification.md) for documentation how to use Plain language.
 
