@@ -8,7 +8,7 @@ Codeplain is a platform that helps you to generate software code using large lan
 
 Schematic overview of the Codeplain's code generation service
 
-<img src="resources/codeplain_overview.png" width="50%" height="50%">
+<img src="resources/codeplain_overview.png" width="75%" height="75%">
 
 ## About Plain specification language
 
