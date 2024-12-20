@@ -16,7 +16,7 @@ Plain is a novel specification language that helps abstracting away complexity o
 
 An example application in Plain
 
-<img src="resources/plain_example.png" width="50%" height="50%">
+<img src="resources/plain_example.png">
 
 
 See [Plain language specification](Plain-language-specification.md) for documentation how to use Plain language.
