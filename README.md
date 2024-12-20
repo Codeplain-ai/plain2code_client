@@ -8,7 +8,7 @@ Codeplain is a platform that helps you to generate software code using large lan
 
 Schematic overview of the Codeplain's code generation service
 
-<img src="resources/codeplain_overview.png" width="75%" height="75%">
+<img src="resources/codeplain_overview.png">
 
 ## About Plain specification language
 
@@ -16,7 +16,7 @@ Plain is a novel specification language that helps abstracting away complexity o
 
 An example application in Plain
 
-<img src="resources/plain_example.png">
+<img src="resources/plain_example.png" width="50%" height="50%">
 
 
 See [Plain language specification](Plain-language-specification.md) for documentation how to use Plain language.
