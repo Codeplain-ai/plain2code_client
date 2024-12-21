@@ -4,7 +4,7 @@ Render Plain source to software code using the Codeplain API.
 
 ## Codeplain.ai - Code Generation as a Service
 
-Codeplain is a platform that helps you to generate software code using large language models based on requirements specified in Plain specification language.
+Codeplain is a platform that generates software code using large language models based on requirements you specify in Plain specification language.
 
 Schematic overview of the Codeplain's code generation service
 
