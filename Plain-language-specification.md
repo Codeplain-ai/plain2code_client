@@ -13,8 +13,6 @@ Plain language is structured English based on markdown syntax.
 Here's an example of a "hello,world" program in Plain.
 
 ```plain
-***Definitions:***
-
 ***Non-Functional Requirements:***
 
 - Implementation should be in Python.
@@ -26,19 +24,42 @@ Here's an example of a "hello,world" program in Plain.
 
 # Source structure
 
-Every Plain source file requires the following top level sections:
+## Source organization
+
+Plain source can be organized in sections and subsection using markdown headers.
+
+```plain
+# Section 1
+
+# Section 2
+
+***Non-Functional Requirements:***
+
+- Simple non-functional requirement
+
+## Section 2.1
+
+***Functional Requirements:***
+
+- Simple functional requirement
+```
+
+### Specifications
+
+There are four types of specifications:
 
 - `***Definitions:***`
 - `***Non-Functional Requirements:***`
 - `***Functional Requirements:***`
-
-The following top level section is optional:
 - `***Test Requirements:***`
 
+Every plain source file requires at least one functional requirement and an associated non-functional requirement.
 
-## Definitons
+Functional requirements must reside in leaf sections while other specifications can be placed also in non-leaf sections. Specifications in non-leaf sections apply not just to the section itself but to all of its subsections.
 
-The top level section `***Definitions:***` is a list of definitions of new terms.
+## Definitions
+
+The `***Definitions:***` specification is a list of definitions of new terms.
 
 Here's an example of a simple definiton.
 
@@ -61,7 +82,7 @@ The definition of a term is provided in natural language. There are no restricti
 
 ## Non-Functional Requirements
 
-The top level section `***Non-Functional Requirements:***` is a list of instructions that steer software code implementation and provide details of execution environment.
+The `***Non-Functional Requirements:***` specification is a list of instructions that steer software code implementation and provide details of execution environment.
 
 Here's an example of a simple instruction specifying only that the Plain specification should be rendered to Python software code.
 
@@ -83,7 +104,7 @@ Here's an example of more complex instructions.
 
 ## Functional Requirements
 
-The top level section `***Functional Requirements:***` provides a description of functionality that should be rendered to software code. The descriptions should be provided in natural language as a markdown list. When referring to other terms **The Noun convention** should be followed.
+The `***Functional Requirements:***` specificationprovides a description of functionality that should be rendered to software code. The descriptions should be provided in natural language as a markdown list. When referring to other terms **The Noun convention** should be followed.
 
 Here's an example of a simple description of the functionality of the "hello, world" application.
 
@@ -125,7 +146,7 @@ Functional requirements are rendered incrementally one by one. Consequently earl
 
 ## Test Requirements
 
-The top level section `***Test Requirements:***` is a list of instructions that steer implementation of end-to-end tests and provide details of testing environment.
+The `***Test Requirements:***` specification is a list of instructions that steer implementation of end-to-end tests and provide details of testing environment.
 
 Here's an example specification of test requirements.
 
