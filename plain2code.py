@@ -130,8 +130,8 @@ def run_unittests(args, codeplainAPI, frid, plain_source_tree, linked_resources,
     return existing_files, changed_files
 
 
-def generate_end_to_end_tests(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, e2e_tests_folder_name):
-    specifications = plain_spec.get_specifications_for_frid(plain_source_tree, frid)
+def generate_end_to_end_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, e2e_tests_folder_name):
+    specifications = plain_spec.get_specifications_for_frid(plain_source_tree, functional_requirement_id)
     if args.verbose:
         # TODO: Print the definitions.
         print(f"\nImplementing test requirements:")
@@ -158,7 +158,7 @@ def generate_end_to_end_tests(args, codeplainAPI, frid, plain_source_tree, linke
 
     existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
-    response_files = codeplainAPI.render_e2e_tests(frid, plain_source_tree, linked_resources, existing_files_content)
+    response_files = codeplainAPI.render_e2e_tests(frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content)
 
     e2e_tests_files = file_utils.store_response_files(e2e_tests_folder_name, response_files, [])
 
@@ -172,6 +172,7 @@ def generate_end_to_end_tests(args, codeplainAPI, frid, plain_source_tree, linke
 
 
 def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, existing_files_content, code_diff, e2e_tests_folder_name):
+    recreated_e2e_tests = False
     e2e_test_fix_count = 0
     implementation_fix_count = 1
     e2e_tests_files = file_utils.list_all_text_files(e2e_tests_folder_name)
@@ -183,8 +184,24 @@ def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sou
 
         e2e_tests_issue = execute_test_script(args.e2e_tests_script, [args.build_folder, e2e_tests_folder_name], args.verbose)
 
-        if not e2e_tests_issue or e2e_test_fix_count > MAX_E2E_TEST_FIX_ATTEMPTS:
+        if not e2e_tests_issue:
             break
+        
+        if e2e_test_fix_count > MAX_E2E_TEST_FIX_ATTEMPTS:
+            print(f"End-to-end tests script {args.e2e_tests_script} for {e2e_tests_folder_name} still failed after {e2e_test_fix_count - 1} attemps at fixing issues.")
+            if recreated_e2e_tests:
+                print("We've already tried to fix the issue by recreating the end-to-end tests but tests still fail. Please fix the issues manually.")
+                sys.exit(1)
+
+            print("Recreating end-to-end tests.")
+
+            generate_end_to_end_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, e2e_tests_folder_name)
+
+            recreated_e2e_tests = True
+            e2e_test_fix_count = 0
+            implementation_fix_count = 1
+            e2e_tests_files = file_utils.list_all_text_files(e2e_tests_folder_name)
+            continue
 
         e2e_tests_files_content = file_utils.get_existing_files_content(e2e_tests_folder_name, e2e_tests_files)
 
@@ -217,10 +234,6 @@ def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sou
         except Exception as e:
             print(f"Error fixing end-to-end tests issue: {str(e)}")
             sys.exit(1)
-
-    if e2e_tests_issue:
-        print(f"End-to-end tests script {args.e2e_tests_script} for {e2e_tests_folder_name} still failed after {e2e_test_fix_count - 1} attemps at fixing issues. Please fix the issues manually.")
-        sys.exit(1)
     
     return [False, existing_files]
 
@@ -256,7 +269,7 @@ def end_to_end_testing(args, codeplainAPI, frid, plain_source_tree, linked_resou
                 else:
                     e2e_tests_folder_name = None
 
-                e2e_tests[frid] = generate_end_to_end_tests(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, e2e_tests_folder_name)
+                e2e_tests[frid] = generate_end_to_end_tests(args, codeplainAPI, frid, frid, plain_source_tree, linked_resources, existing_files, e2e_tests_folder_name)
 
             e2e_tests_folder_name = e2e_tests[functional_requirement_id]['folder_name']
 

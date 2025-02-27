@@ -154,7 +154,7 @@ class CodeplainAPI:
         return self.post_request(endpoint_url, headers, payload)
 
 
-    def render_e2e_tests(self, frid, plain_source_tree, linked_resources, existing_files_content):
+    def render_e2e_tests(self, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content):
         endpoint_url = f"{self.api_url}/render_e2e_tests"
         headers = {
             "X-API-Key": self.api_key,
@@ -163,6 +163,7 @@ class CodeplainAPI:
         
         payload = {
             "frid": frid,
+            "functional_requirement_id": functional_requirement_id,
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content
