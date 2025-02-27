@@ -10,6 +10,8 @@ import traceback
 import plain_spec
 import file_utils
 
+TEST_SCRIPT_EXECUTION_TIMEOUT = 120 # 120 seconds
+
 CLAUDE_API_KEY = os.getenv('CLAUDE_API_KEY')
 DEFAULT_BUILD_FOLDER = 'build'
 DEFAULT_E2E_TESTS_FOLDER = "e2e_tests"
@@ -67,22 +69,27 @@ def print_response_files_summary(response_files):
 
 
 def execute_test_script(test_script, scripts_args, verbose):
-    
-    result = subprocess.run(
-        [file_utils.add_current_path_if_no_path(test_script)] + scripts_args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True
-    )
+    try:
+        result = subprocess.run(
+            [file_utils.add_current_path_if_no_path(test_script)] + scripts_args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=TEST_SCRIPT_EXECUTION_TIMEOUT
+        )
 
-    if verbose:
-        print(f"Test script output (exit code:{result.returncode}):\n{result.stdout}")
+        if verbose:
+            print(f"Test script output (exit code:{result.returncode}):\n{result.stdout}")
 
-    if result.returncode != 0:
-        return result.stdout
-    else:
-        return None
-    
+        if result.returncode != 0:
+            return result.stdout
+        else:
+            return None
+    except subprocess.TimeoutExpired:
+        if verbose:
+            print(f"Test script {test_script} timed out after {TEST_SCRIPT_EXECUTION_TIMEOUT} seconds.")
+
+        return f"Tests did not finish in {TEST_SCRIPT_EXECUTION_TIMEOUT} seconds."
 
 def run_unittests(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files):
 
