@@ -8,7 +8,7 @@ from liquid.exceptions import UndefinedError
 BINARY_FILE_EXTENSIONS = ['.pyc']
 
 
-def list_all_files(directory):
+def list_all_text_files(directory):
     all_files = []
     for root, dirs, files in os.walk(directory, topdown=False):
         modified_root = os.path.relpath(root, directory)
@@ -17,7 +17,14 @@ def list_all_files(directory):
 
         for filename in files:
             if not any(filename.endswith(ending) for ending in BINARY_FILE_EXTENSIONS):
-              all_files.append(os.path.join(modified_root, filename))
+                try:
+                    with open(os.path.join(root, filename), 'rb') as f:
+                        f.read().decode('utf-8')
+                except UnicodeDecodeError:
+                    print(f"WARNING! Not listing {filename} in {root}. File is not a text file. Skipping it.")
+                    continue
+
+                all_files.append(os.path.join(modified_root, filename))
     
     return all_files
 
@@ -98,11 +105,11 @@ def add_current_path_if_no_path(filename):
 
 def get_folders_diff(orig_folder, new_folder):
     if orig_folder:
-        orig_files = list_all_files(orig_folder)
+        orig_files = list_all_text_files(orig_folder)
     else:
         orig_files = []
 
-    new_files = list_all_files(new_folder)
+    new_files = list_all_text_files(new_folder)
 
     diff = {}
     for file_name in new_files:

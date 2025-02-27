@@ -167,7 +167,7 @@ def generate_end_to_end_tests(args, codeplainAPI, frid, plain_source_tree, linke
 def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, existing_files_content, code_diff, e2e_tests_folder_name):
     e2e_test_fix_count = 0
     implementation_fix_count = 1
-    e2e_tests_files = file_utils.list_all_files(e2e_tests_folder_name)
+    e2e_tests_files = file_utils.list_all_text_files(e2e_tests_folder_name)
     while True:
         e2e_test_fix_count += 1
 
@@ -348,7 +348,7 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
         linked_resources[resource['target']] = all_linked_resources[resource['target']]
 
     if previous_build_folder:
-        existing_files = file_utils.list_all_files(previous_build_folder)
+        existing_files = file_utils.list_all_text_files(previous_build_folder)
         existing_files_content = file_utils.get_existing_files_content(previous_build_folder, existing_files)
     else:
         existing_files = []
