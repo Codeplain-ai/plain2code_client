@@ -1,10 +1,42 @@
-if [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
-  VERBOSE=1
+# Store command line arguments
+VERBOSE=0
+API_ENDPOINT=""
 
-  echo "Running Python hello world example in verbose mode."
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -v|--verbose)
+            VERBOSE=1
+            shift # Remove --verbose from processing
+            ;;
+        --api)
+            API_ENDPOINT="$2"
+            shift # Remove --api from processing
+            shift # Remove the API endpoint value from processing
+            ;;
+        *)
+            # Unknown option
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+if [ $VERBOSE -eq 1 ]; then
+    echo "Running Go lang hello world example in verbose mode."
 fi
 
-python ../../plain2code.py hello_world_golang.plain ${VERBOSE:+-v}
+# Construct the command with optional parameters
+CMD="python ../../plain2code.py hello_world_golang.plain"
+if [ $VERBOSE -eq 1 ]; then
+    CMD="$CMD -v"
+fi
+if [ ! -z "$API_ENDPOINT" ]; then
+    CMD="$CMD --api $API_ENDPOINT"
+fi
+
+# Execute the command
+$CMD
 
 # Check if the plain2code command failed
 if [ $? -ne 0 ]; then

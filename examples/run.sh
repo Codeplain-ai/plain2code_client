@@ -1,41 +1,64 @@
-if [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
-  VERBOSE=1
+# Store command line arguments
+VERBOSE=0
+API_ENDPOINT=""
 
-  printf "Running plain2code test harness in verbose mode.\n\n"
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -v|--verbose)
+            VERBOSE=1
+            shift # Remove --verbose from processing
+            ;;
+        --api)
+            API_ENDPOINT="$2"
+            shift # Remove --api from processing
+            shift # Remove the API endpoint value from processing
+            ;;
+        *)
+            # Unknown option
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+echo "Running all example test harnesses..."
+
+VERBOSE_FLAG=""
+if [ "$VERBOSE" -eq 1 ]; then
+    VERBOSE_FLAG="-v"
+fi
+
+# Construct the API parameter if provided
+API_PARAM=""
+if [ ! -z "$API_ENDPOINT" ]; then
+    API_PARAM="--api $API_ENDPOINT"
 fi
 
 (
-	cd example_hello_world_python
-
-	sh run.sh ${VERBOSE:+-v}
-
-	# Check if the example_hello_world/run.sh command failed
-	if [ $? -ne 0 ]; then
-    	echo "Error: The example_hello_world/run.sh command failed."
-    	exit 1
-	fi
+    cd example_hello_world_python
+    sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
+    if [ $? -ne 0 ]; then
+        echo "Hello World Python example failed."
+        exit 1
+    fi
+    cd ..
 )
 
-(
-	cd example_hello_world_golang
+cd example_hello_world_golang
+sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
+if [ $? -ne 0 ]; then
+    echo "Hello World Golang example failed."
+    exit 1
+fi
+cd ..
 
-	sh run.sh ${VERBOSE:+-v}
+cd example_hello_world_react
+sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
+if [ $? -ne 0 ]; then
+    echo "Hello World React example failed."
+    exit 1
+fi
+cd ..
 
-	# Check if the example_hello_world/run.sh command failed
-	if [ $? -ne 0 ]; then
-    	echo "Error: The example_hello_world/run.sh command failed."
-    	exit 1
-	fi
-)
-
-(
-	cd example_hello_world_react
-
-	sh run.sh ${VERBOSE:+-v}
-
-	# Check if the example_hello_world/run.sh command failed
-	if [ $? -ne 0 ]; then
-    	echo "Error: The example_hello_world/run.sh command failed."
-    	exit 1
-	fi
-)
+echo "All example test harnesses completed successfully!"

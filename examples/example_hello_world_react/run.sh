@@ -1,14 +1,46 @@
-if [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
-  VERBOSE=1
+# Store command line arguments
+VERBOSE=0
+API_ENDPOINT=""
 
-  echo "Running the hello world example for React in verbose mode."
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -v|--verbose)
+            VERBOSE=1
+            shift # Remove --verbose from processing
+            ;;
+        --api)
+            API_ENDPOINT="$2"
+            shift # Remove --api from processing
+            shift # Remove the API endpoint value from processing
+            ;;
+        *)
+            # Unknown option
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+if [ $VERBOSE -eq 1 ]; then
+    echo "Running the hello world example for React in verbose mode."
+fi
+
+# Construct the command with optional parameters
+CMD="python ../../plain2code.py hello_world_react.plain --e2e-tests-script=../../test_scripts/run_e2e_tests_cypress.sh"
+if [ $VERBOSE -eq 1 ]; then
+    CMD="$CMD -v"
+fi
+if [ ! -z "$API_ENDPOINT" ]; then
+    CMD="$CMD --api $API_ENDPOINT"
 fi
 
 # Removing all the end-to-end tests before rendering the hello world example.
 rm -rf e2e_tests
 rm -rf node_e2e_tests
 
-python ../../plain2code.py hello_world_react.plain --e2e-tests-script=../../test_scripts/run_e2e_tests_cypress.sh ${VERBOSE:+-v}
+# Execute the command
+$CMD
 
 # Check if the plain2code command failed
 if [ $? -ne 0 ]; then
