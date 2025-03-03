@@ -146,12 +146,12 @@ Functional requirements are rendered incrementally one by one. Consequently earl
 
 ## Test Requirements
 
-The `***Test Requirements:***` specification is a list of instructions that steer implementation of end-to-end tests and provide details of testing environment.
+The `***Test Requirements:***` specification is a list of instructions that steer implementation of conformance tests and provide details of testing environment.
 
 Here's an example specification of test requirements.
 
 ```plain
-- End-to-end tests of The Program (The E2E Tests) should be implemented in Python using Unittest framework. 
+- The Conformance Tests of The Program should be implemented in Python using Unittest framework. 
 ```
 
 # Extended Syntax

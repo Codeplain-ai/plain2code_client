@@ -3,14 +3,14 @@
 # Check if build folder name is provided
 if [ -z "$1" ]; then
   printf "Error: No build folder name provided.\n"
-  printf "Usage: $0 <build_folder_name> <e2e_tests_folder>\n"
+  printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
   exit 1
 fi
 
-# Check if e2e tests folder name is provided
+# Check if conformance tests folder name is provided
 if [ -z "$2" ]; then
-  printf "Error: No e2e tests folder name provided.\n"
-  printf "Usage: $0 <build_folder_name> <e2e_tests_folder>\n"
+  printf "Error: No conformance tests folder name provided.\n"
+  printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
   exit 1
 fi
 
@@ -24,8 +24,8 @@ if [ $? -ne 0 ]; then
   exit 2
 fi
 
-# Execute all Python end-to-end tests in the build folder
-printf "Running Python end-to-end tests...\n\n"
+# Execute all Python conformance tests in the build folder
+printf "Running Python conformance tests...\n\n"
 
 output=$(python -m unittest discover -b -s "$current_dir/$2" 2>&1)
 exit_code=$?

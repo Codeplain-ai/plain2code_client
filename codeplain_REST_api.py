@@ -154,8 +154,8 @@ class CodeplainAPI:
         return self.post_request(endpoint_url, headers, payload)
 
 
-    def render_e2e_tests(self, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content):
-        endpoint_url = f"{self.api_url}/render_e2e_tests"
+    def render_conformance_tests(self, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content):
+        endpoint_url = f"{self.api_url}/render_conformance_tests"
         headers = {
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
@@ -187,8 +187,8 @@ class CodeplainAPI:
         return self.post_request(endpoint_url, headers, payload)
 
 
-    def fix_e2e_tests_issue(self, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content, code_diff, e2e_tests_files, e2e_tests_issue, implementation_fix_count):
-        endpoint_url = f"{self.api_url}/fix_e2e_tests_issue"
+    def fix_conformance_tests_issue(self, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content, code_diff, conformance_tests_files, conformance_tests_issue, implementation_fix_count):
+        endpoint_url = f"{self.api_url}/fix_conformance_tests_issue"
         headers = {
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
@@ -201,8 +201,8 @@ class CodeplainAPI:
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
             "code_diff": code_diff,
-            "e2e_tests_files": e2e_tests_files,
-            "e2e_tests_issue": e2e_tests_issue,
+            "conformance_tests_files": conformance_tests_files,
+            "conformance_tests_issue": conformance_tests_issue,
             "implementation_fix_count": implementation_fix_count
         }
         

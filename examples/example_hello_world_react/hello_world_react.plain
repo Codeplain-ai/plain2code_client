@@ -8,7 +8,7 @@
 
 ***Test Requirements:***
 
-- End-to-end tests should be written in TypeScript, using Cypress as the end-to-end testing framework.
+- The Conformance Tests should be written in TypeScript, using Cypress as the framework for The Conformance Tests.
 
 
 ***Functional Requirements:***

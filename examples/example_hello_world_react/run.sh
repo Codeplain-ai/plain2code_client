@@ -27,7 +27,7 @@ if [ $VERBOSE -eq 1 ]; then
 fi
 
 # Construct the command with optional parameters
-CMD="python ../../plain2code.py hello_world_react.plain --e2e-tests-script=../../test_scripts/run_e2e_tests_cypress.sh"
+CMD="python ../../plain2code.py hello_world_react.plain --conformance-tests-script=../../test_scripts/run_conformance_tests_cypress.sh"
 if [ $VERBOSE -eq 1 ]; then
     CMD="$CMD -v"
 fi
@@ -35,9 +35,9 @@ if [ ! -z "$API_ENDPOINT" ]; then
     CMD="$CMD --api $API_ENDPOINT"
 fi
 
-# Removing all the end-to-end tests before rendering the hello world example.
-rm -rf e2e_tests
-rm -rf node_e2e_tests
+# Removing all the conformance tests before rendering the hello world example.
+rm -rf conformance_tests
+rm -rf node_conformance_tests
 
 # Execute the command
 $CMD
@@ -48,7 +48,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-../../test_scripts/run_e2e_tests_cypress.sh build harness_tests/hello_world_display ${VERBOSE:+-v}
+../../test_scripts/run_conformance_tests_cypress.sh build harness_tests/hello_world_display ${VERBOSE:+-v}
 
 # Check if the test harness has failed for the hello world example
 if [ $? -ne 0 ]; then

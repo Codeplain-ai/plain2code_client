@@ -19,14 +19,14 @@ get_children() {
 # Check if build folder name is provided
 if [ -z "$1" ]; then
   printf "Error: No build folder name provided.\n"
-  printf "Usage: $0 <build_folder_name> <e2e_tests_folder>\n"
+  printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
   exit 1
 fi
 
-# Check if e2e tests folder name is provided
+# Check if conformance tests folder name is provided
 if [ -z "$2" ]; then
-  printf "Error: No e2e tests folder name provided.\n"
-  printf "Usage: $0 <build_folder_name> <e2e_tests_folder>\n"
+  printf "Error: No conformance tests folder name provided.\n"
+  printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
   exit 1
 fi
 
@@ -112,23 +112,23 @@ if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
   printf "React app is up and running!\n"
 fi
 
-# Execute all Cypress end-to-end tests in the build folder
-printf "### Step 2: Running Cypress end-to-end tests $2...\n"
+# Execute all Cypress conformance tests in the build folder
+printf "### Step 2: Running Cypress conformance tests $2...\n"
 
 # Move back to the original directory
 cd $current_dir
 
-# Define the path to the e2e tests subfolder
-NODE_E2E_TESTS_SUBFOLDER=node_$2
+# Define the path to the conformance tests subfolder
+NODE_CONFORMANCE_TESTS_SUBFOLDER=node_$2
 
 if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
-  printf "Preparing end-to-end tests Node subfolder: $NODE_E2E_TESTS_SUBFOLDER\n"
+  printf "Preparing conformance tests Node subfolder: $NODE_CONFORMANCE_TESTS_SUBFOLDER\n"
 fi
 
-# Check if the end-to-end tests node subfolder exists
-if [ -d "$NODE_E2E_TESTS_SUBFOLDER" ]; then
+# Check if the conformance tests node subfolder exists
+if [ -d "$NODE_CONFORMANCE_TESTS_SUBFOLDER" ]; then
   # Find and delete all files and folders except "node_modules", "build", and "package-lock.json"
-  find "$NODE_E2E_TESTS_SUBFOLDER" -mindepth 1 ! -path "$NODE_E2E_TESTS_SUBFOLDER/node_modules*" ! -path "$NODE_E2E_TESTS_SUBFOLDER/build*" ! -name "package-lock.json" -exec rm -rf {} +
+  find "$NODE_CONFORMANCE_TESTS_SUBFOLDER" -mindepth 1 ! -path "$NODE_CONFORMANCE_TESTS_SUBFOLDER/node_modules*" ! -path "$NODE_CONFORMANCE_TESTS_SUBFOLDER/build*" ! -name "package-lock.json" -exec rm -rf {} +
   
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
     printf "Cleanup completed, keeping 'node_modules' and 'package-lock.json'.\n"
@@ -138,23 +138,23 @@ else
     printf "Subfolder does not exist. Creating it...\n"
   fi
 
-  mkdir -p $NODE_E2E_TESTS_SUBFOLDER
+  mkdir -p $NODE_CONFORMANCE_TESTS_SUBFOLDER
 fi
 
-cp -R $2/* $NODE_E2E_TESTS_SUBFOLDER
+cp -R $2/* $NODE_CONFORMANCE_TESTS_SUBFOLDER
 
 # Move to the subfolder with Cypress tests
-cd "$NODE_E2E_TESTS_SUBFOLDER" 2>/dev/null
+cd "$NODE_CONFORMANCE_TESTS_SUBFOLDER" 2>/dev/null
 
 if [ $? -ne 0 ]; then
-  printf "Error: e2e tests Node folder '$NODE_E2E_TESTS_SUBFOLDER' does not exist.\n"
+  printf "Error: conformance tests Node folder '$NODE_CONFORMANCE_TESTS_SUBFOLDER' does not exist.\n"
   exit 2
 fi
 
 npm install cypress --save-dev --prefer-offline --no-audit --no-fund --loglevel error | grep -Ev "$NPM_INSTALL_OUTPUT_FILTER"
 
 if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
-  printf "Running Cypress end-to-end tests...\n"
+  printf "Running Cypress conformance tests...\n"
 fi
 
 BROWSERSLIST_IGNORE_OLD_DATA=1 npx cypress run --config video=false 2>/dev/null
@@ -181,7 +181,7 @@ fi
 
 if [ $cypress_run_result -ne 0 ]; then
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
-    printf "Error: Cypress end-to-end tests have failed.\n"
+    printf "Error: Cypress conformance tests have failed.\n"
   fi
   exit 2
 fi

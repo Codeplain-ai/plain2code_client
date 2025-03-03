@@ -14,12 +14,12 @@ TEST_SCRIPT_EXECUTION_TIMEOUT = 120 # 120 seconds
 
 CLAUDE_API_KEY = os.getenv('CLAUDE_API_KEY')
 DEFAULT_BUILD_FOLDER = 'build'
-DEFAULT_E2E_TESTS_FOLDER = "e2e_tests"
-E2E_TESTS_DEFINITION_FILE_NAME = "e2e_tests.json"
+DEFAULT_CONFORMANCE_TESTS_FOLDER = "conformance_tests"
+CONFORMANCE_TESTS_DEFINITION_FILE_NAME = "conformance_tests.json"
 
 MAX_UNITTEST_FIX_ATTEMPTS = 10
-MAX_E2E_TEST_FIX_ATTEMPTS = 10
-MAX_E2E_TEST_RUNS = 10
+MAX_CONFORMANCE_TEST_FIX_ATTEMPTS = 10
+MAX_CONFORMANCE_TEST_RUNS = 10
 MAX_REFACTORING_ITERATIONS = 5
 
 
@@ -130,7 +130,7 @@ def run_unittests(args, codeplainAPI, frid, plain_source_tree, linked_resources,
     return existing_files, changed_files
 
 
-def generate_end_to_end_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, e2e_tests_folder_name):
+def generate_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, conformance_tests_folder_name):
     specifications = plain_spec.get_specifications_for_frid(plain_source_tree, functional_requirement_id)
     if args.verbose:
         # TODO: Print the definitions.
@@ -138,9 +138,9 @@ def generate_end_to_end_tests(args, codeplainAPI, frid, functional_requirement_i
         print("\n".join(specifications[plain_spec.TEST_REQUIREMENTS]))
         print()
 
-    if not e2e_tests_folder_name:
+    if not conformance_tests_folder_name:
         try:
-            existing_folder_names = file_utils.list_folders_in_directory(args.e2e_tests_folder)
+            existing_folder_names = file_utils.list_folders_in_directory(args.conformance_tests_folder)
         except FileNotFoundError:
             existing_folder_names = []
     
@@ -150,69 +150,69 @@ def generate_end_to_end_tests(args, codeplainAPI, frid, functional_requirement_i
         )
 
         if args.verbose:
-            print(f"Storing e2e test files in subfolder {fr_subfolder_name}")
+            print(f"Storing conformance test files in subfolder {fr_subfolder_name}")
 
-        e2e_tests_folder_name = os.path.join(args.e2e_tests_folder, fr_subfolder_name)
+        conformance_tests_folder_name = os.path.join(args.conformance_tests_folder, fr_subfolder_name)
 
-    file_utils.delete_files_and_subfolders(e2e_tests_folder_name, args.verbose)
+    file_utils.delete_files_and_subfolders(conformance_tests_folder_name, args.verbose)
 
     existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
-    response_files = codeplainAPI.render_e2e_tests(frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content)
+    response_files = codeplainAPI.render_conformance_tests(frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content)
 
-    e2e_tests_files = file_utils.store_response_files(e2e_tests_folder_name, response_files, [])
+    file_utils.store_response_files(conformance_tests_folder_name, response_files, [])
 
-    print("\nEnd-to-end test files generated:")
+    print("\nConformance test files generated:")
     print('\n'.join(["- " + file_name for file_name in response_files.keys()]) + '\n')
 
     return {
         'functional_requirement': specifications[plain_spec.FUNCTIONAL_REQUIREMENTS][-1],
-        'folder_name' : e2e_tests_folder_name
+        'folder_name' : conformance_tests_folder_name
     }
 
 
-def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, existing_files_content, code_diff, e2e_tests_folder_name):
-    recreated_e2e_tests = False
-    e2e_test_fix_count = 0
+def run_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, existing_files_content, code_diff, conformance_tests_folder_name):
+    recreated_conformance_tests = False
+    conformance_test_fix_count = 0
     implementation_fix_count = 1
-    e2e_tests_files = file_utils.list_all_text_files(e2e_tests_folder_name)
+    conformance_tests_files = file_utils.list_all_text_files(conformance_tests_folder_name)
     while True:
-        e2e_test_fix_count += 1
+        conformance_test_fix_count += 1
 
         if args.verbose:
-            print(f"\nRunning end-to-end tests script {args.e2e_tests_script} for {e2e_tests_folder_name} (functional requirement {functional_requirement_id}, attempt: {e2e_test_fix_count}).")
+            print(f"\nRunning conformance tests script {args.conformance_tests_script} for {conformance_tests_folder_name} (functional requirement {functional_requirement_id}, attempt: {conformance_test_fix_count}).")
 
-        e2e_tests_issue = execute_test_script(args.e2e_tests_script, [args.build_folder, e2e_tests_folder_name], args.verbose)
+        conformance_tests_issue = execute_test_script(args.conformance_tests_script, [args.build_folder, conformance_tests_folder_name], args.verbose)
 
-        if not e2e_tests_issue:
+        if not conformance_tests_issue:
             break
         
-        if e2e_test_fix_count > MAX_E2E_TEST_FIX_ATTEMPTS:
-            print(f"End-to-end tests script {args.e2e_tests_script} for {e2e_tests_folder_name} still failed after {e2e_test_fix_count - 1} attemps at fixing issues.")
-            if recreated_e2e_tests:
-                print("We've already tried to fix the issue by recreating the end-to-end tests but tests still fail. Please fix the issues manually.")
+        if conformance_test_fix_count > MAX_CONFORMANCE_TEST_FIX_ATTEMPTS:
+            print(f"Conformance tests script {args.conformance_tests_script} for {conformance_tests_folder_name} still failed after {conformance_test_fix_count - 1} attemps at fixing issues.")
+            if recreated_conformance_tests:
+                print("We've already tried to fix the issue by recreating the conformance tests but tests still fail. Please fix the issues manually.")
                 sys.exit(1)
 
-            print("Recreating end-to-end tests.")
+            print("Recreating conformance tests.")
 
-            generate_end_to_end_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, e2e_tests_folder_name)
+            generate_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, conformance_tests_folder_name)
 
-            recreated_e2e_tests = True
-            e2e_test_fix_count = 0
+            recreated_conformance_tests = True
+            conformance_test_fix_count = 0
             implementation_fix_count = 1
-            e2e_tests_files = file_utils.list_all_text_files(e2e_tests_folder_name)
+            conformance_tests_files = file_utils.list_all_text_files(conformance_tests_folder_name)
             continue
 
-        e2e_tests_files_content = file_utils.get_existing_files_content(e2e_tests_folder_name, e2e_tests_files)
+        conformance_tests_files_content = file_utils.get_existing_files_content(conformance_tests_folder_name, conformance_tests_files)
 
         try:
-            [e2e_tests_fixed, response_files] = codeplainAPI.fix_e2e_tests_issue(
-                frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content, code_diff, e2e_tests_files_content, e2e_tests_issue, implementation_fix_count
+            [conformance_tests_fixed, response_files] = codeplainAPI.fix_conformance_tests_issue(
+                frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content, code_diff, conformance_tests_files_content, conformance_tests_issue, implementation_fix_count
             )
 
-            if e2e_tests_fixed:
-                e2e_tests_files = file_utils.store_response_files(e2e_tests_folder_name, response_files, e2e_tests_files)
-                print(f"\nEnd-to-end test files in folder {e2e_tests_folder_name} fixed:")
+            if conformance_tests_fixed:
+                conformance_tests_files = file_utils.store_response_files(conformance_tests_folder_name, response_files, conformance_tests_files)
+                print(f"\nConformance test files in folder {conformance_tests_folder_name} fixed:")
                 print_response_files_summary(response_files)
 
                 implementation_fix_count = 1
@@ -226,28 +226,28 @@ def run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_sou
 
                     return [True, existing_files]
 
-                print(f"Couldn't fix end-to-end tests issue in folder {e2e_tests_folder_name} for functional requirement {functional_requirement_id}. Trying one more time.")
+                print(f"Couldn't fix conformance tests issue in folder {conformance_tests_folder_name} for functional requirement {functional_requirement_id}. Trying one more time.")
                 implementation_fix_count += 1
         except codeplain_api.ConflictingRequirements as e:
             print(f"Conflicting requirements. {str(e)}.")
             sys.exit(1)
         except Exception as e:
-            print(f"Error fixing end-to-end tests issue: {str(e)}")
+            print(f"Error fixing conformance tests issue: {str(e)}")
             sys.exit(1)
     
     return [False, existing_files]
 
 
-def end_to_end_testing(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, e2e_tests):
-    e2e_tests_run_count = 0
+def conformance_testing(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, conformance_tests):
+    conformance_tests_run_count = 0
     specifications = plain_spec.get_specifications_for_frid(plain_source_tree, frid)
-    while e2e_tests_run_count < MAX_E2E_TEST_RUNS:
-        e2e_tests_run_count += 1
+    while conformance_tests_run_count < MAX_CONFORMANCE_TEST_RUNS:
+        conformance_tests_run_count += 1
         implementation_code_has_changed = False
         existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
         if args.verbose:
-            print(f"Running end-to-end tests attempt {e2e_tests_run_count}.")
+            print(f"Running conformance tests attempt {conformance_tests_run_count}.")
 
         if frid == plain_spec.get_first_frid(plain_source_tree):
             code_diff = {}
@@ -261,19 +261,19 @@ def end_to_end_testing(args, codeplainAPI, frid, plain_source_tree, linked_resou
         functional_requirement_id = plain_spec.get_first_frid(plain_source_tree)
         while functional_requirement_id is not None and not implementation_code_has_changed:
             if (functional_requirement_id == frid) and \
-                (frid not in e2e_tests or \
-                 e2e_tests[frid]['functional_requirement'] != specifications[plain_spec.FUNCTIONAL_REQUIREMENTS][-1]):
+                (frid not in conformance_tests or \
+                 conformance_tests[frid]['functional_requirement'] != specifications[plain_spec.FUNCTIONAL_REQUIREMENTS][-1]):
 
-                if frid in e2e_tests:
-                    e2e_tests_folder_name = e2e_tests[frid]['folder_name']
+                if frid in conformance_tests:
+                    conformance_tests_folder_name = conformance_tests[frid]['folder_name']
                 else:
-                    e2e_tests_folder_name = None
+                    conformance_tests_folder_name = None
 
-                e2e_tests[frid] = generate_end_to_end_tests(args, codeplainAPI, frid, frid, plain_source_tree, linked_resources, existing_files, e2e_tests_folder_name)
+                conformance_tests[frid] = generate_conformance_tests(args, codeplainAPI, frid, frid, plain_source_tree, linked_resources, existing_files, conformance_tests_folder_name)
 
-            e2e_tests_folder_name = e2e_tests[functional_requirement_id]['folder_name']
+            conformance_tests_folder_name = conformance_tests[functional_requirement_id]['folder_name']
 
-            [implementation_code_has_changed, existing_files] = run_e2e_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, existing_files_content, code_diff, e2e_tests_folder_name)
+            [implementation_code_has_changed, existing_files] = run_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, existing_files_content, code_diff, conformance_tests_folder_name)
 
             if functional_requirement_id == frid:
                 break
@@ -283,9 +283,9 @@ def end_to_end_testing(args, codeplainAPI, frid, plain_source_tree, linked_resou
         if implementation_code_has_changed:
             continue
 
-        return e2e_tests
+        return conformance_tests
 
-    print(f"End-to-end tests still failed after {e2e_tests_run_count - 1} attemps at fixing issues. Please fix the issues manually.")
+    print(f"Conformance tests still failed after {conformance_tests_run_count - 1} attemps at fixing issues. Please fix the issues manually.")
     sys.exit(1)
 
 
@@ -374,12 +374,12 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
         existing_files = []
         existing_files_content = {}
 
-    e2e_tests_definition_file_name = os.path.join(args.e2e_tests_folder, E2E_TESTS_DEFINITION_FILE_NAME)
+    conformance_tests_definition_file_name = os.path.join(args.conformance_tests_folder, CONFORMANCE_TESTS_DEFINITION_FILE_NAME)
     try:
-        with open(e2e_tests_definition_file_name, 'r') as f:
-            e2e_tests = json.load(f)
+        with open(conformance_tests_definition_file_name, 'r') as f:
+            conformance_tests = json.load(f)
     except FileNotFoundError:
-        e2e_tests = {}
+        conformance_tests = {}
 
     try:
         response_files = codeplainAPI.render_functional_requirement(frid, plain_source_tree, linked_resources, existing_files_content)
@@ -441,15 +441,15 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
         [existing_files, tmp_changed_files] = run_unittests(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files)
         changed_files.update(tmp_changed_files)
 
-    if args.e2e_tests_script and plain_spec.TEST_REQUIREMENTS in specifications and specifications[plain_spec.TEST_REQUIREMENTS]:
-        e2e_tests = end_to_end_testing(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, e2e_tests)
+    if args.conformance_tests_script and plain_spec.TEST_REQUIREMENTS in specifications and specifications[plain_spec.TEST_REQUIREMENTS]:
+        conformance_tests = conformance_testing(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, conformance_tests)
 
-        if os.path.exists(args.e2e_tests_folder):
+        if os.path.exists(args.conformance_tests_folder):
             if args.verbose:
-                print(f"Storing e2e tests definition to {e2e_tests_definition_file_name}")
+                print(f"Storing conformance tests definition to {conformance_tests_definition_file_name}")
 
-            with open(e2e_tests_definition_file_name, "w") as f:
-                json.dump(e2e_tests, f, indent=4)
+            with open(conformance_tests_definition_file_name, "w") as f:
+                json.dump(conformance_tests, f, indent=4)
 
     if plain_spec.get_next_frid(plain_source_tree, frid) is not None  and \
         (args.render_range is None or frid in args.render_range):
@@ -527,8 +527,8 @@ if __name__ == "__main__":
     parser.add_argument("--build-folder", type=non_empty_string, default=DEFAULT_BUILD_FOLDER, help="folder for build files")
     parser.add_argument('--render-range', type=str, help='which functional requirements should be generated')
     parser.add_argument('--unittests-script', type=str, help='a script to run unit tests')
-    parser.add_argument('--e2e-tests-folder', type=non_empty_string, default=DEFAULT_E2E_TESTS_FOLDER, help='folder for e2e test files')
-    parser.add_argument('--e2e-tests-script', type=str, help='a script to run e2e tests')
+    parser.add_argument('--conformance-tests-folder', type=non_empty_string, default=DEFAULT_CONFORMANCE_TESTS_FOLDER, help='folder for conformance test files')
+    parser.add_argument('--conformance-tests-script', type=str, help='a script to run conformance tests')
     parser.add_argument('--api', type=str, nargs='?', const="https://api.codeplain.ai", help='force using the API (for internal use)')
     parser.add_argument('--api-key', type=str, default=CLAUDE_API_KEY, help='API key used to access the API. If not provided, the CLAUDE_API_KEY environment variable is used.')
 

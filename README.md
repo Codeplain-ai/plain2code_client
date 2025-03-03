@@ -57,8 +57,8 @@ To have the hash generated use the following command:
 ## Usage
 ```
 plain2code.py [-h] [--verbose] [--debug] [--base-folder BASE_FOLDER] [--build-folder BUILD_FOLDER]
-    [--render-range RENDER_RANGE] [--unittests-script UNITTESTS_SCRIPT] [--e2e-tests-folder E2E_TESTS_FOLDER]
-    [--e2e-tests-script E2E_TESTS_SCRIPT] [--api [API]] [--api-key API_KEY] filename
+    [--render-range RENDER_RANGE] [--unittests-script UNITTESTS_SCRIPT] [--conformance-tests-folder CONFORMANCE_TESTS_FOLDER]
+    [--conformance-tests-script CONFORMANCE_TESTS_SCRIPT] [--api [API]] [--api-key API_KEY] filename
 
 Render Plain source to software code.
 
@@ -80,11 +80,11 @@ options:
   --unittests-script UNITTESTS_SCRIPT
                         Name of a shell script to run unit tests. The script will receive
                         the build folder as its parameter.
-  --e2e-tests-folder E2E_TESTS_FOLDER
-                        Location of the folder where generated end-to-end test files will be written.
-  --e2e-tests-script E2E_TESTS_SCRIPT
-                        Name of a shell script to run end-to-end tests. The script will receive
-                        the build folder and the end-to-end tests subfolder as its parameters.
+  --conformance-tests-folder CONFORMANCE_TESTS_FOLDER
+                        Location of the folder where generated conformance test files will be written.
+  --conformance-tests-script CONFORMANCE_TESTS_SCRIPT
+                        Name of a shell script to run conformance tests. The script will receive
+                        the build folder and the conformance tests subfolder as its parameters.
   --api [API]           Force using the API (for internal use).
   --api-key API_KEY     API key used to access the API. If not provided, the CLAUDE_API_KEY
                         environment variable is used.
