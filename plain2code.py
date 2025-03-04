@@ -285,7 +285,7 @@ def conformance_testing(args, codeplainAPI, frid, plain_source_tree, linked_reso
 
         return conformance_tests
 
-    print(f"Conformance tests still failed after {conformance_tests_run_count - 1} attemps at fixing issues. Please fix the issues manually.")
+    print(f"Conformance tests still failed after {conformance_tests_run_count} attemps at fixing issues. Please fix the issues manually.")
     sys.exit(1)
 
 
