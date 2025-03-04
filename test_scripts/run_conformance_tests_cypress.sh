@@ -87,25 +87,36 @@ if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
   printf "Building the application...\n"
 fi
 
-npm run build --loglevel silent | grep -v -E "Creating an optimized production build..." | sed '/The project was built assuming/,/https:\/\/cra\.link\/deployment/d'
+build_output=$(mktemp)
+
+npm run build --loglevel silent > "$build_output" 2>&1
 
 if [ $? -ne 0 ]; then
   printf "Error: Building application.\n"
+  cat "$build_output"
+  rm "$build_output"
   exit 2
 fi
+
+rm "$build_output"
 
 if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
   printf "Starting the application...\n"
 fi
 
 # Start the React app in the background and redirect output to a log file
-BROWSER=none npm start > app.log 2>&1 &
+BROWSER=none npm start -- --no-open > app.log 2>&1 &
 
 # Capture the process ID of the npm start command
 REACT_APP_PID=$!
 
-# Wait for the "Compiled successfully!" message in the log file
-tail -f app.log | grep -q -E "Compiled successfully!|Compiled with warnings."
+# Wait for the "compiled successfully!" message in the log file
+while true; do
+  if grep -iq -E "compiled successfully|compiled with warnings" app.log; then
+    break
+  fi
+  sleep 0.1
+done
 
 # At this point, the React app is up and running in the background
 if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
