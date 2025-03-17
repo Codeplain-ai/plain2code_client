@@ -27,13 +27,16 @@ if [ $VERBOSE -eq 1 ]; then
 fi
 
 # Construct the command with optional parameters
-CMD="python ../../plain2code.py hello_world_golang.plain"
+CMD="python ../../plain2code.py hello_world_golang.plain --unittests-script=../../test_scripts/run_unittests_golang.sh --conformance-tests-script=../../test_scripts/run_conformance_tests_golang.sh"
 if [ $VERBOSE -eq 1 ]; then
     CMD="$CMD -v"
 fi
 if [ ! -z "$API_ENDPOINT" ]; then
     CMD="$CMD --api $API_ENDPOINT"
 fi
+
+# Removing all the conformance tests before rendering the hello world example.
+rm -rf conformance_tests
 
 # Execute the command
 $CMD

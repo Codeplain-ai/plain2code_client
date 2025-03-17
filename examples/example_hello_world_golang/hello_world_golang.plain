@@ -1,11 +1,6 @@
-> "hello, world" in Plain (Go lang version)
+{% include "golang-console-app-template.plain", main_executable_file_name: "hello_world.go" %}
 
-***Non-Functional Requirements:***
-
-- Implementation should be in Go lang.
-
-- The main executable code file should be called hello_world.go
-
+# "hello, world" in Plain (Go lang version)
 
 ***Functional Requirements:***
 

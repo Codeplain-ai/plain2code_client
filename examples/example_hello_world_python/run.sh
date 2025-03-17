@@ -27,13 +27,15 @@ if [ $VERBOSE -eq 1 ]; then
 fi
 
 # Construct the command with optional parameters
-CMD="python ../../plain2code.py hello_world_python.plain"
+CMD="python ../../plain2code.py hello_world_python.plain --unittests-script=../../test_scripts/run_unittests_python.sh --conformance-tests-script=../../test_scripts/run_conformance_tests_python.sh --debug"
 if [ $VERBOSE -eq 1 ]; then
     CMD="$CMD -v"
 fi
 if [ ! -z "$API_ENDPOINT" ]; then
     CMD="$CMD --api $API_ENDPOINT"
 fi
+
+rm -rf conformance_tests
 
 # Execute the command
 $CMD

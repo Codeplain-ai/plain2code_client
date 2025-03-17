@@ -1,11 +1,6 @@
-> "hello, world" in Plain (Python version)
+{% include "python-console-app-template.plain", main_executable_file_name: "hello_world.py" %}
 
-***Non-Functional Requirements:***
-
-- Implementation should be in Python.
-
-- The main executable code file should be called hello_world.py
-
+# "hello, world" in Plain (Python version)
 
 ***Functional Requirements:***
 

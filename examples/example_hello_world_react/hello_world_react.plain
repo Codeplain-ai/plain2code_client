@@ -1,15 +1,6 @@
-> "hello, world" in Plain (React version)
+{% include "typescript-react-app-template.plain" %}
 
-
-***Non-Functional Requirements:***
-
-- Implementation should be written in TypeScript, using React as a web framework.
-
-
-***Test Requirements:***
-
-- The Conformance Tests should be written in TypeScript, using Cypress as the framework for The Conformance Tests.
-
+# "hello, world" in Plain (React version)
 
 ***Functional Requirements:***
 
