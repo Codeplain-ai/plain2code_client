@@ -2,8 +2,10 @@ import os
 
 import difflib
 
-from liquid import Environment, FileSystemLoader, StrictUndefined
-from liquid.exceptions import UndefinedError
+from liquid2 import Environment, FileSystemLoader, StrictUndefined
+from liquid2.exceptions import UndefinedError
+
+import plain_spec
 
 BINARY_FILE_EXTENSIONS = ['.pyc']
 
@@ -198,8 +200,8 @@ class TrackingFileSystemLoader(FileSystemLoader):
         super().__init__(*args, **kwargs)
         self.loaded_templates = {}
 
-    def get_source(self, environment, template_name):
-        source = super().get_source(environment, template_name)
+    def get_source(self, environment, template_name, **kwargs):
+        source = super().get_source(environment, template_name, **kwargs)
         self.loaded_templates[template_name] = source.source
         return source
 
@@ -212,10 +214,13 @@ def get_loaded_templates(source_path, plain_source):
         loader=liquid_loader,
         undefined=StrictUndefined
     )
+
+    liquid_env.filters["code_variable"] = plain_spec.code_variable_liquid_filter
+
     plain_source_template = liquid_env.from_string(plain_source)
     try:
-        plain_source_template.render()
+        plain_source = plain_source_template.render()
     except UndefinedError as e:
         raise Exception(f"Undefined liquid variable: {str(e)}")
 
-    return liquid_loader.loaded_templates
+    return plain_source, liquid_loader.loaded_templates

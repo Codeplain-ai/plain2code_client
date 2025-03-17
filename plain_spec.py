@@ -1,4 +1,8 @@
 import copy
+import uuid
+import hashlib
+import json
+from liquid2.filter import with_context
 
 
 DEFINITIONS = 'Definitions:'
@@ -118,7 +122,23 @@ def get_previous_frid(plain_source_tree, frid):
     raise Exception(f"Functional requirement {frid} does not exist.")
 
 
-def get_specifications_from_plain_source_tree(frid, plain_source_tree, definitions, non_functional_requirements, test_requirements, functional_requirements, section_id=None):
+def get_specification_item_markdown(specification_item, code_variables, replace_code_variables):
+    markdown = specification_item['markdown']
+    if 'code_variables' in specification_item:
+        for code_variable in specification_item['code_variables']:
+            if code_variable['name'] in code_variables:
+                if code_variables[code_variable['name']] != code_variable['value']:
+                    raise Exception(f"Code variable {code_variable['name']} has multiple values: {code_variables[code_variable['name']]} and {code_variable['value']}")
+            else:
+                code_variables[code_variable['name']] = code_variable['value']
+
+            if replace_code_variables:
+                markdown = markdown.replace(f"{{{{ {code_variable['name']} }}}}", code_variable['value'])
+
+    return markdown
+
+
+def get_specifications_from_plain_source_tree(frid, plain_source_tree, definitions, non_functional_requirements, test_requirements, functional_requirements, code_variables, replace_code_variables, section_id=None):
     return_frid = None
     if FUNCTIONAL_REQUIREMENTS in plain_source_tree and len(plain_source_tree[FUNCTIONAL_REQUIREMENTS]) > 0:
         functional_requirement_count = 0
@@ -129,7 +149,7 @@ def get_specifications_from_plain_source_tree(frid, plain_source_tree, definitio
             else:
                 current_frid = section_id + "." + str(functional_requirement_count)
 
-            functional_requirements.append(functional_requirement['markdown'])
+            functional_requirements.append(get_specification_item_markdown(functional_requirement, code_variables, replace_code_variables))
 
             if current_frid == frid:
                 return_frid = current_frid
@@ -137,35 +157,69 @@ def get_specifications_from_plain_source_tree(frid, plain_source_tree, definitio
 
     if 'sections' in plain_source_tree:
         for section in plain_source_tree['sections']:
-            sub_frid = get_specifications_from_plain_source_tree(frid, section, definitions, non_functional_requirements, test_requirements, functional_requirements, section['ID'])
+            sub_frid = get_specifications_from_plain_source_tree(frid, section, definitions, non_functional_requirements, test_requirements, functional_requirements, code_variables, replace_code_variables, section['ID'])
             if sub_frid is not None:
                 return_frid = sub_frid
                 break
 
     if return_frid is not None:
         if DEFINITIONS in plain_source_tree and plain_source_tree[DEFINITIONS] is not None:
-            definitions[0:0] = [specification['markdown'] for specification in plain_source_tree[DEFINITIONS]]
+            definitions[0:0] = [get_specification_item_markdown(specification, code_variables, replace_code_variables) for specification in plain_source_tree[DEFINITIONS]]
         if NON_FUNCTIONAL_REQUIREMENTS in plain_source_tree and plain_source_tree[NON_FUNCTIONAL_REQUIREMENTS] is not None:
-            non_functional_requirements[0:0] = [specification['markdown'] for specification in plain_source_tree[NON_FUNCTIONAL_REQUIREMENTS]]
+            non_functional_requirements[0:0] = [get_specification_item_markdown(specification, code_variables, replace_code_variables) for specification in plain_source_tree[NON_FUNCTIONAL_REQUIREMENTS]]
         if TEST_REQUIREMENTS in plain_source_tree and plain_source_tree[TEST_REQUIREMENTS] is not None:
-            test_requirements[0:0] = [specification['markdown'] for specification in plain_source_tree[TEST_REQUIREMENTS]]
+            test_requirements[0:0] = [get_specification_item_markdown(specification, code_variables, replace_code_variables) for specification in plain_source_tree[TEST_REQUIREMENTS]]
 
     return return_frid
 
 
-def get_specifications_for_frid(plain_source_tree, frid):
+def get_specifications_for_frid(plain_source_tree, frid, replace_code_variables=True):
     definitions = []
     non_functional_requirements = []
     test_requirements = []
     functional_requirements = []
 
-    result = get_specifications_from_plain_source_tree(frid, plain_source_tree, definitions, non_functional_requirements, test_requirements, functional_requirements)
+    code_variables = {}
+
+    result = get_specifications_from_plain_source_tree(frid, plain_source_tree, definitions, non_functional_requirements, test_requirements, functional_requirements, code_variables, replace_code_variables)
     if result is None:
         raise Exception(f"Functional requirement {frid} does not exist.")
 
-    return {
+    specifications = {
         DEFINITIONS: definitions,
         NON_FUNCTIONAL_REQUIREMENTS: non_functional_requirements,
         TEST_REQUIREMENTS: test_requirements,
         FUNCTIONAL_REQUIREMENTS: functional_requirements
     }
+
+    if code_variables:
+        return specifications, code_variables
+    else:
+        return specifications, None
+
+
+@with_context
+def code_variable_liquid_filter(value, *, context):
+    if len(context.scope) == 0:
+        raise Exception("Invalid use of code_variable filter!")
+
+    if 'code_variables' in context.globals:
+        code_variables = context.globals['code_variables']
+
+        variable = next(iter(context.scope.items()))
+
+        unique_str = uuid.uuid4().hex
+
+        code_variables[unique_str] = {variable[0]: value}
+
+        return unique_str
+    else:
+        return value
+
+
+def hash_text(text):
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def get_hash_value(specifications):
+    return hash_text(json.dumps(specifications, indent=4))

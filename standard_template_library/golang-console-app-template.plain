@@ -1,0 +1,30 @@
+***Definitions:***
+
+- The App is a console application.
+
+
+***Non-Functional Requirements:***
+
+- Implementation should be in Go lang.
+
+- The Implementation should include unit tests using Go's built-in testing package.
+
+- The main executable code file of The App should be called "{{ main_executable_file_name | code_variable }}". The main executable code file does not have any semantic meaning and it should be completely disregarded when generating the code (except for the file name).
+
+
+***Test Requirements:***
+
+- The Conformance Tests of The App should be implemented in Go lang using Go's built-in testing package.
+
+- The main executable code file of The App is "{{ main_executable_file_name | code_variable }}".
+
+- The current working directory contains the file "{{ main_executable_file_name | code_variable }}".
+
+- The App can be executed using the command "go run {{ main_executable_file_name | code_variable }}".
+
+
+# The Go lang console application boilerplate
+
+***Functional Requirements:***
+
+- Implement the entry point for The App.

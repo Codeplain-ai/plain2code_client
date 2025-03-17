@@ -16,6 +16,7 @@ CLAUDE_API_KEY = os.getenv('CLAUDE_API_KEY')
 DEFAULT_BUILD_FOLDER = 'build'
 DEFAULT_CONFORMANCE_TESTS_FOLDER = "conformance_tests"
 CONFORMANCE_TESTS_DEFINITION_FILE_NAME = "conformance_tests.json"
+DEFAULT_TEMPLATE_DIRS = "standard_template_library"
 
 MAX_UNITTEST_FIX_ATTEMPTS = 10
 MAX_CONFORMANCE_TEST_FIX_ATTEMPTS = 10
@@ -130,8 +131,8 @@ def run_unittests(args, codeplainAPI, frid, plain_source_tree, linked_resources,
     return existing_files, changed_files
 
 
-def generate_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, conformance_tests_folder_name):
-    specifications = plain_spec.get_specifications_for_frid(plain_source_tree, functional_requirement_id)
+def generate_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content, conformance_tests_folder_name):
+    specifications, _ = plain_spec.get_specifications_for_frid(plain_source_tree, functional_requirement_id)
     if args.verbose:
         # TODO: Print the definitions.
         print(f"\nImplementing test requirements:")
@@ -155,8 +156,6 @@ def generate_conformance_tests(args, codeplainAPI, frid, functional_requirement_
         conformance_tests_folder_name = os.path.join(args.conformance_tests_folder, fr_subfolder_name)
 
     file_utils.delete_files_and_subfolders(conformance_tests_folder_name, args.verbose)
-
-    existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
     response_files = codeplainAPI.render_conformance_tests(frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content)
 
@@ -195,7 +194,7 @@ def run_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, p
 
             print("Recreating conformance tests.")
 
-            generate_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files, conformance_tests_folder_name)
+            generate_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content, conformance_tests_folder_name)
 
             recreated_conformance_tests = True
             conformance_test_fix_count = 0
@@ -240,7 +239,7 @@ def run_conformance_tests(args, codeplainAPI, frid, functional_requirement_id, p
 
 def conformance_testing(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, conformance_tests):
     conformance_tests_run_count = 0
-    specifications = plain_spec.get_specifications_for_frid(plain_source_tree, frid)
+    specifications, _ = plain_spec.get_specifications_for_frid(plain_source_tree, frid)
     while conformance_tests_run_count < MAX_CONFORMANCE_TEST_RUNS:
         conformance_tests_run_count += 1
         implementation_code_has_changed = False
@@ -269,7 +268,7 @@ def conformance_testing(args, codeplainAPI, frid, plain_source_tree, linked_reso
                 else:
                     conformance_tests_folder_name = None
 
-                conformance_tests[frid] = generate_conformance_tests(args, codeplainAPI, frid, frid, plain_source_tree, linked_resources, existing_files, conformance_tests_folder_name)
+                conformance_tests[frid] = generate_conformance_tests(args, codeplainAPI, frid, frid, plain_source_tree, linked_resources, existing_files_content, conformance_tests_folder_name)
 
             conformance_tests_folder_name = conformance_tests[functional_requirement_id]['folder_name']
 
@@ -315,7 +314,7 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
 
         return
 
-    specifications = plain_spec.get_specifications_for_frid(plain_source_tree, frid)
+    specifications, _ = plain_spec.get_specifications_for_frid(plain_source_tree, frid)
         
     if args.verbose:
         print(f"\n-------------------------------------")
@@ -407,8 +406,13 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
     print('\n'.join(["- " + file_name for file_name in response_files.keys()]))
 
     [existing_files, tmp_changed_files] = run_unittests(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files)
-    
-    changed_files.update(tmp_changed_files)
+
+    for file_name in tmp_changed_files:
+        if file_name not in existing_files:
+            if file_name in changed_files:
+                changed_files.remove(file_name)
+        else:
+            changed_files.add(file_name)
 
     num_refactoring_iterations = 0
     while num_refactoring_iterations < MAX_REFACTORING_ITERATIONS:
@@ -439,7 +443,13 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
         print('\n'.join(response_files.keys()))
 
         [existing_files, tmp_changed_files] = run_unittests(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files)
-        changed_files.update(tmp_changed_files)
+
+        for file_name in tmp_changed_files:
+            if file_name not in existing_files:
+                if file_name in changed_files:
+                    changed_files.remove(file_name)
+            else:
+                changed_files.add(file_name)
 
     if args.conformance_tests_script and plain_spec.TEST_REQUIREMENTS in specifications and specifications[plain_spec.TEST_REQUIREMENTS]:
         conformance_tests = conformance_testing(args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, conformance_tests)
@@ -490,7 +500,19 @@ def render(args):
     with open(args.filename, "r") as fin:
         plain_source = fin.read()
 
-    loaded_templates = file_utils.get_loaded_templates(os.path.dirname(args.filename), plain_source)
+    template_dirs = [
+        os.path.dirname(args.filename),
+        os.path.join(os.path.dirname( os.path.abspath(__file__)), DEFAULT_TEMPLATE_DIRS)
+    ]
+
+    [full_plain_source, loaded_templates] = file_utils.get_loaded_templates(template_dirs, plain_source)
+
+    if args.full_plain:
+        if args.verbose:
+            print("Full plain text:\n")
+
+        print(full_plain_source)
+        return
 
     codeplainAPI = codeplain_api.CodeplainAPI(args.api_key)
     codeplainAPI.debug = args.debug
@@ -531,6 +553,7 @@ if __name__ == "__main__":
     parser.add_argument('--conformance-tests-script', type=str, help='a script to run conformance tests')
     parser.add_argument('--api', type=str, nargs='?', const="https://api.codeplain.ai", help='force using the API (for internal use)')
     parser.add_argument('--api-key', type=str, default=CLAUDE_API_KEY, help='API key used to access the API. If not provided, the CLAUDE_API_KEY environment variable is used.')
+    parser.add_argument('--full-plain', action='store_true', help='full plain text to render')
 
     args = parser.parse_args()
 
@@ -543,7 +566,9 @@ if __name__ == "__main__":
         print(f"Running plain2code using REST API at {args.api }\n")
         import codeplain_REST_api as codeplain_api
     else:
-        print(f"Running plain2code using local API.\n")
+        if args.verbose or not args.full_plain:
+            print(f"Running plain2code using local API.\n")
+
         codeplain_api = importlib.import_module(codeplain_api_module_name)
 
     try:

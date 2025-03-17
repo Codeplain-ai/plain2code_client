@@ -1,2 +1,2 @@
 requests
-python-liquid
+python-liquid2==0.3.0
