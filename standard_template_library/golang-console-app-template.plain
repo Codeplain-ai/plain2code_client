@@ -14,13 +14,19 @@
 
 ***Test Requirements:***
 
-- The Conformance Tests of The App should be implemented in Go lang using Go's built-in testing package.
+- The Conformance Tests of The App should be implemented in Go lang.
 
-- The main executable code file of The App is "{{ main_executable_file_name | code_variable }}".
+- The main executable code file of The Conformance Tests should be called "conformance_tests.go".
 
-- The current working directory contains the file "{{ main_executable_file_name | code_variable }}".
+- The Conformance Tests will be executed using the command "go run <conformance tests folder>/conformance_tests.go" from a folder that contains the file "{{ main_executable_file_name | code_variable }}".
 
-- The App can be executed using the command "go run {{ main_executable_file_name | code_variable }}".
+- "{{ main_executable_file_name | code_variable }}" is the main executable code file of The App.
+
+- Before The Conformance Tests are executed "go get" will be executed in the folder containing the file "{{ main_executable_file_name | code_variable }}".
+
+- Before The Conformance Tests are executed "go get" will be executed in <conformance tests folder>.
+
+- The App can be executed using the command "go run".
 
 
 # The Go lang console application boilerplate
