@@ -45,9 +45,7 @@ def get_render_range(render_range, plain_source_tree):
     if len(render_range) == 1:
         render_range.append(render_range[0])
 
-    frids = []
-    for frid in plain_spec.get_frids(plain_source_tree):
-        frids.append(frid)
+    frids = list(plain_spec.get_frids(plain_source_tree))
 
     if render_range[0] not in frids or render_range[1] not in frids:
         raise InvalidRenderRange("Invalid render range.")
