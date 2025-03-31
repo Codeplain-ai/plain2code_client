@@ -22,6 +22,10 @@ class MissingResource(Exception):
     pass
 
 
+class OnlyRelativeLinksAllowed(Exception):
+    pass
+
+
 class CodeplainAPI:
     
     def __init__(self, api_key):
@@ -40,9 +44,6 @@ class CodeplainAPI:
 
     def post_request(self, endpoint_url, headers, payload):
         response = requests.post(endpoint_url, headers=headers, json=payload)
-
-        # First check if the response was successful
-        response.raise_for_status()
 
         try:
             response_json = response.json()
@@ -65,6 +66,11 @@ class CodeplainAPI:
 
             if response_json["error_code"] == 'MissingResource':
                 raise MissingResource(response_json['message'])
+
+            if response_json["error_code"] == 'OnlyRelativeLinksAllowed':
+                raise OnlyRelativeLinksAllowed(response_json['message'])
+
+        response.raise_for_status()
 
         return response_json
 
