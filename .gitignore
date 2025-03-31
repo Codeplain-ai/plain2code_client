@@ -4,6 +4,7 @@ __pycache__
 # Plain
 examples/**/build*/
 examples/**/conformance_tests/
+examples/**/conformance_tests.backup/
 examples/**/node_build/
 examples/**/node_conformance_tests/
 examples/**/package-lock.json

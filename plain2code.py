@@ -1,5 +1,6 @@
 import sys
 import os
+import shutil
 import subprocess
 import argparse
 import json
@@ -15,6 +16,7 @@ TEST_SCRIPT_EXECUTION_TIMEOUT = 120 # 120 seconds
 CLAUDE_API_KEY = os.getenv('CLAUDE_API_KEY')
 DEFAULT_BUILD_FOLDER = 'build'
 DEFAULT_CONFORMANCE_TESTS_FOLDER = "conformance_tests"
+CONFORMANCE_TESTS_BACKUP_FOLDER_SUFFIX = ".backup"
 CONFORMANCE_TESTS_DEFINITION_FILE_NAME = "conformance_tests.json"
 DEFAULT_TEMPLATE_DIRS = "standard_template_library"
 
@@ -363,6 +365,15 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
         previous_build_folder = args.build_folder + "." + plain_spec.get_previous_frid(plain_source_tree, frid)
         if not os.path.exists(previous_build_folder):
             raise Exception(f"Build folder {previous_build_folder} not found: ")
+
+        if os.path.exists(args.conformance_tests_folder):
+            conformance_tests_backup_folder = args.conformance_tests_folder + CONFORMANCE_TESTS_BACKUP_FOLDER_SUFFIX
+            if os.path.exists(conformance_tests_backup_folder):
+                shutil.rmtree(conformance_tests_backup_folder)
+                
+            # Copy the entire directory tree
+            shutil.copytree(args.conformance_tests_folder, conformance_tests_backup_folder)
+            print(f"Conformance tests folder successfully backed up.")
 
     resources_list = []
     plain_spec.collect_linked_resources(plain_source_tree, resources_list, frid)
