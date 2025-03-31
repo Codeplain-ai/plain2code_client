@@ -13,6 +13,10 @@ FUNCTIONAL_REQUIREMENTS = 'Functional Requirements:'
 ALLOWED_SPECIFICATION_HEADINGS = [DEFINITIONS, NON_FUNCTIONAL_REQUIREMENTS, TEST_REQUIREMENTS, FUNCTIONAL_REQUIREMENTS]
 
 
+class InvalidLiquidVariableName(Exception):
+    pass
+
+
 def collect_specification_linked_resources(specification, specification_heading, linked_resources_list):
     linked_resources = []
     if 'linked_resources' in specification:
@@ -215,6 +219,24 @@ def code_variable_liquid_filter(value, *, context):
         return unique_str
     else:
         return value
+
+
+@with_context
+def prohibited_chars_liquid_filter(value, prohibited_chars, *, context):
+    if not isinstance(value, str):
+        value = str(value)
+    
+    if len(context.scope) == 0:
+        raise Exception("Invalid use of prohibited_chars filter!")
+
+    variable = next(iter(context.scope.items()))
+    variable_name = variable[0]
+    
+    for char in prohibited_chars:
+        if char in value:
+            raise InvalidLiquidVariableName(f"'{char}' is not a valid character for variable '{variable_name}' (value: '{value}').")
+    
+    return value
 
 
 def hash_text(text):

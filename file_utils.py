@@ -216,6 +216,7 @@ def get_loaded_templates(source_path, plain_source):
     )
 
     liquid_env.filters["code_variable"] = plain_spec.code_variable_liquid_filter
+    liquid_env.filters["prohibited_chars"] = plain_spec.prohibited_chars_liquid_filter
 
     plain_source_template = liquid_env.from_string(plain_source)
     try:
