@@ -84,9 +84,16 @@ def execute_test_script(test_script, scripts_args, verbose):
             return result.stdout
         else:
             return None
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as e:
         if verbose:
             print(f"Test script {test_script} timed out after {TEST_SCRIPT_EXECUTION_TIMEOUT} seconds.")
+
+            if e.stdout:
+                decoded_output = e.stdout.decode('utf-8') if isinstance(e.stdout, bytes) else e.stdout
+                print(f"Test script partial output before the timeout:\n{decoded_output}")
+            else:
+                print(f"Test script did not produce any output before the timeout.")
+
 
         return f"Tests did not finish in {TEST_SCRIPT_EXECUTION_TIMEOUT} seconds."
 
