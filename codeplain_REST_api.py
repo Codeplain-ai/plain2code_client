@@ -22,7 +22,15 @@ class MissingResource(Exception):
     pass
 
 
+class PlainSyntaxError(Exception):
+	pass
+
+
 class OnlyRelativeLinksAllowed(Exception):
+    pass
+
+
+class LinkMustHaveTextSpecified(Exception):
     pass
 
 
@@ -67,8 +75,14 @@ class CodeplainAPI:
             if response_json["error_code"] == 'MissingResource':
                 raise MissingResource(response_json['message'])
 
+            if response_json["error_code"] == 'PlainSyntaxError':
+                raise PlainSyntaxError(response_json['message'])
+
             if response_json["error_code"] == 'OnlyRelativeLinksAllowed':
                 raise OnlyRelativeLinksAllowed(response_json['message'])
+
+            if response_json["error_code"] == 'LinkMustHaveTextSpecified':
+                raise LinkMustHaveTextSpecified(response_json['message'])
 
         response.raise_for_status()
 
