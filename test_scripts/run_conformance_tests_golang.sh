@@ -24,7 +24,7 @@ fi
 
 # Check if the go build subfolder exists
 if [ -d "$GO_BUILD_SUBFOLDER" ]; then
-  # Find and delete all files and folders except "node_modules", "build", and "package-lock.json"
+  # Find and delete all files and folders
   find "$GO_BUILD_SUBFOLDER" -mindepth 1 -exec rm -rf {} +
   
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
@@ -48,22 +48,31 @@ if [ $? -ne 0 ]; then
   exit 2
 fi
 
-# Execute all Go lang conformance tests in the build folder
-printf "Compiling Golang conformance tests...\n\n"
+echo "Runinng go get in the build folder..."
+go get
 
-output=$(go test -c $current_dir/$2/conformance_test.go 2>&1)
-exit_code=$?
+cd "$current_dir/$2" 2>/dev/null
 
-# If there was an error, print the output and exit with the error code
-if [ $exit_code -ne 0 ]; then
-    echo "$output"
-    exit $exit_code
+if [ $? -ne 0 ]; then
+  printf "Error: Conformance tests folder '$current_dir/$2' does not exist.\n"
+  exit 2
 fi
 
-# Execute all Go lang conformance tests in the build folder
+echo "Checking for go.mod in conformance test directory..."
+if [ -f "go.mod" ]; then
+    echo "Running go get in conformance test directory..."
+    go get
+else
+    echo "No go.mod found in conformance test directory, skipping go get"
+fi
+
+# Move back to build directory
+cd "$current_dir/$GO_BUILD_SUBFOLDER" 2>/dev/null
+
+# Execute Go lang conformance tests
 printf "Running Golang conformance tests...\n\n"
 
-output=$(./main.test 2>&1)
+output=$(go run $current_dir/$2/conformance_tests.go 2>&1)
 exit_code=$?
 
 # If there was an error, print the output and exit with the error code

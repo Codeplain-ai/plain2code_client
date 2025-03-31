@@ -2,6 +2,22 @@
 
 NPM_INSTALL_OUTPUT_FILTER="up to date in|added [0-9]* packages, removed [0-9]* packages, and changed [0-9]* packages in|removed [0-9]* packages, and changed [0-9]* packages in|added [0-9]* packages in|removed [0-9]* packages in"
 
+# Function to check and kill any Node process running on port 3000 (React development server)
+check_and_kill_node_server() {
+    # Find process listening on port 3000
+    local pid=$(lsof -i :3000 -t 2>/dev/null)
+    if [ ! -z "$pid" ]; then
+        if ps -p $pid -o comm= | grep -q "node"; then
+            printf "Found Node server running on port 3000. Killing it...\n"
+            kill $pid 2>/dev/null
+            sleep 1  # Give the process time to terminate
+            if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+                printf "Node server terminated.\n"
+            fi
+        fi
+    fi
+}
+
 # Function to get all child processes of a given PID and store them in a list
 get_children() {
     local parent_pid=$1
@@ -15,6 +31,43 @@ get_children() {
         get_children $child
     done
 }
+
+# Cleanup function to ensure all processes are terminated
+cleanup() {
+    # Kill any running npm processes started by this script
+    if [ ! -z "${NPM_PID+x}" ]; then
+        pkill -P $NPM_PID 2>/dev/null
+        kill $NPM_PID 2>/dev/null
+    fi
+
+    # Kill React app and its children if they exist
+    if [ ! -z "${REACT_APP_PID+x}" ]; then
+        local processes_to_kill=()
+        get_children $REACT_APP_PID
+        
+        # Kill the main process
+        kill $REACT_APP_PID 2>/dev/null
+
+        # Kill all the subprocesses
+        for pid in "${processes_to_kill[@]}"
+        do
+            kill $pid 2>/dev/null
+        done
+
+        if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+            printf "React app is terminated!\n"
+        fi
+    fi
+
+    # Remove temporary files if they exist
+    [ -f "$build_output" ] && rm "$build_output" 2>/dev/null
+}
+
+# Set up trap to call cleanup function on script exit, interrupt, or termination
+trap cleanup EXIT SIGINT SIGTERM
+
+# Check for and kill any existing Node server from previous runs
+check_and_kill_node_server
 
 # Check if build folder name is provided
 if [ -z "$1" ]; then
@@ -109,6 +162,7 @@ BROWSER=none npm start -- --no-open > app.log 2>&1 &
 
 # Capture the process ID of the npm start command
 REACT_APP_PID=$!
+NPM_PID=$(pgrep -P $REACT_APP_PID npm)
 
 # Wait for the "compiled successfully!" message in the log file
 while true; do
@@ -168,27 +222,8 @@ if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
   printf "Running Cypress conformance tests...\n"
 fi
 
-BROWSERSLIST_IGNORE_OLD_DATA=1 npx cypress run --config video=false 2>/dev/null
+BROWSERSLIST_IGNORE_OLD_DATA=1 npx cypress run --browser=chrome --config video=false 2>/dev/null
 cypress_run_result=$?
-
-# Initialize an empty array to hold the PIDs
-processes_to_kill=()
-
-# Start the recursive search from the given parent PID
-get_children $REACT_APP_PID
-
-# Kill the main process
-kill $REACT_APP_PID
-
-# Kill all the subprocesses
-for pid in "${processes_to_kill[@]}"
-do
-    kill $pid
-done
-
-if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
-  printf "React app is terminated!\n"
-fi
 
 if [ $cypress_run_result -ne 0 ]; then
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
