@@ -7,13 +7,40 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+GO_BUILD_SUBFOLDER=go_$1
+
+if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+  printf "Preparing Go build subfolder: $GO_BUILD_SUBFOLDER\n"
+fi
+
+# Check if the go build subfolder exists
+if [ -d "$GO_BUILD_SUBFOLDER" ]; then
+  # Find and delete all files and folders
+  find "$GO_BUILD_SUBFOLDER" -mindepth 1 -exec rm -rf {} +
+  
+  if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+    printf "Cleanup completed.\n"
+  fi
+else
+  if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+    printf "Subfolder does not exist. Creating it...\n"
+  fi
+
+  mkdir $GO_BUILD_SUBFOLDER
+fi
+
+cp -R $1/* $GO_BUILD_SUBFOLDER
+
 # Move to the subfolder
-cd "$1" 2>/dev/null
+cd "$GO_BUILD_SUBFOLDER" 2>/dev/null
 
 if [ $? -ne 0 ]; then
-  echo "Error: Subfolder '$1' does not exist."
+  printf "Error: Go build folder '$GO_BUILD_SUBFOLDER' does not exist.\n"
   exit 2
 fi
+
+echo "Runinng go get..."
+go get
 
 # Execute all Golang unittests in the subfolder
 echo "Running Golang unittests in $1..."
