@@ -569,6 +569,10 @@ if __name__ == "__main__":
 
         codeplain_api = importlib.import_module(codeplain_api_module_name)
 
+    if not args.api_key or args.api_key == "":
+        print("Error: API key is not provided. Please provide an API key using the --api-key flag or by setting the CLAUDE_API_KEY environment variable.")
+        sys.exit(1)
+
     try:
         render(args)
     except InvalidRenderRange as e:
