@@ -14,6 +14,10 @@ class CreditBalanceTooLow(Exception):
     pass
 
 
+class LLMOverloadedError(Exception):
+    pass
+
+
 class MissingResource(Exception):
     pass
 
@@ -37,9 +41,16 @@ class CodeplainAPI:
     def post_request(self, endpoint_url, headers, payload):
         response = requests.post(endpoint_url, headers=headers, json=payload)
 
-        response_json = response.json()
+        # First check if the response was successful
+        response.raise_for_status()
+
+        try:
+            response_json = response.json()
+        except requests.exceptions.JSONDecodeError as e:
+            print(f"Failed to decode JSON response. Response text: {response.text}")
+            raise
+
         if response.status_code == requests.codes.bad_request and "error_code" in response_json:
-            
             if response_json["error_code"] == 'FunctionalRequirementTooComplex':
                 raise FunctionalRequirementTooComplex(response_json['message'])
             
@@ -48,11 +59,12 @@ class CodeplainAPI:
             
             if response_json["error_code"] == 'CreditBalanceTooLow':
                 raise CreditBalanceTooLow(response_json['message'])
+            
+            if response_json["error_code"] == 'LLMOverloadedError':
+                raise LLMOverloadedError(response_json['message'])
 
             if response_json["error_code"] == 'MissingResource':
                 raise MissingResource(response_json['message'])
-
-        response.raise_for_status()
 
         return response_json
 
