@@ -80,11 +80,20 @@ def execute_test_script(test_script, scripts_args, verbose):
         )
 
         if verbose:
-            print(f"Test script output (exit code:{result.returncode}):\n{result.stdout}")
+            print("\n═════════════════════════ Test Script Output ═════════════════════════")
+            for line in result.stdout.splitlines():
+                print(line)
+            print("══════════════════════════════════════════════════════════════════════")
 
         if result.returncode != 0:
+            if verbose:
+                print(f"Test script {test_script} failed with exit code {result.returncode}.\n")
+
             return result.stdout
         else:
+            if verbose:
+                print(f"Test script {test_script} successfully passed.\n")
+
             return None
     except subprocess.TimeoutExpired as e:
         if verbose:
