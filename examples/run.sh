@@ -36,6 +36,8 @@ if [ ! -z "$API_ENDPOINT" ]; then
 fi
 
 (
+    printf "\nHELLO, WORLD (Pyhton example)...\n\n"
+
     cd example_hello_world_python
     sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
     if [ $? -ne 0 ]; then
@@ -45,20 +47,28 @@ fi
     cd ..
 )
 
-cd example_hello_world_golang
-sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
-if [ $? -ne 0 ]; then
-    echo "Hello World Golang example failed."
-    exit 1
-fi
-cd ..
+(
+    printf "\nHELLO, WORLD (Go lang example)...\n\n"
 
-cd example_hello_world_react
-sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
-if [ $? -ne 0 ]; then
-    echo "Hello World React example failed."
-    exit 1
-fi
-cd ..
+    cd example_hello_world_golang
+    sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
+    if [ $? -ne 0 ]; then
+        echo "Hello World Golang example failed."
+        exit 1
+    fi
+    cd ..
+)
+
+(
+    printf "\nHELLO, WORLD (React example)...\n\n"
+
+    cd example_hello_world_react
+    sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
+    if [ $? -ne 0 ]; then
+        echo "Hello World React example failed."
+        exit 1
+    fi
+    cd ..
+)
 
 echo "All example test harnesses completed successfully!"
