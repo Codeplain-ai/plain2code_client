@@ -40,6 +40,12 @@ For example application how to implement SaaS connectors in Plain see [example-s
 
 ## Prerequisites
 
+### System requirements
+
+To run the plain2code client, you need Python 3.11 or a later version.
+
+### Claude API Key
+
 For now you need to bring your own LLM (Anthropic Claude) API key to use Codeplain API. Please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic Claude API key added to the list of authorized API keys.
 
 To have the hash generated use the following command:
@@ -52,6 +58,10 @@ To have the hash generated use the following command:
 2. Set your Codeplain API key as an environment variable:
    ```
    export CLAUDE_API_KEY=your_api_key_here
+   ```
+3. Install required libraries
+   ```
+   pip install -r requirements.txt
    ```
 
 ## Usage
