@@ -42,12 +42,12 @@ class CodeplainAPI:
     
     @property
     def api_url(self):
-        return self.api_url
+        return self._api_url
 
 
     @api_url.setter
     def api_url(self, value):
-        self.api_url = value
+        self._api_url = value
 
 
     def post_request(self, endpoint_url, headers, payload):
