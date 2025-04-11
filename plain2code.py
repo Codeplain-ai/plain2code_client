@@ -356,12 +356,14 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
         if args.verbose:
             print(f"Deleting content of the build folder {args.build_folder}.")
 
-        file_utils.delete_files_and_subfolders(args.build_folder, args.verbose)
+        if not args.dry_run:
+            file_utils.delete_files_and_subfolders(args.build_folder, args.verbose)
     else:
         if args.verbose and frid == plain_spec.get_first_frid(plain_source_tree):
             print(f"Build folder {args.build_folder} does not exist. Creating it.")
 
-        os.makedirs(args.build_folder)
+        if not args.dry_run:
+            os.makedirs(args.build_folder)
 
     if frid == plain_spec.get_first_frid(plain_source_tree):
         if args.base_folder:
@@ -372,17 +374,21 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
             previous_build_folder = None
     else:
         previous_build_folder = args.build_folder + "." + plain_spec.get_previous_frid(plain_source_tree, frid)
-        if not os.path.exists(previous_build_folder):
-            raise Exception(f"Build folder {previous_build_folder} not found: ")
 
-        if os.path.exists(args.conformance_tests_folder):
-            conformance_tests_backup_folder = args.conformance_tests_folder + CONFORMANCE_TESTS_BACKUP_FOLDER_SUFFIX
-            if os.path.exists(conformance_tests_backup_folder):
-                shutil.rmtree(conformance_tests_backup_folder)
+        if not args.dry_run:
+            if not os.path.exists(previous_build_folder):
+                raise Exception(f"Build folder {previous_build_folder} not found: ")
+
+            if os.path.exists(args.conformance_tests_folder):
+                conformance_tests_backup_folder = args.conformance_tests_folder + CONFORMANCE_TESTS_BACKUP_FOLDER_SUFFIX
+                if os.path.exists(conformance_tests_backup_folder):
+                    shutil.rmtree(conformance_tests_backup_folder)
+                    
+                # Copy the entire directory tree
+                shutil.copytree(args.conformance_tests_folder, conformance_tests_backup_folder)
                 
-            # Copy the entire directory tree
-            shutil.copytree(args.conformance_tests_folder, conformance_tests_backup_folder)
-            print(f"Conformance tests folder successfully backed up.")
+                if args.verbose:
+                    print(f"Conformance tests folder successfully backed up.")
 
     resources_list = []
     plain_spec.collect_linked_resources(plain_source_tree, resources_list, frid)
@@ -404,6 +410,11 @@ def render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, a
             conformance_tests = json.load(f)
     except FileNotFoundError:
         conformance_tests = {}
+
+    if args.dry_run:
+        if args.verbose:
+            print(f"\n== Dry run: not actually rendering the functional requirement. ==\n")
+        return
 
     try:
         response_files = codeplainAPI.render_functional_requirement(frid, plain_source_tree, linked_resources, existing_files_content)
@@ -578,7 +589,8 @@ if __name__ == "__main__":
     parser.add_argument('--conformance-tests-script', type=str, help='a script to run conformance tests')
     parser.add_argument('--api', type=str, nargs='?', const="https://api.codeplain.ai", help='force using the API (for internal use)')
     parser.add_argument('--api-key', type=str, default=CLAUDE_API_KEY, help='API key used to access the API. If not provided, the CLAUDE_API_KEY environment variable is used.')
-    parser.add_argument('--full-plain', action='store_true', help='full plain text to render')
+    parser.add_argument('--full-plain', action='store_true', help='emit full plain text to render')
+    parser.add_argument('--dry-run', action='store_true', help='preview what plain2code would do without actually making any changes')
 
     args = parser.parse_args()
 
