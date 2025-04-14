@@ -616,6 +616,8 @@ if __name__ == "__main__":
         render(args)
     except InvalidRenderRange as e:
         print(f"Error rendering plain code. Invalid render range: {args.render_range}\n")
+    except FileNotFoundError as e:
+        print(f"Error rendering plain code: {str(e)}\n")
     except Exception as e:
         print(f"Error rendering plain code: {str(e)}\n")
         traceback.print_exc()
