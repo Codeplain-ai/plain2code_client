@@ -1,43 +1,42 @@
-import os
-
 import difflib
+import os
 
 from liquid2 import Environment, FileSystemLoader, StrictUndefined
 from liquid2.exceptions import UndefinedError
 
 import plain_spec
 
-BINARY_FILE_EXTENSIONS = ['.pyc']
+BINARY_FILE_EXTENSIONS = [".pyc"]
 
 
 def list_all_text_files(directory):
     all_files = []
     for root, dirs, files in os.walk(directory, topdown=False):
         modified_root = os.path.relpath(root, directory)
-        if modified_root == '.':
-            modified_root = ''
+        if modified_root == ".":
+            modified_root = ""
 
         for filename in files:
             if not any(filename.endswith(ending) for ending in BINARY_FILE_EXTENSIONS):
                 try:
-                    with open(os.path.join(root, filename), 'rb') as f:
-                        f.read().decode('utf-8')
+                    with open(os.path.join(root, filename), "rb") as f:
+                        f.read().decode("utf-8")
                 except UnicodeDecodeError:
                     print(f"WARNING! Not listing {filename} in {root}. File is not a text file. Skipping it.")
                     continue
 
                 all_files.append(os.path.join(modified_root, filename))
-    
+
     return all_files
 
 
 def list_folders_in_directory(directory):
     # List all items in the directory
     items = os.listdir(directory)
-    
+
     # Filter out the folders
     folders = [item for item in items if os.path.isdir(os.path.join(directory, item))]
-    
+
     return folders
 
 
@@ -45,7 +44,7 @@ def delete_files_and_subfolders(directory, verbose=False):
     total_files_deleted = 0
     total_folders_deleted = 0
     items_deleted = []
-    
+
     # Walk the directory in reverse order (bottom-up)
     for root, dirs, files in os.walk(directory, topdown=False):
         # Delete files
@@ -55,7 +54,7 @@ def delete_files_and_subfolders(directory, verbose=False):
             total_files_deleted += 1
             if verbose and len(items_deleted) < 10:
                 items_deleted.append(f"Deleted file: {file_path}")
-        
+
         # Delete directories
         for dir_ in dirs:
             dir_path = os.path.join(root, dir_)
@@ -63,7 +62,7 @@ def delete_files_and_subfolders(directory, verbose=False):
             total_folders_deleted += 1
             if verbose and len(items_deleted) < 10:
                 items_deleted.append(f"Deleted folder: {dir_path}")
-    
+
     # Print the results
     if verbose:
         if total_files_deleted + total_folders_deleted > 10:
@@ -79,9 +78,9 @@ def copy_file(source_path, destination_path):
     os.makedirs(os.path.dirname(destination_path), exist_ok=True)
 
     # Open the source file in read-binary ('rb') mode
-    with open(source_path, 'rb') as source_file:
+    with open(source_path, "rb") as source_file:
         # Open the destination file in write-binary ('wb') mode
-        with open(destination_path, 'wb') as destination_file:
+        with open(destination_path, "wb") as destination_file:
             # Copy the content from source to destination
             while True:
                 # Read a chunk of the source file
@@ -95,7 +94,7 @@ def copy_file(source_path, destination_path):
 def add_current_path_if_no_path(filename):
     # Extract the base name of the file (ignoring any path information)
     basename = os.path.basename(filename)
-    
+
     # Compare the basename to the original filename
     # If they are the same, there was no path information in the filename
     if basename == filename:
@@ -115,20 +114,20 @@ def get_folders_diff(orig_folder, new_folder):
 
     diff = {}
     for file_name in new_files:
-        with open(os.path.join(new_folder, file_name), 'r') as f:
+        with open(os.path.join(new_folder, file_name), "r") as f:
             new_file = f.read().splitlines()
-        
+
         if file_name in orig_files:
-            with open(os.path.join(orig_folder, file_name), 'r') as f:
-              orig_file = f.read().splitlines()
+            with open(os.path.join(orig_folder, file_name), "r") as f:
+                orig_file = f.read().splitlines()
 
             orig_file_name = file_name
         else:
             orig_file = []
-            orig_file_name = '/dev/null'
+            orig_file_name = "/dev/null"
 
-        file_diff = difflib.unified_diff(orig_file, new_file, fromfile=orig_file_name, tofile=file_name, lineterm='')
-        file_diff_str = '\n'.join(file_diff)
+        file_diff = difflib.unified_diff(orig_file, new_file, fromfile=orig_file_name, tofile=file_name, lineterm="")
+        file_diff_str = "\n".join(file_diff)
         if file_diff_str:
             diff[file_name] = file_diff_str
 
@@ -138,10 +137,10 @@ def get_folders_diff(orig_folder, new_folder):
 def get_existing_files_content(build_folder, existing_files):
     existing_files_content = {}
     for file_name in existing_files:
-        with open(os.path.join(build_folder, file_name), 'rb') as f:
+        with open(os.path.join(build_folder, file_name), "rb") as f:
             content = f.read()
             try:
-                existing_files_content[file_name] = content.decode('utf-8')
+                existing_files_content[file_name] = content.decode("utf-8")
             except UnicodeDecodeError:
                 print(f"WARNING! Error loading {file_name}. File is not a text file. Skipping it.")
 
@@ -176,21 +175,22 @@ def store_response_files(target_folder, response_files, existing_files):
 def load_linked_resources(folder_name, resources_list):
     linked_resources = {}
     for resource in resources_list:
-        file_name = resource['target']
+        file_name = resource["target"]
         if file_name in linked_resources:
             continue
 
         full_file_name = os.path.join(folder_name, file_name)
         if not os.path.isfile(full_file_name):
             raise FileNotFoundError(f"The file '{full_file_name}' does not exist.")
-    
 
-        with open(full_file_name, 'rb') as f:
+        with open(full_file_name, "rb") as f:
             content = f.read()
             try:
-                linked_resources[file_name] = content.decode('utf-8')
+                linked_resources[file_name] = content.decode("utf-8")
             except UnicodeDecodeError:
-                print(f"WARNING! Error loading {resource['text']} ({resource['target']}). File is not a text file. Skipping it.")
+                print(
+                    f"WARNING! Error loading {resource['text']} ({resource['target']}). File is not a text file. Skipping it."
+                )
 
     return linked_resources
 
@@ -210,10 +210,7 @@ def get_loaded_templates(source_path, plain_source):
     # Render the plain source with Liquid templating engine
     # to identify the templates that are being loaded
     liquid_loader = TrackingFileSystemLoader(source_path)
-    liquid_env = Environment(
-        loader=liquid_loader,
-        undefined=StrictUndefined
-    )
+    liquid_env = Environment(loader=liquid_loader, undefined=StrictUndefined)
 
     liquid_env.filters["code_variable"] = plain_spec.code_variable_liquid_filter
     liquid_env.filters["prohibited_chars"] = plain_spec.prohibited_chars_liquid_filter
