@@ -1,5 +1,6 @@
 import difflib
 import os
+from pathlib import Path
 
 from liquid2 import Environment, FileSystemLoader, StrictUndefined
 from liquid2.exceptions import UndefinedError
@@ -7,6 +8,46 @@ from liquid2.exceptions import UndefinedError
 import plain_spec
 
 BINARY_FILE_EXTENSIONS = [".pyc"]
+
+# Dictionary mapping of file extensions to type names
+FILE_EXTENSION_MAPPING = {
+    "": "plaintext",
+    ".py": "python",
+    ".txt": "plaintext",
+    ".md": "markdown",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".js": "javascript",
+    ".html": "HTML",
+    ".css": "CSS",
+    ".scss": "SASS/SCSS",
+    ".java": "java",
+    ".cpp": "C++",
+    ".c": "C",
+    ".cs": "C#",
+    ".php": "PHP",
+    ".rb": "Ruby",
+    ".go": "Go",
+    ".rs": "Rust",
+    ".swift": "Swift",
+    ".kt": "Kotlin",
+    ".sql": "SQL",
+    ".json": "JSON",
+    ".xml": "XML",
+    ".yaml": "YAML",
+    ".yml": "YAML",  # YAML has two common extensions
+    ".sh": "Shell Script",
+    ".bat": "Batch File",
+}
+
+
+def get_file_type(file_name):
+
+    # Extract the file extension
+    ext = Path(file_name).suffix.lower()  # Convert to lowercase to handle case-insensitive matching
+
+    # Use the dictionary to get the file type, defaulting to 'unknown' if the extension is not found
+    return FILE_EXTENSION_MAPPING.get(ext, "unknown")
 
 
 def list_all_text_files(directory):
@@ -40,7 +81,7 @@ def list_folders_in_directory(directory):
     return folders
 
 
-def delete_files_and_subfolders(directory, verbose=False):
+def delete_files_and_subfolders(directory, debug=False):
     total_files_deleted = 0
     total_folders_deleted = 0
     items_deleted = []
@@ -52,7 +93,7 @@ def delete_files_and_subfolders(directory, verbose=False):
             file_path = os.path.join(root, file)
             os.remove(file_path)
             total_files_deleted += 1
-            if verbose and len(items_deleted) < 10:
+            if debug and len(items_deleted) < 10:
                 items_deleted.append(f"Deleted file: {file_path}")
 
         # Delete directories
@@ -60,11 +101,11 @@ def delete_files_and_subfolders(directory, verbose=False):
             dir_path = os.path.join(root, dir_)
             os.rmdir(dir_path)
             total_folders_deleted += 1
-            if verbose and len(items_deleted) < 10:
+            if debug and len(items_deleted) < 10:
                 items_deleted.append(f"Deleted folder: {dir_path}")
 
     # Print the results
-    if verbose:
+    if debug:
         if total_files_deleted + total_folders_deleted > 10:
             print(f"Total files deleted: {total_files_deleted}")
             print(f"Total folders deleted: {total_folders_deleted}")
@@ -222,3 +263,27 @@ def get_loaded_templates(source_path, plain_source):
         raise Exception(f"Undefined liquid variable: {str(e)}")
 
     return plain_source, liquid_loader.loaded_templates
+
+
+def copy_unchanged_files_from_previous_build(
+    previous_build_folder, build_folder, existing_files, response_files, debug
+):
+    for file_name in existing_files:
+        if file_name not in response_files:
+            if debug:
+                print("Copying file: ", file_name)
+            copy_file(os.path.join(previous_build_folder, file_name), os.path.join(build_folder, file_name))
+
+
+def update_build_folder_with_rendered_files(previous_build_folder, build_folder, existing_files, response_files, debug):
+    if previous_build_folder:
+        copy_unchanged_files_from_previous_build(
+            previous_build_folder, build_folder, existing_files, response_files, debug
+        )
+
+    changed_files = set()
+    changed_files.update(response_files.keys())
+
+    existing_files = store_response_files(build_folder, response_files, existing_files)
+
+    return existing_files, changed_files
