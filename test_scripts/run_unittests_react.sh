@@ -45,4 +45,4 @@ npm install
 
 # Execute all React unittests in the subfolder
 echo "Running React unittests in $1..."
-CI=true npm test -- --silent
+CI=true npm test -- --silent --detectOpenHandles
