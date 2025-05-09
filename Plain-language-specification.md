@@ -162,9 +162,13 @@ Here's an example of a "Hello, World" application with one acceptance test.
   - The App shouldn't show logging output in the console output (neither in stdout nor stderr).
 ```
 
+Acceptance tests extend **conformance tests**. The acceptance tests are implemented according to the ***Test Requirements:*** specification (see next section).
+
 ## Test Requirements
 
 The `***Test Requirements:***` specification is a list of instructions that steer implementation of conformance tests and provide details of testing environment.
+
+**Conformance tests** is the generated code used to verify that the functional requirement is implemented according to the specification.
 
 Here's an example specification of test requirements.
 
