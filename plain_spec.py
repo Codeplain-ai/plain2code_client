@@ -8,8 +8,16 @@ DEFINITIONS = "Definitions:"
 NON_FUNCTIONAL_REQUIREMENTS = "Non-Functional Requirements:"
 TEST_REQUIREMENTS = "Test Requirements:"
 FUNCTIONAL_REQUIREMENTS = "Functional Requirements:"
+ACCEPTANCE_TESTS = "acceptance_tests"
+ACCEPTANCE_TEST_HEADING = "Acceptance Tests:"
 
-ALLOWED_SPECIFICATION_HEADINGS = [DEFINITIONS, NON_FUNCTIONAL_REQUIREMENTS, TEST_REQUIREMENTS, FUNCTIONAL_REQUIREMENTS]
+ALLOWED_SPECIFICATION_HEADINGS = [
+    DEFINITIONS,
+    NON_FUNCTIONAL_REQUIREMENTS,
+    TEST_REQUIREMENTS,
+    FUNCTIONAL_REQUIREMENTS,
+    ACCEPTANCE_TEST_HEADING,
+]
 
 
 class InvalidLiquidVariableName(Exception):
@@ -51,7 +59,7 @@ def collect_specification_linked_resources(specification, specification_heading,
             )
 
 
-def collect_linked_resources_in_section(section, linked_resources_list, frid=None):
+def collect_linked_resources_in_section(section, linked_resources_list, include_acceptance_tests, frid=None):
     for specification_heading in [DEFINITIONS, NON_FUNCTIONAL_REQUIREMENTS, TEST_REQUIREMENTS]:
         if specification_heading in section:
             for requirement in section[specification_heading]:
@@ -68,18 +76,24 @@ def collect_linked_resources_in_section(section, linked_resources_list, frid=Non
             else:
                 current_frid = str(functional_requirement_count)
 
+            if ACCEPTANCE_TESTS in requirement and include_acceptance_tests and (frid is None or frid == current_frid):
+                for acceptance_test in requirement[ACCEPTANCE_TESTS]:
+                    collect_specification_linked_resources(
+                        acceptance_test, FUNCTIONAL_REQUIREMENTS, linked_resources_list
+                    )
+
             if current_frid == frid:
                 return True
 
     if "sections" in section:
         for subsection in section["sections"]:
-            if collect_linked_resources_in_section(subsection, linked_resources_list, frid):
+            if collect_linked_resources_in_section(subsection, linked_resources_list, include_acceptance_tests, frid):
                 return True
 
     return False
 
 
-def collect_linked_resources(plain_source_tree, linked_resources_list, frid=None):
+def collect_linked_resources(plain_source_tree, linked_resources_list, include_acceptance_tests, frid=None):
 
     if not isinstance(plain_source_tree, dict):
         raise ValueError("[plain_source_tree must be a dictionary.")
@@ -89,7 +103,7 @@ def collect_linked_resources(plain_source_tree, linked_resources_list, frid=None
         if frid not in functional_requirements:
             raise ValueError(f"frid {frid} does not exist.")
 
-    return collect_linked_resources_in_section(plain_source_tree, linked_resources_list, frid)
+    return collect_linked_resources_in_section(plain_source_tree, linked_resources_list, include_acceptance_tests, frid)
 
 
 def get_frids(plain_source_tree):
@@ -154,6 +168,7 @@ def get_specifications_from_plain_source_tree(
     non_functional_requirements,
     test_requirements,
     functional_requirements,
+    acceptance_tests,
     code_variables,
     replace_code_variables,
     section_id=None,
@@ -173,6 +188,12 @@ def get_specifications_from_plain_source_tree(
             )
 
             if current_frid == frid:
+                if ACCEPTANCE_TESTS in functional_requirement:
+                    for acceptance_test in functional_requirement[ACCEPTANCE_TESTS]:
+                        acceptance_tests.append(
+                            get_specification_item_markdown(acceptance_test, code_variables, replace_code_variables)
+                        )
+
                 return_frid = current_frid
                 break
 
@@ -185,6 +206,7 @@ def get_specifications_from_plain_source_tree(
                 non_functional_requirements,
                 test_requirements,
                 functional_requirements,
+                acceptance_tests,
                 code_variables,
                 replace_code_variables,
                 section["ID"],
@@ -221,6 +243,7 @@ def get_specifications_for_frid(plain_source_tree, frid, replace_code_variables=
     non_functional_requirements = []
     test_requirements = []
     functional_requirements = []
+    acceptance_tests = []
 
     code_variables = {}
 
@@ -231,6 +254,7 @@ def get_specifications_for_frid(plain_source_tree, frid, replace_code_variables=
         non_functional_requirements,
         test_requirements,
         functional_requirements,
+        acceptance_tests,
         code_variables,
         replace_code_variables,
     )
@@ -243,6 +267,9 @@ def get_specifications_for_frid(plain_source_tree, frid, replace_code_variables=
         TEST_REQUIREMENTS: test_requirements,
         FUNCTIONAL_REQUIREMENTS: functional_requirements,
     }
+
+    if acceptance_tests:
+        specifications[ACCEPTANCE_TESTS] = acceptance_tests
 
     if code_variables:
         return specifications, code_variables

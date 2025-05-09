@@ -36,7 +36,7 @@ if [ ! -z "$API_ENDPOINT" ]; then
 fi
 
 (
-    printf "\nHELLO, WORLD (Pyhton example)...\n\n"
+    printf "\nHELLO, WORLD (Python example)...\n\n"
 
     cd example_hello_world_python
     sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
