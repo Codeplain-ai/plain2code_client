@@ -12,3 +12,5 @@ examples/**/node_modules/
 examples/**/node_harness_tests/
 
 examples/**/go_build/
+
+.venv
