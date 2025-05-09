@@ -104,7 +104,7 @@ Here's an example of more complex instructions.
 
 ## Functional Requirements
 
-The `***Functional Requirements:***` specificationprovides a description of functionality that should be rendered to software code. The descriptions should be provided in natural language as a markdown list. When referring to other terms **The Noun convention** should be followed.
+The `***Functional Requirements:***` specification provides a description of functionality that should be rendered to software code. The descriptions should be provided in natural language as a markdown list. When referring to other terms **The Noun convention** should be followed.
 
 Here's an example of a simple description of the functionality of the "hello, world" application.
 
@@ -143,6 +143,24 @@ Here's an example how to do such a break down in the case of a task manager appl
 ```
 
 Functional requirements are rendered incrementally one by one. Consequently earlier functional requirements cannot reference later functional requirements.
+
+### Acceptance Tests
+
+Acceptance tests can be used to further refine the functional requirement and especially to incorporate constraints on the implementation.
+
+Acceptance tests are specified with a keyword `***Acceptance Tests:***` as a subsection within `***Functional Requirements:***` section. Each acceptance tests must be an item in a list.
+
+Here's an example of a "Hello, World" application with one acceptance test.
+
+```plain
+***Functional Requirements:***
+
+- Display "hello, world"
+
+  ***Acceptance Tests:***
+    
+  - The App shouldn't show logging output in the console output (neither in stdout nor stderr).
+```
 
 ## Test Requirements
 
