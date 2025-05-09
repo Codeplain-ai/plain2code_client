@@ -200,6 +200,7 @@ class CodeplainAPI:
         existing_files_content,
         code_diff,
         conformance_tests_files,
+        acceptance_tests,
         conformance_tests_issue,
         implementation_fix_count,
     ):
@@ -216,6 +217,51 @@ class CodeplainAPI:
             "conformance_tests_files": conformance_tests_files,
             "conformance_tests_issue": conformance_tests_issue,
             "implementation_fix_count": implementation_fix_count,
+        }
+
+        if acceptance_tests is not None:
+            payload["acceptance_tests"] = acceptance_tests
+
+        return self.post_request(endpoint_url, headers, payload)
+
+    def render_acceptance_tests(
+        self,
+        frid,
+        plain_source_tree,
+        linked_resources,
+        existing_files_content,
+        conformance_tests_files,
+        acceptance_test,
+    ):
+        """
+        Renders acceptance tests based on the provided parameters.
+
+        Args:
+            frid (str): The unique identifier for the functional requirement.
+            plain_source_tree (dict): A dictionary containing the plain source tree.
+            linked_resources (dict): A dictionary where the keys represent resource names
+                                    and the values are the content of those resources.
+            existing_files_content (dict): A dictionary where the keys represent code base
+                                        filenames and the values are the content of those files.
+            conformance_tests_files (dict): A dictionary containing conformance test files.
+            acceptance_test (dict): A dictionary containing acceptance test information.
+
+        Returns:
+            dict: The rendered acceptance tests.
+
+        Raises:
+            Exception: If the request fails or returns an error.
+        """
+        endpoint_url = f"{self.api_url}/render_acceptance_tests"
+        headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+
+        payload = {
+            "frid": frid,
+            "plain_source_tree": plain_source_tree,
+            "linked_resources": linked_resources,
+            "existing_files_content": existing_files_content,
+            "conformance_tests_files": conformance_tests_files,
+            "acceptance_test": acceptance_test,
         }
 
         return self.post_request(endpoint_url, headers, payload)

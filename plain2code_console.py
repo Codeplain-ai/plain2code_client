@@ -7,7 +7,7 @@ from rich.tree import Tree
 class Plain2CodeConsole(Console):
     INFO_STYLE = Style()
     WARNING_STYLE = Style(color="yellow", bold=True)
-    ERROR_STYLE = Style(color="red", bold=True, blink=True)
+    ERROR_STYLE = Style(color="red", bold=True)
     INPUT_STYLE = Style(color="#4169E1")  # Royal Blue
     OUTPUT_STYLE = Style(color="green")
     DEBUG_STYLE = Style(color="purple")
@@ -39,10 +39,15 @@ class Plain2CodeConsole(Console):
             super().print(f"{item}", style=style)
 
     def print_files(self, header, root_folder, files, style=None):
+        if not files:
+            return
+
         tree = self._create_tree_from_files(root_folder, files)
         super().print(f"\n[b]{header}[/b]", style=style)
 
         super().print(tree, style=style)
+
+        super().print()
 
     def _create_tree_from_files(self, root_folder, files):
         """
@@ -82,6 +87,20 @@ class Plain2CodeConsole(Console):
                     current_level = existing_level
 
         return tree
+
+    def print_resources(self, resources_list, linked_resources):
+        if len(resources_list) == 0:
+            return
+
+        self.input("\nLinked resources:")
+        for resource_name in resources_list:
+            if resource_name["target"] in linked_resources:
+                file_tokens = len(self.llm_encoding.encode(linked_resources[resource_name["target"]]))
+                console.input(
+                    f"- {resource_name['text']} [b][#4169E1]({resource_name['target']}, {file_tokens} tokens)[/#4169E1][/b]"
+                )
+
+        self.input()
 
 
 console = Plain2CodeConsole()

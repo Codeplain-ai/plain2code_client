@@ -35,6 +35,7 @@ if [ ! -z "$API_ENDPOINT" ]; then
     CMD="$CMD --api $API_ENDPOINT"
 fi
 
+echo "Removing conformance tests folder"
 rm -rf conformance_tests
 
 # Execute the command
