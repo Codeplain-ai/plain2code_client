@@ -44,9 +44,11 @@ For example application how to implement SaaS connectors in Plain see [example-s
 
 To run the plain2code client, you need Python 3.11 or a later version.
 
-### Claude API Key
+### Anthropic API Key
 
-For now you need to bring your own LLM (Anthropic Claude) API key to use Codeplain API. Please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic Claude API key added to the list of authorized API keys.
+For now you need to bring your own Anthropic API key to use Codeplain API. If you don't have Anthropic API key, you can create a free developer account at [console.anthropic.com](https://console.anthropic.com/). To experiment with Codeplain you need to top up your Anthropic account with $5-10.
+
+With Anthropic API Key ready, please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic API key added to the list of authorized API keys.
 
 To have the hash generated use the following command:
 
