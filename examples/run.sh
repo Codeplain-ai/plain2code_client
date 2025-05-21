@@ -9,6 +9,16 @@ while [[ $# -gt 0 ]]; do
             VERBOSE=1
             shift # Remove --verbose from processing
             ;;
+        --render-range )
+            shift
+            RENDER_RANGE=$1
+            shift
+            ;;
+        --render-from)
+            shift
+            RENDER_FROM=$1
+            shift
+            ;;
         --api)
             API_ENDPOINT="$2"
             shift # Remove --api from processing
@@ -24,22 +34,11 @@ done
 
 echo "Running all example test harnesses..."
 
-VERBOSE_FLAG=""
-if [ "$VERBOSE" -eq 1 ]; then
-    VERBOSE_FLAG="-v"
-fi
-
-# Construct the API parameter if provided
-API_PARAM=""
-if [ ! -z "$API_ENDPOINT" ]; then
-    API_PARAM="--api $API_ENDPOINT"
-fi
-
 (
     printf "\nHELLO, WORLD (Python example)...\n\n"
 
     cd example_hello_world_python
-    sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
+    sh run.sh ${VERBOSE:+-v} ${RENDER_RANGE:+"--render-range=$RENDER_RANGE"} ${RENDER_FROM:+"--render-from=$RENDER_FROM"} ${API_ENDPOINT:+"--api $API_ENDPOINT"}
     if [ $? -ne 0 ]; then
         echo "Hello World Python example failed."
         exit 1
@@ -51,7 +50,7 @@ fi
     printf "\nHELLO, WORLD (Go lang example)...\n\n"
 
     cd example_hello_world_golang
-    sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
+    sh run.sh ${VERBOSE:+-v} ${RENDER_RANGE:+"--render-range=$RENDER_RANGE"} ${RENDER_FROM:+"--render-from=$RENDER_FROM"} ${API_ENDPOINT:+"--api $API_ENDPOINT"}
     if [ $? -ne 0 ]; then
         echo "Hello World Golang example failed."
         exit 1
@@ -63,7 +62,7 @@ fi
     printf "\nHELLO, WORLD (React example)...\n\n"
 
     cd example_hello_world_react
-    sh run.sh ${VERBOSE_FLAG} ${API_PARAM}
+    sh run.sh ${VERBOSE:+-v} ${RENDER_RANGE:+"--render-range=$RENDER_RANGE"} ${RENDER_FROM:+"--render-from=$RENDER_FROM"} ${API_ENDPOINT:+"--api $API_ENDPOINT"}
     if [ $? -ne 0 ]; then
         echo "Hello World React example failed."
         exit 1

@@ -2,7 +2,10 @@ import requests
 
 
 class FunctionalRequirementTooComplex(Exception):
-    pass
+    def __init__(self, message, proposed_breakdown=None):
+        self.message = message
+        self.proposed_breakdown = proposed_breakdown
+        super().__init__(self.message)
 
 
 class ConflictingRequirements(Exception):
@@ -13,7 +16,7 @@ class CreditBalanceTooLow(Exception):
     pass
 
 
-class LLMOverloadedError(Exception):
+class LLMInternalError(Exception):
     pass
 
 
@@ -57,7 +60,7 @@ class CodeplainAPI:
 
         if response.status_code == requests.codes.bad_request and "error_code" in response_json:
             if response_json["error_code"] == "FunctionalRequirementTooComplex":
-                raise FunctionalRequirementTooComplex(response_json["message"])
+                raise FunctionalRequirementTooComplex(response_json["message"], response_json.get("proposed_breakdown"))
 
             if response_json["error_code"] == "ConflictingRequirements":
                 raise ConflictingRequirements(response_json["message"])
@@ -65,8 +68,8 @@ class CodeplainAPI:
             if response_json["error_code"] == "CreditBalanceTooLow":
                 raise CreditBalanceTooLow(response_json["message"])
 
-            if response_json["error_code"] == "LLMOverloadedError":
-                raise LLMOverloadedError(response_json["message"])
+            if response_json["error_code"] == "LLMInternalError":
+                raise LLMInternalError(response_json["message"])
 
             if response_json["error_code"] == "MissingResource":
                 raise MissingResource(response_json["message"])

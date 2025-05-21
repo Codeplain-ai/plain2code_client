@@ -27,13 +27,7 @@ if [ $VERBOSE -eq 1 ]; then
 fi
 
 # Construct the command with optional parameters
-CMD="python ../../plain2code.py hello_world_react.plain --conformance-tests-script=../../test_scripts/run_conformance_tests_cypress.sh"
-if [ $VERBOSE -eq 1 ]; then
-    CMD="$CMD -v"
-fi
-if [ ! -z "$API_ENDPOINT" ]; then
-    CMD="$CMD --api $API_ENDPOINT"
-fi
+CMD="python ../../plain2code.py hello_world_react.plain --conformance-tests-script=../../test_scripts/run_conformance_tests_cypress.sh ${VERBOSE:+-v} ${RENDER_RANGE:+"--render-range=$RENDER_RANGE"} ${RENDER_FROM:+"--render-from=$RENDER_FROM"} ${API_ENDPOINT:+"--api $API_ENDPOINT"}"
 
 # Removing all the conformance tests before rendering the hello world example.
 rm -rf conformance_tests
