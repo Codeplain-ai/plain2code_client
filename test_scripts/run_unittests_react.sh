@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# ANSI escape code pattern to remove color codes and formatting from output
+ANSI_ESCAPE_PATTERN="s/\x1b\[[0-9;]*[mK]//g"
+
+# Ensures that if any command in the pipeline fails (like npm run build), the entire pipeline
+# will return a non-zero status, allowing the if condition to properly catch failures.
+set -o pipefail
+
 # Check if subfolder name is provided
 if [ -z "$1" ]; then
   echo "Error: No subfolder name provided."
@@ -45,4 +52,11 @@ npm install
 
 # Execute all React unittests in the subfolder
 echo "Running React unittests in $1..."
-CI=true npm test -- --silent --detectOpenHandles
+npm test -- --runInBand --silent --detectOpenHandles 2>&1 | sed -E "$ANSI_ESCAPE_PATTERN"
+TEST_EXIT_CODE=$?
+
+# Check if tests failed
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+  echo "Error: Tests failed with exit code $TEST_EXIT_CODE"
+  exit $TEST_EXIT_CODE
+fi

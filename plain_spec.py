@@ -1,6 +1,7 @@
 import hashlib
 import json
 import uuid
+from typing import Optional
 
 from liquid2.filter import with_context
 
@@ -59,22 +60,36 @@ def collect_specification_linked_resources(specification, specification_heading,
             )
 
 
-def collect_linked_resources_in_section(section, linked_resources_list, include_acceptance_tests, frid=None):
-    for specification_heading in [DEFINITIONS, NON_FUNCTIONAL_REQUIREMENTS, TEST_REQUIREMENTS]:
+def collect_linked_resources_in_section(
+    section, linked_resources_list, specifications_list, include_acceptance_tests, frid=Optional[str]
+):
+    # When should we collect resources in the current section (should_collect_resources_in_current_section):
+    # - frid wasn't specified
+    # - section has no ID <==> it's the root section
+    # - section has ID, frid was specified and the specified frid inside the current section tree
+    should_collect_resources_in_current_section = frid is None or "ID" not in section or frid.startswith(section["ID"])
+    if not should_collect_resources_in_current_section:
+        return False
+
+    specifications_to_collect = list(set([DEFINITIONS, NON_FUNCTIONAL_REQUIREMENTS, TEST_REQUIREMENTS]))
+    if specifications_list:
+        specifications_to_collect = list(set(specifications_to_collect) & set(specifications_list))
+
+    for specification_heading in specifications_to_collect:
         if specification_heading in section:
             for requirement in section[specification_heading]:
                 collect_specification_linked_resources(requirement, specification_heading, linked_resources_list)
 
-    if FUNCTIONAL_REQUIREMENTS in section:
+    if FUNCTIONAL_REQUIREMENTS in section and (
+        not specifications_list or FUNCTIONAL_REQUIREMENTS in specifications_list
+    ):
         functional_requirement_count = 0
         for requirement in section[FUNCTIONAL_REQUIREMENTS]:
             collect_specification_linked_resources(requirement, FUNCTIONAL_REQUIREMENTS, linked_resources_list)
 
             functional_requirement_count += 1
-            if "ID" in section:
-                current_frid = section["ID"] + "." + str(functional_requirement_count)
-            else:
-                current_frid = str(functional_requirement_count)
+            section_id = section.get("ID", None)
+            current_frid = get_current_frid(section_id, functional_requirement_count)
 
             if ACCEPTANCE_TESTS in requirement and include_acceptance_tests and (frid is None or frid == current_frid):
                 for acceptance_test in requirement[ACCEPTANCE_TESTS]:
@@ -87,13 +102,17 @@ def collect_linked_resources_in_section(section, linked_resources_list, include_
 
     if "sections" in section:
         for subsection in section["sections"]:
-            if collect_linked_resources_in_section(subsection, linked_resources_list, include_acceptance_tests, frid):
+            if collect_linked_resources_in_section(
+                subsection, linked_resources_list, specifications_list, include_acceptance_tests, frid
+            ):
                 return True
 
     return False
 
 
-def collect_linked_resources(plain_source_tree, linked_resources_list, include_acceptance_tests, frid=None):
+def collect_linked_resources(
+    plain_source_tree, linked_resources_list, specifications_list, include_acceptance_tests, frid=None
+):
 
     if not isinstance(plain_source_tree, dict):
         raise ValueError("[plain_source_tree must be a dictionary.")
@@ -103,7 +122,14 @@ def collect_linked_resources(plain_source_tree, linked_resources_list, include_a
         if frid not in functional_requirements:
             raise ValueError(f"frid {frid} does not exist.")
 
-    return collect_linked_resources_in_section(plain_source_tree, linked_resources_list, include_acceptance_tests, frid)
+    result = collect_linked_resources_in_section(
+        plain_source_tree, linked_resources_list, specifications_list, include_acceptance_tests, frid
+    )
+
+    # Sort linked_resources_list by the "text" field
+    linked_resources_list.sort(key=lambda x: x["text"])
+
+    return result
 
 
 def get_frids(plain_source_tree):
@@ -121,6 +147,13 @@ def get_frids(plain_source_tree):
 
 def get_first_frid(plain_source_tree):
     return next(get_frids(plain_source_tree), None)
+
+
+def get_current_frid(section_id: Optional[str], functional_requirement_count: int) -> str:
+    if section_id is None:
+        return str(functional_requirement_count)
+    else:
+        return section_id + "." + str(functional_requirement_count)
 
 
 def get_next_frid(plain_source_tree, frid):
