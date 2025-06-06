@@ -6,7 +6,6 @@ import subprocess
 import sys
 import tempfile
 import traceback
-from typing import Optional
 
 import yaml
 
@@ -457,9 +456,9 @@ def conformance_testing(
     existing_files,
     existing_files_content,
     code_diff,
-) -> tuple[bool, bool, bool, Optional[str]]:
+) -> tuple[bool, bool, bool, str]:
     """
-    Returns: (success, implementation_code_has_changed, unittests_fixed_successfully, unsuccessfull_functional_requirement_id)
+    Returns: (success, implementation_code_has_changed, unittests_fixed_successfully, last_functional_requirement_id)
     """
     implementation_code_has_changed = False
     functional_requirement_id = plain_spec.get_first_frid(plain_source_tree)
@@ -508,20 +507,16 @@ def conformance_testing(
         )
 
         if functional_requirement_id == frid or not success or not unittests_fixed_successfully:
-            unsuccessfull_functional_requirement_id = (
-                None if functional_requirement_id == frid else functional_requirement_id
-            )
             return [
                 success,
                 implementation_code_has_changed,
                 unittests_fixed_successfully,
-                unsuccessfull_functional_requirement_id,
+                functional_requirement_id,
             ]
 
         functional_requirement_id = plain_spec.get_next_frid(plain_source_tree, functional_requirement_id)
 
-    unsuccessfull_functional_requirement_id = None if functional_requirement_id == frid else functional_requirement_id
-    return [True, implementation_code_has_changed, True, unsuccessfull_functional_requirement_id]
+    return [True, implementation_code_has_changed, True, functional_requirement_id]
 
 
 def conformance_and_acceptance_testing(  # noqa: C901
@@ -555,7 +550,7 @@ def conformance_and_acceptance_testing(  # noqa: C901
             success,
             implementation_code_has_changed,
             unittests_fixed_successfully,
-            unsuccessfull_functional_requirement_id,
+            last_functional_requirement_id,
         ] = conformance_testing(
             codeplainAPI,
             frid,
@@ -668,18 +663,15 @@ def conformance_and_acceptance_testing(  # noqa: C901
         conformance_tests_run_count = 0
         acceptance_test_count = 0
 
-        if unsuccessfull_functional_requirement_id is None:
-            raise Exception("Invalid State: unsuccessfull_functional_requirement_id is None and success is False")
-
         conformance_tests[frid] = generate_conformance_tests(
             args,
             codeplainAPI,
             frid,
-            unsuccessfull_functional_requirement_id,
+            last_functional_requirement_id,
             plain_source_tree,
             linked_resources,
             existing_files_content,
-            conformance_tests[unsuccessfull_functional_requirement_id]["folder_name"],
+            conformance_tests[last_functional_requirement_id]["folder_name"],
         )
 
     exit_with_error(
