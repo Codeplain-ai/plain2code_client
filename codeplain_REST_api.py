@@ -1,4 +1,8 @@
+from typing import Optional
+
 import requests
+
+from plain2code_state import RunState
 
 
 class FunctionalRequirementTooComplex(Exception):
@@ -36,6 +40,14 @@ class LinkMustHaveTextSpecified(Exception):
     pass
 
 
+class NoRenderFound(Exception):
+    pass
+
+
+class MultipleRendersFound(Exception):
+    pass
+
+
 class CodeplainAPI:
 
     def __init__(self, api_key):
@@ -49,7 +61,13 @@ class CodeplainAPI:
     def api_url(self, value):
         self._api_url = value
 
-    def post_request(self, endpoint_url, headers, payload):
+    def _extend_payload_with_run_state(self, payload: dict, run_state: RunState):
+        run_state.increment_call_count()
+        payload["render_state"] = run_state.to_dict()
+
+    def post_request(self, endpoint_url, headers, payload, run_state: Optional[RunState]):
+        if run_state is not None:
+            self._extend_payload_with_run_state(payload, run_state)
         response = requests.post(endpoint_url, headers=headers, json=payload)
 
         try:
@@ -83,6 +101,12 @@ class CodeplainAPI:
             if response_json["error_code"] == "LinkMustHaveTextSpecified":
                 raise LinkMustHaveTextSpecified(response_json["message"])
 
+            if response_json["error_code"] == "NoRenderFound":
+                raise NoRenderFound(response_json["message"])
+
+            if response_json["error_code"] == "MultipleRendersFound":
+                raise MultipleRendersFound(response_json["message"])
+
         response.raise_for_status()
 
         return response_json
@@ -106,9 +130,16 @@ class CodeplainAPI:
 
         payload = {"plain_source": plain_source, "loaded_templates": loaded_templates}
 
-        return self.post_request(endpoint_url, headers, payload)
+        return self.post_request(endpoint_url, headers, payload, None)
 
-    def render_functional_requirement(self, frid, plain_source_tree, linked_resources, existing_files_content):
+    def render_functional_requirement(
+        self,
+        frid,
+        plain_source_tree,
+        linked_resources,
+        existing_files_content,
+        run_state: RunState,
+    ):
         """
         Renders the content of a functional requirement based on the provided ID,
         plain source tree, and existing files' content.
@@ -138,9 +169,17 @@ class CodeplainAPI:
             "existing_files_content": existing_files_content,
         }
 
-        return self.post_request(endpoint_url, headers, payload)
+        return self.post_request(endpoint_url, headers, payload, run_state)
 
-    def fix_unittests_issue(self, frid, plain_source_tree, linked_resources, existing_files_content, unittests_issue):
+    def fix_unittests_issue(
+        self,
+        frid,
+        plain_source_tree,
+        linked_resources,
+        existing_files_content,
+        unittests_issue,
+        run_state: RunState,
+    ):
         endpoint_url = f"{self.api_url}/fix_unittests_issue"
         headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
 
@@ -152,9 +191,9 @@ class CodeplainAPI:
             "unittests_issue": unittests_issue,
         }
 
-        return self.post_request(endpoint_url, headers, payload)
+        return self.post_request(endpoint_url, headers, payload, run_state)
 
-    def refactor_source_files_if_needed(self, frid, files_to_check, existing_files_content):
+    def refactor_source_files_if_needed(self, frid, files_to_check, existing_files_content, run_state: RunState):
         endpoint_url = f"{self.api_url}/refactor_source_files_if_needed"
         headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
 
@@ -164,10 +203,16 @@ class CodeplainAPI:
             "existing_files_content": existing_files_content,
         }
 
-        return self.post_request(endpoint_url, headers, payload)
+        return self.post_request(endpoint_url, headers, payload, run_state)
 
     def render_conformance_tests(
-        self, frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content
+        self,
+        frid,
+        functional_requirement_id,
+        plain_source_tree,
+        linked_resources,
+        existing_files_content,
+        run_state: RunState,
     ):
         endpoint_url = f"{self.api_url}/render_conformance_tests"
         headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
@@ -180,9 +225,15 @@ class CodeplainAPI:
             "existing_files_content": existing_files_content,
         }
 
-        return self.post_request(endpoint_url, headers, payload)
+        return self.post_request(endpoint_url, headers, payload, run_state)
 
-    def generate_folder_name_from_functional_requirement(self, frid, functional_requirement, existing_folder_names):
+    def generate_folder_name_from_functional_requirement(
+        self,
+        frid,
+        functional_requirement,
+        existing_folder_names,
+        run_state: RunState,
+    ):
         endpoint_url = f"{self.api_url}/generate_folder_name_from_functional_requirement"
         headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
 
@@ -192,7 +243,7 @@ class CodeplainAPI:
             "existing_folder_names": existing_folder_names,
         }
 
-        return self.post_request(endpoint_url, headers, payload)
+        return self.post_request(endpoint_url, headers, payload, run_state)
 
     def fix_conformance_tests_issue(
         self,
@@ -206,6 +257,7 @@ class CodeplainAPI:
         acceptance_tests,
         conformance_tests_issue,
         implementation_fix_count,
+        run_state: RunState,
     ):
         endpoint_url = f"{self.api_url}/fix_conformance_tests_issue"
         headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
@@ -225,7 +277,7 @@ class CodeplainAPI:
         if acceptance_tests is not None:
             payload["acceptance_tests"] = acceptance_tests
 
-        return self.post_request(endpoint_url, headers, payload)
+        return self.post_request(endpoint_url, headers, payload, run_state)
 
     def render_acceptance_tests(
         self,
@@ -235,6 +287,7 @@ class CodeplainAPI:
         existing_files_content,
         conformance_tests_files,
         acceptance_test,
+        run_state: RunState,
     ):
         """
         Renders acceptance tests based on the provided parameters.
@@ -267,4 +320,4 @@ class CodeplainAPI:
             "acceptance_test": acceptance_test,
         }
 
-        return self.post_request(endpoint_url, headers, payload)
+        return self.post_request(endpoint_url, headers, payload, run_state)

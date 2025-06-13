@@ -1,11 +1,12 @@
-import difflib
 import os
+import shutil
 from pathlib import Path
 
 from liquid2 import Environment, FileSystemLoader, StrictUndefined
 from liquid2.exceptions import UndefinedError
 
 import plain_spec
+from system_config import system_config
 
 BINARY_FILE_EXTENSIONS = [".pyc"]
 
@@ -52,7 +53,11 @@ def get_file_type(file_name):
 
 def list_all_text_files(directory):
     all_files = []
-    for root, dirs, files in os.walk(directory, topdown=False):
+    for root, dirs, files in os.walk(directory, topdown=True):
+        # Skip .git directory
+        if ".git" in dirs:
+            dirs.remove(".git")
+
         modified_root = os.path.relpath(root, directory)
         if modified_root == ".":
             modified_root = ""
@@ -145,36 +150,6 @@ def add_current_path_if_no_path(filename):
     return filename
 
 
-def get_folders_diff(orig_folder, new_folder):
-    if orig_folder:
-        orig_files = list_all_text_files(orig_folder)
-    else:
-        orig_files = []
-
-    new_files = list_all_text_files(new_folder)
-
-    diff = {}
-    for file_name in new_files:
-        with open(os.path.join(new_folder, file_name), "r") as f:
-            new_file = f.read().splitlines()
-
-        if file_name in orig_files:
-            with open(os.path.join(orig_folder, file_name), "r") as f:
-                orig_file = f.read().splitlines()
-
-            orig_file_name = file_name
-        else:
-            orig_file = []
-            orig_file_name = "/dev/null"
-
-        file_diff = difflib.unified_diff(orig_file, new_file, fromfile=orig_file_name, tofile=file_name, lineterm="")
-        file_diff_str = "\n".join(file_diff)
-        if file_diff_str:
-            diff[file_name] = file_diff_str
-
-    return diff
-
-
 def get_existing_files_content(build_folder, existing_files):
     existing_files_content = {}
     for file_name in existing_files:
@@ -213,25 +188,33 @@ def store_response_files(target_folder, response_files, existing_files):
     return existing_files
 
 
-def load_linked_resources(folder_name, resources_list):
+def load_linked_resources(template_dirs: list[str], resources_list):
     linked_resources = {}
+
     for resource in resources_list:
-        file_name = resource["target"]
-        if file_name in linked_resources:
-            continue
+        resource_found = False
+        for template_dir in template_dirs:
+            file_name = resource["target"]
+            if file_name in linked_resources:
+                continue
 
-        full_file_name = os.path.join(folder_name, file_name)
-        if not os.path.isfile(full_file_name):
-            raise FileNotFoundError(f"The file '{full_file_name}' does not exist.")
+            full_file_name = os.path.join(template_dir, file_name)
+            if not os.path.isfile(full_file_name):
+                continue
 
-        with open(full_file_name, "rb") as f:
-            content = f.read()
-            try:
-                linked_resources[file_name] = content.decode("utf-8")
-            except UnicodeDecodeError:
-                print(
-                    f"WARNING! Error loading {resource['text']} ({resource['target']}). File is not a text file. Skipping it."
-                )
+            with open(full_file_name, "rb") as f:
+                content = f.read()
+                try:
+                    linked_resources[file_name] = content.decode("utf-8")
+                except UnicodeDecodeError:
+                    print(
+                        f"WARNING! Error loading {resource['text']} ({resource['target']}). File is not a text file. Skipping it."
+                    )
+                resource_found = True
+        if not resource_found:
+            raise FileNotFoundError(
+                system_config.get_error_message("resource_not_found", resource_name=resource["target"])
+            )
 
     return linked_resources
 
@@ -275,15 +258,43 @@ def copy_unchanged_files_from_previous_build(
             copy_file(os.path.join(previous_build_folder, file_name), os.path.join(build_folder, file_name))
 
 
-def update_build_folder_with_rendered_files(previous_build_folder, build_folder, existing_files, response_files, debug):
-    if previous_build_folder:
-        copy_unchanged_files_from_previous_build(
-            previous_build_folder, build_folder, existing_files, response_files, debug
-        )
-
+def update_build_folder_with_rendered_files(build_folder, existing_files, response_files):
     changed_files = set()
     changed_files.update(response_files.keys())
 
     existing_files = store_response_files(build_folder, response_files, existing_files)
 
     return existing_files, changed_files
+
+
+def copy_folder_content(source_folder, destination_folder):
+    """
+    Recursively copy all files and folders from source_folder to destination_folder.
+    Uses shutil.copytree which handles all edge cases including permissions and symlinks.
+    """
+    shutil.copytree(source_folder, destination_folder, dirs_exist_ok=True)
+
+
+def get_template_directories(plain_file_path, custom_template_dir=None, default_template_dir=None) -> list[str]:
+    """Set up template search directories with specific precedence order.
+
+    The order of directories in the returned list determines template loading precedence.
+    Earlier indices (lower numbers) have higher precedence - the first matching template found will be used.
+
+    Precedence order (highest to lowest):
+    1. Directory containing the plain file - for project-specific template overrides
+    2. Custom template directory (if provided) - for shared custom templates
+    3. Default template directory - for standard/fallback templates
+    """
+    template_dirs = [
+        os.path.dirname(plain_file_path),  # Highest precedence - directory containing plain file
+    ]
+
+    if custom_template_dir:
+        template_dirs.append(os.path.abspath(custom_template_dir))  # Second highest - custom template dir
+
+    if default_template_dir:
+        # Add standard template directory last - lowest precedence
+        template_dirs.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), default_template_dir))
+
+    return template_dirs

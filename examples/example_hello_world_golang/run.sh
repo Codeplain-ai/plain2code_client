@@ -1,49 +1,24 @@
 # Store command line arguments
 VERBOSE=0
-API_ENDPOINT=""
+CONFIG_FILE="config.yaml"
 
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -v|--verbose)
-            VERBOSE=1
-            shift # Remove --verbose from processing
-            ;;
-        --render-range)
-            shift
-            RENDER_RANGE=$1
-            shift
-            ;;
-        --render-from)
-            shift
-            RENDER_FROM=$1
-            shift
-            ;;
-        --api)
-            API_ENDPOINT="$2"
-            shift # Remove --api from processing
-            shift # Remove the API endpoint value from processing
-            ;;
-        *)
-            # Unknown option
-            echo "Unknown option: $1"
-            exit 1
-            ;;
-    esac
-done
+# Check if verbose is set in config.yaml and set VERBOSE accordingly
+if grep -q "verbose: true" "$CONFIG_FILE" 2>/dev/null; then
+    VERBOSE=1
+fi
 
 if [ $VERBOSE -eq 1 ]; then
     echo "Running Go lang hello world example in verbose mode."
 fi
 
-# Construct the command with optional parameters
-CMD="python ../../plain2code.py hello_world_golang.plain --unittests-script=../../test_scripts/run_unittests_golang.sh --conformance-tests-script=../../test_scripts/run_conformance_tests_golang.sh ${VERBOSE:+-v} ${RENDER_RANGE:+"--render-range=$RENDER_RANGE"} ${RENDER_FROM:+"--render-from=$RENDER_FROM"} ${API_ENDPOINT:+"--api $API_ENDPOINT"}"
-
-# Removing all the conformance tests before rendering the hello world example.
-rm -rf conformance_tests
+# Check if render-range and render-from exist in config.yaml
+if ! (grep -q "render-range:" $CONFIG_FILE || grep -q "render-from:" $CONFIG_FILE); then
+    echo "Removing conformance tests folder"
+    rm -rf conformance_tests
+fi
 
 # Execute the command
-$CMD
+python ../../plain2code.py hello_world_golang.plain
 
 # Check if the plain2code command failed
 if [ $? -ne 0 ]; then

@@ -8,20 +8,26 @@ import tempfile
 import traceback
 
 import yaml
+from liquid2.exceptions import TemplateNotFoundError
 
 import file_utils
+import git_utils
 import plain_spec
 from codeplain_REST_api import CodeplainAPI
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
-from plain2code_state import Codebase, ConformanceTestsState, ExecutionState
-from system_requirements import SystemRequirements
+from plain2code_state import (
+    CONFORMANCE_TESTS_BACKUP_FOLDER_SUFFIX,
+    CONFORMANCE_TESTS_DEFINITION_FILE_NAME,
+    ConformanceTestsState,
+    ExecutionState,
+    RunState,
+)
+from system_config import system_config
 
 TEST_SCRIPT_EXECUTION_TIMEOUT = 120  # 120 seconds
 LOGGING_CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging_config.yaml")
 
-CONFORMANCE_TESTS_BACKUP_FOLDER_SUFFIX = ".backup"
-CONFORMANCE_TESTS_DEFINITION_FILE_NAME = "conformance_tests.json"
 DEFAULT_TEMPLATE_DIRS = "standard_template_library"
 
 MAX_UNITTEST_FIX_ATTEMPTS = 10
@@ -123,7 +129,7 @@ def execute_test_script(test_script, scripts_args, verbose, test_type):
 
 
 def run_unittests(
-    args, codeplainAPI, frid, plain_source_tree, resources_list, linked_resources, existing_files
+    args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, run_state: RunState
 ) -> tuple[list[str], set[str], bool]:
     changed_files = set()
 
@@ -169,9 +175,9 @@ def run_unittests(
                 style=console.INPUT_STYLE,
             )
 
-        with console.status(f"[{console.INFO_STYLE}]Fixing unit tests issue...\n"):
+        with console.status(f"[{console.INFO_STYLE}]Fixing unit tests issue for functional requirement {frid}...\n"):
             response_files = codeplainAPI.fix_unittests_issue(
-                frid, plain_source_tree, linked_resources, existing_files_content, unittests_issue
+                frid, plain_source_tree, linked_resources, existing_files_content, unittests_issue, run_state
             )
 
         changed_files.update(response_files.keys())
@@ -192,6 +198,7 @@ def generate_conformance_tests(
     linked_resources,
     existing_files_content,
     conformance_tests_folder_name,
+    run_state: RunState,
 ):
     specifications, _ = plain_spec.get_specifications_for_frid(plain_source_tree, functional_requirement_id)
     if args.verbose:
@@ -206,11 +213,15 @@ def generate_conformance_tests(
             # This happens if we're rendering the first FRID (without previously created conformance tests)
             existing_folder_names = []
 
-        fr_subfolder_name = codeplainAPI.generate_folder_name_from_functional_requirement(
-            frid=frid,
-            functional_requirement=specifications[plain_spec.FUNCTIONAL_REQUIREMENTS][-1],
-            existing_folder_names=existing_folder_names,
-        )
+        with console.status(
+            f"[{console.INFO_STYLE}]Generating folder name for conformance tests for functional requirement {frid}...\n"
+        ):
+            fr_subfolder_name = codeplainAPI.generate_folder_name_from_functional_requirement(
+                frid=frid,
+                functional_requirement=specifications[plain_spec.FUNCTIONAL_REQUIREMENTS][-1],
+                existing_folder_names=existing_folder_names,
+                run_state=run_state,
+            )
 
         if args.verbose:
             console.info(f"Storing conformance test files in subfolder {fr_subfolder_name}")
@@ -241,9 +252,14 @@ def generate_conformance_tests(
             style=console.INPUT_STYLE,
         )
 
-    with console.status(f"[{console.INFO_STYLE}]Generating conformance tests...\n"):
+    with console.status(f"[{console.INFO_STYLE}]Generating conformance tests for functional requirement {frid}...\n"):
         response_files = codeplainAPI.render_conformance_tests(
-            frid, functional_requirement_id, plain_source_tree, linked_resources, existing_files_content
+            frid,
+            functional_requirement_id,
+            plain_source_tree,
+            linked_resources,
+            existing_files_content,
+            run_state,
         )
 
     file_utils.store_response_files(conformance_tests_folder_name, response_files, [])
@@ -268,13 +284,13 @@ def run_conformance_tests(  # noqa: C901
     frid,
     functional_requirement_id,
     plain_source_tree,
-    resources_list,
     linked_resources,
     existing_files,
     existing_files_content,
     code_diff,
     conformance_tests_folder_name,
     acceptance_tests,
+    run_state: RunState,
 ) -> tuple[bool, bool, list[str], bool]:
     """
     Returns:
@@ -311,7 +327,7 @@ def run_conformance_tests(  # noqa: C901
 
         if conformance_test_fix_count > MAX_CONFORMANCE_TEST_FIX_ATTEMPTS:
             console.info(
-                f"Conformance tests script {args.conformance_tests_script} for {conformance_tests_folder_name} still failed after {conformance_test_fix_count - 1} attemps at fixing issues."
+                f"Conformance tests script {args.conformance_tests_script} for {conformance_tests_folder_name} still failed after {conformance_test_fix_count - 1} attempts at fixing issues."
             )
             return [False, False, existing_files, True]
 
@@ -345,7 +361,11 @@ def run_conformance_tests(  # noqa: C901
             )
 
         try:
-            with console.status(f"[{console.INFO_STYLE}]Fixing conformance tests...\n"):
+            if frid == functional_requirement_id:
+                console_message = f"Fixing conformance tests for functional requirement {frid}...\n"
+            else:
+                console_message = f"While implementing functional requirement {frid}, conformance tests for functional requirement {functional_requirement_id} broke. Fixing them...\n"
+            with console.status(console_message):
                 [conformance_tests_fixed, response_files] = codeplainAPI.fix_conformance_tests_issue(
                     frid,
                     functional_requirement_id,
@@ -357,6 +377,7 @@ def run_conformance_tests(  # noqa: C901
                     acceptance_tests,
                     conformance_tests_issue,
                     implementation_fix_count,
+                    run_state,
                 )
 
             if conformance_tests_fixed:
@@ -381,7 +402,7 @@ def run_conformance_tests(  # noqa: C901
                         )
 
                     [existing_files, _, unittests_success] = run_unittests(
-                        args, codeplainAPI, frid, plain_source_tree, resources_list, linked_resources, existing_files
+                        args, codeplainAPI, frid, plain_source_tree, linked_resources, existing_files, run_state
                     )
 
                     if not unittests_success:
@@ -400,13 +421,9 @@ def run_conformance_tests(  # noqa: C901
                 )
                 implementation_fix_count += 1
         except codeplain_api.ConflictingRequirements as e:
-            exit_with_error(
-                f"Conflicting requirements. {str(e)}.", plain_spec.get_previous_frid(plain_source_tree, frid)
-            )
+            exit_with_error(f"Conflicting requirements. {str(e)}.", frid, run_state.render_id)
         except Exception as e:
-            exit_with_error(
-                f"Error fixing conformance tests issue: {str(e)}", plain_spec.get_previous_frid(plain_source_tree, frid)
-            )
+            exit_with_error(f"Error fixing conformance tests issue: {str(e)}", frid, run_state.render_id)
 
     return [True, False, existing_files, True]
 
@@ -419,20 +436,23 @@ def generate_acceptance_test(
     existing_files_content,
     conformance_tests_folder_name,
     acceptance_test,
+    run_state: RunState,
 ):
     conformance_tests_files = file_utils.list_all_text_files(conformance_tests_folder_name)
     conformance_tests_files_content = file_utils.get_existing_files_content(
         conformance_tests_folder_name, conformance_tests_files
     )
 
-    response_files = codeplainAPI.render_acceptance_tests(
-        frid,
-        plain_source_tree,
-        linked_resources,
-        existing_files_content,
-        conformance_tests_files_content,
-        acceptance_test,
-    )
+    with console.status(f"[{console.INFO_STYLE}]Generating acceptance test for functional requirement {frid}...\n"):
+        response_files = codeplainAPI.render_acceptance_tests(
+            frid,
+            plain_source_tree,
+            linked_resources,
+            existing_files_content,
+            conformance_tests_files_content,
+            acceptance_test,
+            run_state,
+        )
 
     conformance_tests_files = file_utils.store_response_files(
         conformance_tests_folder_name, response_files, conformance_tests_files
@@ -449,16 +469,16 @@ def conformance_testing(
     codeplainAPI,
     frid,
     plain_source_tree,
-    resources_list,
     linked_resources,
     conformance_tests,
     specifications,
     existing_files,
     existing_files_content,
     code_diff,
+    run_state: RunState,
 ) -> tuple[bool, bool, bool, str]:
     """
-    Returns: (success, implementation_code_has_changed, unittests_fixed_successfully, last_functional_requirement_id)
+    Returns: (success, implementation_code_has_changed, unittests_fixed_successfully, unsuccessfull_functional_requirement_id)
     """
     implementation_code_has_changed = False
     functional_requirement_id = plain_spec.get_first_frid(plain_source_tree)
@@ -482,6 +502,7 @@ def conformance_testing(
                 linked_resources,
                 existing_files_content,
                 conformance_tests_folder_name,
+                run_state,
             )
 
         conformance_tests_folder_name = conformance_tests[functional_requirement_id]["folder_name"]
@@ -496,13 +517,13 @@ def conformance_testing(
                 frid,
                 functional_requirement_id,
                 plain_source_tree,
-                resources_list,
                 linked_resources,
                 existing_files,
                 existing_files_content,
                 code_diff,
                 conformance_tests_folder_name,
                 acceptance_tests,
+                run_state,
             )
         )
 
@@ -520,7 +541,14 @@ def conformance_testing(
 
 
 def conformance_and_acceptance_testing(  # noqa: C901
-    args, codeplainAPI, frid, plain_source_tree, resources_list, linked_resources, existing_files, conformance_tests
+    args,
+    codeplainAPI,
+    frid,
+    plain_source_tree,
+    linked_resources,
+    existing_files,
+    conformance_tests,
+    run_state: RunState,
 ) -> tuple[any, bool]:
     """
     Returns: (conformance_tests, should_rerender_functional_requirement)
@@ -538,13 +566,10 @@ def conformance_and_acceptance_testing(  # noqa: C901
             console.info(f"Running conformance tests attempt {conformance_tests_run_count}.")
 
         if frid == plain_spec.get_first_frid(plain_source_tree):
-            code_diff = {}
+            code_diff = git_utils.diff(args.build_folder)
         else:
-            previous_build_folder = args.build_folder + "." + plain_spec.get_previous_frid(plain_source_tree, frid)
-            if not os.path.exists(previous_build_folder):
-                raise Exception(f"Build folder {previous_build_folder} not found: ")
-
-            code_diff = file_utils.get_folders_diff(previous_build_folder, args.build_folder)
+            # full diff between the previous frid and the current frid (including refactoring commits)
+            code_diff = git_utils.diff(args.build_folder, plain_spec.get_previous_frid(plain_source_tree, frid))
 
         [
             success,
@@ -555,13 +580,13 @@ def conformance_and_acceptance_testing(  # noqa: C901
             codeplainAPI,
             frid,
             plain_source_tree,
-            resources_list,
             linked_resources,
             conformance_tests,
             specifications,
             existing_files,
             existing_files_content,
             code_diff,
+            run_state,
         )
 
         """
@@ -613,6 +638,7 @@ def conformance_and_acceptance_testing(  # noqa: C901
                     existing_files_content,
                     conformance_tests[frid]["folder_name"],
                     acceptance_test,
+                    run_state,
                 )
 
                 generated_acceptance_tests = specifications[plain_spec.ACCEPTANCE_TESTS][:acceptance_test_count]
@@ -629,13 +655,13 @@ def conformance_and_acceptance_testing(  # noqa: C901
                     frid,
                     frid,
                     plain_source_tree,
-                    resources_list,
                     linked_resources,
                     existing_files,
                     existing_files_content,
                     code_diff,
                     conformance_tests[frid]["folder_name"],
                     generated_acceptance_tests,
+                    run_state,
                 )
 
                 if not unittests_fixed_successfully:
@@ -654,7 +680,8 @@ def conformance_and_acceptance_testing(  # noqa: C901
         if recreated_conformance_tests:
             exit_with_error(
                 "We've already tried to fix the issue by recreating the conformance tests but tests still fail. Please fix the issues manually.",
-                plain_spec.get_previous_frid(plain_source_tree, frid),
+                frid,
+                run_state.render_id,
             )
 
         recreated_conformance_tests = True
@@ -672,11 +699,13 @@ def conformance_and_acceptance_testing(  # noqa: C901
             linked_resources,
             existing_files_content,
             conformance_tests[last_functional_requirement_id]["folder_name"],
+            run_state,
         )
 
     exit_with_error(
         f"Conformance tests still failed after {conformance_tests_run_count} attempts at fixing issues. Please fix the issues manually.",
-        plain_spec.get_previous_frid(plain_source_tree, frid),
+        frid,
+        run_state.render_id,
     )
 
 
@@ -693,16 +722,31 @@ class IndentedFormatter(logging.Formatter):
 
 # TODO: Once we'll be refactoring and working with this method, we should also adjust cognitive complexity.
 def render_functional_requirement(  # noqa: C901
-    args, codeplainAPI: CodeplainAPI, plain_source_tree, frid, all_linked_resources, retry_state: ExecutionState
+    args,
+    codeplainAPI: CodeplainAPI,
+    plain_source_tree,
+    frid,
+    all_linked_resources,
+    retry_state: ExecutionState,
+    run_state: RunState,
 ):
 
-    if args.render_range is not None and frid not in args.render_range:
-        if args.verbose:
-            console.info("\n-------------------------------------")
-            console.info(f"Skipping rendering iteration: {frid}")
-            console.info("-------------------------------------\n")
+    if args.render_range is not None:
+        if frid not in args.render_range:
+            if args.verbose:
+                console.info("\n-------------------------------------")
+                console.info(f"Skipping rendering iteration: {frid}")
+                console.info("-------------------------------------\n")
 
-        return
+            return
+        else:
+            previous_frid = plain_spec.get_previous_frid(plain_source_tree, frid)
+
+            if frid == args.render_range[0] and previous_frid is not None and not args.dry_run:
+                if args.verbose:
+                    console.info(f"Checking out commit with frid {previous_frid}")
+
+                git_utils.revert_to_commit_with_frid(args.build_folder, previous_frid)
 
     specifications, _ = plain_spec.get_specifications_for_frid(plain_source_tree, frid)
 
@@ -716,17 +760,16 @@ def render_functional_requirement(  # noqa: C901
         console.info(f"[b]{functional_requirement_text}[/b]")
         console.info("-------------------------------------\n")
 
-    if os.path.isdir(args.build_folder):
-        if not args.dry_run:
-            if args.debug:
-                console.debug(f"Deleting content of the build folder {args.build_folder}.")
-            file_utils.delete_files_and_subfolders(args.build_folder, args.debug)
-    else:
-        if args.debug and is_first_frid:
-            console.debug(f"Build folder {args.build_folder} does not exist. Creating it.")
-
-        if not args.dry_run:
+    if not args.dry_run and is_first_frid:
+        if not os.path.isdir(args.build_folder):
             os.makedirs(args.build_folder)
+
+            if args.debug:
+                console.debug(f"Initializing a new git repository in build folder {args.build_folder}.")
+        else:
+            file_utils.delete_files_and_subfolders(args.build_folder)
+
+        git_utils.init_clean_repo(args.build_folder)
 
     conformance_tests_state = ConformanceTestsState(
         conformance_tests_folder=args.conformance_tests_folder,
@@ -740,19 +783,10 @@ def render_functional_requirement(  # noqa: C901
     )
     conformance_tests_state.init_backup_folder()
 
-    if is_first_frid:
+    if is_first_frid and not args.dry_run:
         if args.base_folder:
-            previous_build_folder = args.base_folder
-            if not os.path.exists(previous_build_folder):
-                raise Exception(f"Base folder {previous_build_folder} not found: ")
-        else:
-            previous_build_folder = None
-    else:
-        previous_build_folder = args.build_folder + "." + plain_spec.get_previous_frid(plain_source_tree, frid)
-
-        if not args.dry_run:
-            if not os.path.exists(previous_build_folder):
-                raise Exception(f"Build folder {previous_build_folder} not found: ")
+            file_utils.copy_folder_content(args.base_folder, args.build_folder)
+            git_utils.add_all_files_and_commit(args.build_folder, git_utils.BASE_FOLDER_COMMIT_MESSAGE, None)
 
     resources_list = []
     plain_spec.collect_linked_resources(plain_source_tree, resources_list, None, True, frid)
@@ -760,13 +794,6 @@ def render_functional_requirement(  # noqa: C901
     linked_resources = {}
     for resource in resources_list:
         linked_resources[resource["target"]] = all_linked_resources[resource["target"]]
-
-    if previous_build_folder:
-        existing_files = file_utils.list_all_text_files(previous_build_folder)
-        existing_files_content = file_utils.get_existing_files_content(previous_build_folder, existing_files)
-    else:
-        existing_files = []
-        existing_files_content = {}
 
     conformance_tests = conformance_tests_state.get_conformance_tests_json()
 
@@ -780,19 +807,18 @@ def render_functional_requirement(  # noqa: C901
 
         return
 
-    # Create a snapshot of the initial state before rendering begins
-    initial_code_state = Codebase()
-    initial_code_state.save_state(existing_files, set(), previous_build_folder)
-
     functional_requirement_render_attempt = 0
     while True:
+        existing_files = file_utils.list_all_text_files(args.build_folder)
+        existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
+
         functional_requirement_render_attempt += 1
         if args.verbose:
             if functional_requirement_render_attempt == 0:
                 console.info(f"\nRendering functional requirement {frid}.")
             else:
                 console.info(
-                    f"\nRendering functional requirement {frid}, attempt number {functional_requirement_render_attempt}."
+                    f"\nRendering functional requirement {frid}, attempt number {functional_requirement_render_attempt}/{MAX_UNIT_TEST_RENDER_RETRIES}."
                 )
 
         # Phase 1: Render the functional requirement.
@@ -820,9 +846,9 @@ def render_functional_requirement(  # noqa: C901
                     style=console.INPUT_STYLE,
                 )
 
-            with console.status(f"[{console.INFO_STYLE}]Generating functional requirement...\n"):
+            with console.status(f"[{console.INFO_STYLE}]Generating functional requirement {frid}...\n"):
                 response_files = codeplainAPI.render_functional_requirement(
-                    frid, plain_source_tree, linked_resources, existing_files_content
+                    frid, plain_source_tree, linked_resources, existing_files_content, run_state
                 )
         except codeplain_api.FunctionalRequirementTooComplex as e:
             # TODO: Suggest how to break down the functional requirement. Identified options are:
@@ -837,11 +863,12 @@ def render_functional_requirement(  # noqa: C901
 
             exit_with_error(
                 error_message,
-                plain_spec.get_previous_frid(plain_source_tree, frid),
+                frid,
+                run_state.render_id,
             )
 
         existing_files, changed_files = file_utils.update_build_folder_with_rendered_files(
-            previous_build_folder, args.build_folder, existing_files, response_files, args.debug
+            args.build_folder, existing_files, response_files
         )
         if args.verbose:
             console.print_files(
@@ -856,9 +883,9 @@ def render_functional_requirement(  # noqa: C901
             codeplainAPI,
             frid,
             plain_source_tree,
-            resources_list,
             linked_resources,
             existing_files,
+            run_state,
         )
 
         if unittest_success:
@@ -868,6 +895,8 @@ def render_functional_requirement(  # noqa: C901
                         changed_files.remove(file_name)
                 else:
                     changed_files.add(file_name)
+
+            git_utils.add_all_files_and_commit(args.build_folder, f"{functional_requirement_text}", frid)
             break
 
         # If unittests generation&patching failed for the first time => retry rendering functional requirement
@@ -877,17 +906,14 @@ def render_functional_requirement(  # noqa: C901
                 "Unittests could not be fixed after rendering the functional requirement. "
                 f"Restarting rendering the functional requirement {frid} from scratch."
             )
-            existing_files, changed_files = initial_code_state.restore_state(args.build_folder)
+            git_utils.revert_changes(args.build_folder)
             continue
 
         exit_with_error(
             f"Unittests could not be fixed after rendering the functional requirement {frid} for the {functional_requirement_render_attempt} time.",
-            plain_spec.get_previous_frid(plain_source_tree, frid),
+            frid,
+            run_state.render_id,
         )
-
-    # Create a snapshot of the state before refactoring
-    pre_refactoring_state = Codebase()
-    pre_refactoring_state.save_state(existing_files, changed_files, args.build_folder)
 
     # Phase 3: Refactor the source code if needed.
     console.info("[b]Refactoring the generated code...[/b]")
@@ -897,6 +923,7 @@ def render_functional_requirement(  # noqa: C901
         if args.verbose:
             console.info(f"\nRefactoring iteration {num_refactoring_iterations}.")
 
+        existing_files = file_utils.list_all_text_files(args.build_folder)
         existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
         if args.verbose:
             console.print_files(
@@ -905,27 +932,20 @@ def render_functional_requirement(  # noqa: C901
                 existing_files_content,
                 style=console.INPUT_STYLE,
             )
-        with console.status(f"[{console.INFO_STYLE}]Refactoring the generated code...\n"):
+        with console.status(
+            f"[{console.INFO_STYLE}]Refactoring the generated code for functional requirement {frid}...\n"
+        ):
             response_files = codeplainAPI.refactor_source_files_if_needed(
                 frid=frid,
                 files_to_check=changed_files,
                 existing_files_content=existing_files_content,
+                run_state=run_state,
             )
 
         if len(response_files) == 0:
             if args.verbose:
                 console.info("No files refactored.")
             break
-
-        build_folder_copy = args.build_folder + "." + frid + "." + str(num_refactoring_iterations - 1)
-        if args.verbose:
-            console.info(f"Some files refactored. Storing a copy of current build folder to {build_folder_copy}")
-
-        if os.path.exists(build_folder_copy) and os.path.isdir(build_folder_copy):
-            file_utils.delete_files_and_subfolders(build_folder_copy)
-
-        for file_name in existing_files:
-            file_utils.copy_file(os.path.join(args.build_folder, file_name), os.path.join(build_folder_copy, file_name))
 
         existing_files = file_utils.store_response_files(args.build_folder, response_files, existing_files)
         if args.verbose:
@@ -936,19 +956,18 @@ def render_functional_requirement(  # noqa: C901
             codeplainAPI,
             frid,
             plain_source_tree,
-            resources_list,
             linked_resources,
             existing_files,
+            run_state,
         )
 
         if not unittest_success:
-            # Revert to the last known good state
             if args.verbose:
                 console.info(
                     f"Refactoring iteration {num_refactoring_iterations} was not successful for the functional requirement {frid}. "
                     f"Reverting to the previous valid state and retrying again."
                 )
-            existing_files, changed_files = pre_refactoring_state.restore_state(args.build_folder)
+            git_utils.revert_changes(args.build_folder)
             continue
 
         for file_name in tmp_changed_files:
@@ -958,8 +977,7 @@ def render_functional_requirement(  # noqa: C901
             else:
                 changed_files.add(file_name)
 
-        # Update the last known good state since refactoring was successful
-        pre_refactoring_state.save_state(existing_files, changed_files, args.build_folder)
+        git_utils.add_all_files_and_commit(args.build_folder, f"Refactored code after implementing {frid}.", frid)
 
     # Phase 4: Conformance test the code.
     console.info("\n[b]Implementing conformance tests...[/b]\n")
@@ -973,56 +991,47 @@ def render_functional_requirement(  # noqa: C901
             codeplainAPI,
             frid,
             plain_source_tree,
-            resources_list,
             linked_resources,
             existing_files,
             conformance_tests,
+            run_state,
         )
 
         if should_rerender_functional_requirement:
             # Restore the code state to initial
-            initial_code_state.restore_state(args.build_folder)
+            git_utils.revert_changes(args.build_folder)
             # Restore the conformance tests state to initial
             conformance_tests_state.restore_from_backup()
-            # Increment this specific counter and pass the retry state
             retry_state.mark_failed_conformance_testing_rendering()
 
             if retry_state.should_rerender_functional_requirement():
                 if args.verbose:
                     console.info(
-                        f"Unsuccessful at conformance testing after {retry_state.conformance_testing_rendering_retries} attempts. "
+                        f"Unsuccessful at conformance testing (attempt {retry_state.conformance_testing_rendering_retries}/{retry_state.MAX_CONFORMANCE_TESTING_RENDERING_RETRIES}). "
                         f"Rerendering the functional requirement {frid} from scratch."
                     )
                 return render_functional_requirement(
-                    args, codeplainAPI, plain_source_tree, frid, all_linked_resources, retry_state
+                    args, codeplainAPI, plain_source_tree, frid, all_linked_resources, retry_state, run_state
                 )
             else:
                 exit_with_error(
-                    f"Unsuccessful at conformance testing after {retry_state.conformance_testing_rendering_retries} attempts.",
-                    plain_spec.get_previous_frid(plain_source_tree, frid),
+                    f"Unsuccessful at conformance testing after {retry_state.conformance_testing_rendering_retries}/{retry_state.MAX_CONFORMANCE_TESTING_RENDERING_RETRIES} attempts.",
+                    frid,
+                    run_state.render_id,
                 )
 
         conformance_tests_state.dump_conformance_tests_json(conformance_tests)
-
-    if plain_spec.get_next_frid(plain_source_tree, frid) is not None and (
-        args.render_range is None or frid in args.render_range
-    ):
-
-        previous_build_folder = args.build_folder + "." + frid
-        if args.debug:
-            console.debug(f"Renaming build folder to {previous_build_folder}")
-
-        if os.path.exists(previous_build_folder) and os.path.isdir(previous_build_folder):
-            file_utils.delete_files_and_subfolders(previous_build_folder)
-            os.rmdir(previous_build_folder)
-
-        os.rename(args.build_folder, previous_build_folder)
+        if git_utils.is_dirty(args.build_folder):
+            git_utils.add_all_files_and_commit(
+                args.build_folder,
+                "Changes related to the conformance tests implementation.\nAll conformance tests passed.",
+                frid,
+            )
 
     return
 
 
-def render(args):
-
+def render(args, run_state: RunState):
     if args.verbose:
         # Try to load logging configuration from YAML file
         if os.path.exists(LOGGING_CONFIG_PATH):
@@ -1057,15 +1066,12 @@ def render(args):
         logging.getLogger("repositories").setLevel(logging.INFO)
 
     # Check system requirements before proceeding
-    SystemRequirements().verify_requirements()
+    system_config.verify_requirements()
 
     with open(args.filename, "r") as fin:
         plain_source = fin.read()
 
-    template_dirs = [
-        os.path.dirname(args.filename),
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), DEFAULT_TEMPLATE_DIRS),
-    ]
+    template_dirs = file_utils.get_template_directories(args.filename, args.template_dir, DEFAULT_TEMPLATE_DIRS)
 
     [full_plain_source, loaded_templates] = file_utils.get_loaded_templates(template_dirs, plain_source)
 
@@ -1095,16 +1101,22 @@ def render(args):
     resources_list = []
     plain_spec.collect_linked_resources(plain_source_tree, resources_list, None, True)
 
-    all_linked_resources = file_utils.load_linked_resources(os.path.dirname(args.filename), resources_list)
+    all_linked_resources = file_utils.load_linked_resources(template_dirs, resources_list)
 
     frid = plain_spec.get_first_frid(plain_source_tree)
+
     while frid is not None:
         retry_state = ExecutionState()
-        render_functional_requirement(args, codeplainAPI, plain_source_tree, frid, all_linked_resources, retry_state)
+        render_functional_requirement(
+            args, codeplainAPI, plain_source_tree, frid, all_linked_resources, retry_state, run_state
+        )
         frid = plain_spec.get_next_frid(plain_source_tree, frid)
 
+    console.info(f"Render ID: {run_state.render_id}")
+    return
 
-def exit_with_error(message, last_successful_frid=None):
+
+def exit_with_error(message, last_successful_frid=None, render_id=None):
     console.error(message)
 
     if last_successful_frid is not None:
@@ -1112,10 +1124,13 @@ def exit_with_error(message, last_successful_frid=None):
             f"To continue rendering from the last successfully rendered functional requirement, provide the [red][b]--render-from {last_successful_frid}[/b][/red] flag."
         )
 
+    if render_id is not None:
+        console.info(f"Render ID: {render_id}")
+
     sys.exit(1)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # noqa: C901
     args = parse_arguments()
 
     codeplain_api_module_name = "codeplain_local_api"
@@ -1137,13 +1152,31 @@ if __name__ == "__main__":
         exit_with_error(
             "Error: API key is not provided. Please provide an API key using the --api-key flag or by setting the CLAUDE_API_KEY environment variable."
         )
+    run_state = RunState(replay_with=args.replay_with)
+    if args.debug:
+        console.info(f"Render ID: {run_state.render_id}")
 
     try:
-        render(args)
+        render(args, run_state)
     except InvalidFridArgument as e:
         console.error(f"Error rendering plain code: {str(e)}.\n")
+        # No need to print render ID since this error is going to be thrown at the very start so user will be able to
+        # see the render ID that's printed at the very start of the rendering process.
     except FileNotFoundError as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
+        if args.debug:
+            console.info(f"Render ID: {run_state.render_id}")
+            traceback.print_exc()
+    except TemplateNotFoundError as e:
+        console.error(f"Error: Template not found: {str(e)}\n")
+        console.error(system_config.get_error_message("template_not_found"))
+    except KeyboardInterrupt:
+        console.error("Keyboard interrupt")
+        if args.debug:
+            # Don't print the traceback here because it's going to be from keyboard interrupt and we don't really care about that
+            console.info(f"Render ID: {run_state.render_id}")
     except Exception as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
-        traceback.print_exc()
+        if args.debug:
+            console.info(f"Render ID: {run_state.render_id}")
+            traceback.print_exc()
