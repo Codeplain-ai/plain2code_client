@@ -1,53 +1,15 @@
 """Contains all state and context information we need for the rendering process."""
 
-import copy
 import json
 import os
 import shutil
+import uuid
 from typing import Optional
 
-import file_utils
 from plain2code_console import console
 
-
-class Codebase:
-    """Manages the state of the codebase at different points in the rendering process."""
-
-    def __init__(self):
-        self.existing_files = None
-        self.changed_files = None
-        self.existing_files_content = None
-
-    def save_state(self, existing_files, changed_files, build_folder: Optional[str] = None):
-        """Capture the current state of the codebase using deepcopy."""
-        self.existing_files = copy.deepcopy(existing_files)
-        self.changed_files = copy.deepcopy(changed_files)
-        if build_folder:
-            self.existing_files_content = copy.deepcopy(
-                file_utils.get_existing_files_content(build_folder, existing_files)
-            )
-        else:
-            self.existing_files_content = dict()
-
-    def restore_state(self, build_folder):
-        """Restore the codebase to the captured state."""
-        if self.existing_files is None or self.changed_files is None or self.existing_files_content is None:
-            raise ValueError(
-                "Cannot restore state: state not properly captured - missing one of the following: existing_files, changed_files, existing_files_content"
-            )
-
-        # Remove files not in the snapshot
-        current_files = set(file_utils.list_all_text_files(build_folder))
-        snapshot_files = set(self.existing_files)
-        for file_to_remove in current_files - snapshot_files:
-            os.remove(os.path.join(build_folder, file_to_remove))
-
-        # Restore file contents
-        for fname, content in self.existing_files_content.items():
-            with open(os.path.join(build_folder, fname), "w") as f:
-                f.write(content)
-
-        return copy.deepcopy(self.existing_files), copy.deepcopy(self.changed_files)
+CONFORMANCE_TESTS_BACKUP_FOLDER_SUFFIX = ".backup"
+CONFORMANCE_TESTS_DEFINITION_FILE_NAME = "conformance_tests.json"
 
 
 class ExecutionState:
@@ -200,3 +162,25 @@ class ConformanceTestsState:
                 )
             with open(self.full_conformance_tests_definition_file_name, "w") as f:
                 json.dump(conformance_tests_json, f, indent=4)
+
+
+class RunState:
+    """Contains information about the identifiable state of the rendering process."""
+
+    def __init__(self, replay_with: Optional[str] = None):
+        self.replay = replay_with is not None
+        if replay_with:
+            self.render_id = replay_with
+        else:
+            self.render_id = str(uuid.uuid4())
+        self.call_count = 0
+
+    def increment_call_count(self):
+        self.call_count += 1
+
+    def to_dict(self):
+        return {
+            "render_id": self.render_id,
+            "call_count": self.call_count,
+            "replay": self.replay,
+        }
