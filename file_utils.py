@@ -6,7 +6,6 @@ from liquid2 import Environment, FileSystemLoader, StrictUndefined
 from liquid2.exceptions import UndefinedError
 
 import plain_spec
-from system_config import system_config
 
 BINARY_FILE_EXTENSIONS = [".pyc"]
 
@@ -213,7 +212,15 @@ def load_linked_resources(template_dirs: list[str], resources_list):
                 resource_found = True
         if not resource_found:
             raise FileNotFoundError(
-                system_config.get_error_message("resource_not_found", resource_name=resource["target"])
+                f"""
+                Resource file {resource['target']} not found. Resource files are searched in the following order (highest to lowest precedence):
+
+                1. The directory containing your .plain file
+                2. The directory specified by --template-dir (if provided)
+                3. The built-in 'standard_template_library' directory
+
+                Please ensure that the resource exists in one of these locations, or specify the correct --template-dir if using custom templates.
+                """
             )
 
     return linked_resources

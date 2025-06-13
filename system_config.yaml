@@ -16,15 +16,6 @@ system_requirements:
       - On Windows: Use Windows Subsystem for Linux (WSL), Cygwin, or Git Bash
 
 error_messages:
-  resource_not_found:
-    message: |
-      The resource file '{resource_name}' could not be found. Resource files are searched in the following order (highest to lowest precedence):
-
-        1. The directory containing your .plain file
-        2. The directory specified by --template-dir (if provided)
-        3. The built-in 'standard_template_library' directory
-
-      Please ensure that the resource exists in one of these locations, or specify the correct --template-dir if using custom templates.
   template_not_found:
     message: |
       The required template could not be found. Templates are searched in the following order (highest to lowest precedence):
