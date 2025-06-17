@@ -1,9 +1,10 @@
-import logging
 import os
 from argparse import ArgumentParser, Namespace
 from typing import Any, Dict
 
 import yaml
+
+from plain2code_console import console
 
 
 def load_config(config_file: str) -> Dict[str, Any]:
@@ -12,8 +13,8 @@ def load_config(config_file: str) -> Dict[str, Any]:
         with open(config_file, "r") as f:
             return yaml.safe_load(f)
     except Exception as e:
-        logging.error(f"Error loading config file: {e}. Please check the config file path and the config file content.")
-        raise
+        console.error(f"Error loading config file: {e}. Please check the config file path and the config file content.")
+        raise e
 
 
 def validate_config(config: Dict[str, Any], parser: ArgumentParser) -> None:
@@ -47,7 +48,7 @@ def get_args_from_config(config_file: str, parser: ArgumentParser) -> Namespace:
 
     if config_file == "config.yaml":
         if not os.path.exists(config_file):
-            logging.error(f"Default config file {config_file} not found. No config file is read.")
+            console.info(f"Default config file {config_file} not found. No config file is read.")
             return args
 
     # Load config

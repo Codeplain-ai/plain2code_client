@@ -17,7 +17,7 @@ fi
 if [ -d "$GO_BUILD_SUBFOLDER" ]; then
   # Find and delete all files and folders
   find "$GO_BUILD_SUBFOLDER" -mindepth 1 -exec rm -rf {} +
-  
+
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
     printf "Cleanup completed.\n"
   fi
@@ -39,7 +39,7 @@ if [ $? -ne 0 ]; then
   exit 2
 fi
 
-echo "Runinng go get..."
+echo "Running go get..."
 go get
 
 # Execute all Golang unittests in the subfolder

@@ -36,6 +36,9 @@ MAX_CONFORMANCE_TEST_RUNS = 10
 MAX_REFACTORING_ITERATIONS = 5
 MAX_UNIT_TEST_RENDER_RETRIES = 2
 
+UNRECOVERABLE_ERROR_EXIT_CODES = [69]
+TIMEOUT_ERROR_EXIT_CODE = 124
+
 
 class InvalidFridArgument(Exception):
     pass
@@ -106,10 +109,7 @@ def execute_test_script(test_script, scripts_args, verbose, test_type):
             else:
                 console.info(f"[b]All {test_type} tests passed successfully.[/b]\n")
 
-        # Return the output of the test script if it failed
-        if result.returncode != 0:
-            return result.stdout
-        return None
+        return result.returncode, result.stdout
     except subprocess.TimeoutExpired as e:
         # Store timeout output in a temporary file
         if verbose:
@@ -125,7 +125,7 @@ def execute_test_script(test_script, scripts_args, verbose, test_type):
                 f"The {test_type} test timed out after {TEST_SCRIPT_EXECUTION_TIMEOUT} seconds. Test output stored in: {temp_file_path}\n"
             )
 
-        return f"Tests did not finish in {TEST_SCRIPT_EXECUTION_TIMEOUT} seconds."
+        return TIMEOUT_ERROR_EXIT_CODE, f"Tests did not finish in {TEST_SCRIPT_EXECUTION_TIMEOUT} seconds."
 
 
 def run_unittests(
@@ -146,10 +146,17 @@ def run_unittests(
         if args.verbose:
             console.info(f"Running unit tests attempt {unit_test_run_count}.")
 
-        unittests_issue = execute_test_script(args.unittests_script, [args.build_folder], args.verbose, "unit")
+        exit_code, unittests_issue = execute_test_script(
+            args.unittests_script, [args.build_folder], args.verbose, "unit"
+        )
 
-        if not unittests_issue:
+        if exit_code == 0:
             return existing_files, changed_files, True
+        elif exit_code in UNRECOVERABLE_ERROR_EXIT_CODES:
+            console.error(unittests_issue)
+            exit_with_error(
+                "Unit tests script failed due to problems in the environment setup. Please check the your environment or update the script for running unittests.",
+            )
 
         existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
@@ -315,15 +322,21 @@ def run_conformance_tests(  # noqa: C901
                 f"\n[b]Running conformance tests script {args.conformance_tests_script} for {conformance_tests_folder_name} (functional requirement {functional_requirement_id}, attempt: {conformance_test_fix_count}).[/b]"
             )
 
-        conformance_tests_issue = execute_test_script(
+        exit_code, conformance_tests_issue = execute_test_script(
             args.conformance_tests_script,
             [args.build_folder, conformance_tests_folder_name],
             args.verbose,
             "conformance",
         )
 
-        if not conformance_tests_issue:
+        if exit_code == 0:
             break
+
+        elif exit_code in UNRECOVERABLE_ERROR_EXIT_CODES:
+            console.error(conformance_tests_issue)
+            exit_with_error(
+                "Conformance tests script failed due to problems in the envronment setup. Please check the your environment or update the script for running conformance tests.",
+            )
 
         if conformance_test_fix_count > MAX_CONFORMANCE_TEST_FIX_ATTEMPTS:
             console.info(

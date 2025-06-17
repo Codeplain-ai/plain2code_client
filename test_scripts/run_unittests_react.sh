@@ -1,5 +1,7 @@
 #!/bin/bash
 
+UNRECOVERABLE_ERROR_EXIT_CODE=69
+
 # ANSI escape code pattern to remove color codes and formatting from output
 ANSI_ESCAPE_PATTERN="s/\x1b\[[0-9;]*[mK]//g"
 
@@ -11,7 +13,7 @@ set -o pipefail
 if [ -z "$1" ]; then
   echo "Error: No subfolder name provided."
   echo "Usage: $0 <subfolder_name>"
-  exit 1
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 # Define the path to the subfolder
@@ -25,7 +27,7 @@ fi
 if [ -d "$NODE_SUBFOLDER" ]; then
   # Find and delete all files and folders except "node_modules", "build", and "package-lock.json"
   find "$NODE_SUBFOLDER" -mindepth 1 ! -path "$NODE_SUBFOLDER/node_modules*" ! -path "$NODE_SUBFOLDER/build*" ! -name "package-lock.json" -exec rm -rf {} +
-  
+
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
     printf "Cleanup completed, keeping 'node_modules' and 'package-lock.json'.\n"
   fi
@@ -44,7 +46,7 @@ cd "$NODE_SUBFOLDER" 2>/dev/null
 
 if [ $? -ne 0 ]; then
   echo "Error: Subfolder '$1' does not exist."
-  exit 2
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 # Install libraries
@@ -60,3 +62,5 @@ if [ $TEST_EXIT_CODE -ne 0 ]; then
   echo "Error: Tests failed with exit code $TEST_EXIT_CODE"
   exit $TEST_EXIT_CODE
 fi
+
+exit $UNRECOVERABLE_ERROR_EXIT_CODE

@@ -1,17 +1,19 @@
 #!/bin/bash
 
+UNRECOVERABLE_ERROR_EXIT_CODE=69
+
 # Check if build folder name is provided
 if [ -z "$1" ]; then
   printf "Error: No build folder name provided.\n"
   printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
-  exit 1
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 # Check if conformance tests folder name is provided
 if [ -z "$2" ]; then
   printf "Error: No conformance tests folder name provided.\n"
   printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
-  exit 1
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 current_dir=$(pwd)
@@ -21,7 +23,7 @@ cd "$1" 2>/dev/null
 
 if [ $? -ne 0 ]; then
   printf "Error: Build folder '$1' does not exist.\n"
-  exit 2
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 # Execute all Python conformance tests in the build folder

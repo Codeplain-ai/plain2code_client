@@ -1,17 +1,19 @@
 #!/bin/bash
 
+UNRECOVERABLE_ERROR_EXIT_CODE=69
+
 # Check if build folder name is provided
 if [ -z "$1" ]; then
   printf "Error: No build folder name provided.\n"
   printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
-  exit 1
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 # Check if conformance tests folder name is provided
 if [ -z "$2" ]; then
   printf "Error: No conformance tests folder name provided.\n"
   printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
-  exit 1
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 current_dir=$(pwd)
@@ -26,7 +28,7 @@ fi
 if [ -d "$GO_BUILD_SUBFOLDER" ]; then
   # Find and delete all files and folders
   find "$GO_BUILD_SUBFOLDER" -mindepth 1 -exec rm -rf {} +
-  
+
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
     printf "Cleanup completed.\n"
   fi
@@ -45,7 +47,7 @@ cd "$GO_BUILD_SUBFOLDER" 2>/dev/null
 
 if [ $? -ne 0 ]; then
   printf "Error: Go build folder '$GO_BUILD_SUBFOLDER' does not exist.\n"
-  exit 2
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 echo "Runinng go get in the build folder..."
@@ -55,7 +57,7 @@ cd "$current_dir/$2" 2>/dev/null
 
 if [ $? -ne 0 ]; then
   printf "Error: Conformance tests folder '$current_dir/$2' does not exist.\n"
-  exit 2
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 echo "Checking for go.mod in conformance test directory..."

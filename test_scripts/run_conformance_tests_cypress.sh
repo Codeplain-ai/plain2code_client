@@ -1,5 +1,7 @@
 #!/bin/bash
 
+UNRECOVERABLE_ERROR_EXIT_CODE=69
+
 NPM_INSTALL_OUTPUT_FILTER="up to date in|added [0-9]* packages, removed [0-9]* packages, and changed [0-9]* packages in|removed [0-9]* packages, and changed [0-9]* packages in|added [0-9]* packages in|removed [0-9]* packages in"
 
 # Function to check and kill any Node process running on port 3000 (React development server)
@@ -44,7 +46,7 @@ cleanup() {
     if [ ! -z "${REACT_APP_PID+x}" ]; then
         local processes_to_kill=()
         get_children $REACT_APP_PID
-        
+
         # Kill the main process
         kill $REACT_APP_PID 2>/dev/null
 
@@ -73,14 +75,14 @@ check_and_kill_node_server
 if [ -z "$1" ]; then
   printf "Error: No build folder name provided.\n"
   printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
-  exit 1
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 # Check if conformance tests folder name is provided
 if [ -z "$2" ]; then
   printf "Error: No conformance tests folder name provided.\n"
   printf "Usage: $0 <build_folder_name> <conformance_tests_folder>\n"
-  exit 1
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 if [[ "$3" == "-v" || "$3" == "--verbose" ]]; then
@@ -107,7 +109,7 @@ fi
 if [ -d "$NODE_SUBFOLDER" ]; then
   # Find and delete all files and folders except "node_modules", "build", and "package-lock.json"
   find "$NODE_SUBFOLDER" -mindepth 1 ! -path "$NODE_SUBFOLDER/node_modules*" ! -path "$NODE_SUBFOLDER/build*" ! -name "package-lock.json" -exec rm -rf {} +
-  
+
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
     printf "Cleanup completed, keeping 'node_modules' and 'package-lock.json'.\n"
   fi
@@ -126,7 +128,7 @@ cd "$NODE_SUBFOLDER" 2>/dev/null
 
 if [ $? -ne 0 ]; then
   printf "Error: Node build folder '$NODE_SUBFOLDER' does not exist.\n"
-  exit 2
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 npm install --prefer-offline --no-audit --no-fund --loglevel error | grep -Ev "$NPM_INSTALL_OUTPUT_FILTER"
@@ -194,7 +196,7 @@ fi
 if [ -d "$NODE_CONFORMANCE_TESTS_SUBFOLDER" ]; then
   # Find and delete all files and folders except "node_modules", "build", and "package-lock.json"
   find "$NODE_CONFORMANCE_TESTS_SUBFOLDER" -mindepth 1 ! -path "$NODE_CONFORMANCE_TESTS_SUBFOLDER/node_modules*" ! -path "$NODE_CONFORMANCE_TESTS_SUBFOLDER/build*" ! -name "package-lock.json" -exec rm -rf {} +
-  
+
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
     printf "Cleanup completed, keeping 'node_modules' and 'package-lock.json'.\n"
   fi
@@ -213,7 +215,7 @@ cd "$NODE_CONFORMANCE_TESTS_SUBFOLDER" 2>/dev/null
 
 if [ $? -ne 0 ]; then
   printf "Error: conformance tests Node folder '$NODE_CONFORMANCE_TESTS_SUBFOLDER' does not exist.\n"
-  exit 2
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 npm install cypress --save-dev --prefer-offline --no-audit --no-fund --loglevel error | grep -Ev "$NPM_INSTALL_OUTPUT_FILTER"
@@ -229,5 +231,5 @@ if [ $cypress_run_result -ne 0 ]; then
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
     printf "Error: Cypress conformance tests have failed.\n"
   fi
-  exit 2
+  exit 1
 fi
