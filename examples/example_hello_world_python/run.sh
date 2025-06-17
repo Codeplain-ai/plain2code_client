@@ -2,7 +2,7 @@ CONFIG_FILE="config.yaml"
 VERBOSE=0
 
 # Check if verbose is set in config.yaml and set VERBOSE accordingly
-if grep -q "verbose: true" "$CONFIG_FILE" 2>/dev/null; then
+if grep -q "v: true" "$CONFIG_FILE" 2>/dev/null; then
     VERBOSE=1
 fi
 

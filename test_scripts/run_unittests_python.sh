@@ -1,10 +1,12 @@
 #!/bin/bash
 
+UNRECOVERABLE_ERROR_EXIT_CODE=69
+
 # Check if subfolder name is provided
 if [ -z "$1" ]; then
   echo "Error: No subfolder name provided."
   echo "Usage: $0 <subfolder_name>"
-  exit 1
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 # Move to the subfolder
@@ -12,7 +14,7 @@ cd "$1" 2>/dev/null
 
 if [ $? -ne 0 ]; then
   echo "Error: Subfolder '$1' does not exist."
-  exit 2
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 # Execute all Python unittests in the subfolder
@@ -24,7 +26,7 @@ exit_code=$?
 # Check if the command timed out
 if [ $exit_code -eq 124 ]; then
     printf "\nError: Unittests timed out after 60 seconds.\n"
-    exit 3
+    exit $exit_code
 fi
 
 # Echo the original output
