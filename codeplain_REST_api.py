@@ -1,8 +1,13 @@
+import time
 from typing import Optional
 
 import requests
+from requests.exceptions import ConnectionError, RequestException, Timeout
 
 from plain2code_state import RunState
+
+MAX_RETRIES = 3
+RETRY_DELAY = 3
 
 
 class FunctionalRequirementTooComplex(Exception):
@@ -50,8 +55,9 @@ class MultipleRendersFound(Exception):
 
 class CodeplainAPI:
 
-    def __init__(self, api_key):
+    def __init__(self, api_key, console):
         self.api_key = api_key
+        self.console = console
 
     @property
     def api_url(self):
@@ -65,51 +71,67 @@ class CodeplainAPI:
         run_state.increment_call_count()
         payload["render_state"] = run_state.to_dict()
 
-    def post_request(self, endpoint_url, headers, payload, run_state: Optional[RunState]):
+    def post_request(self, endpoint_url, headers, payload, run_state: Optional[RunState]):  # noqa: C901
         if run_state is not None:
             self._extend_payload_with_run_state(payload, run_state)
-        response = requests.post(endpoint_url, headers=headers, json=payload)
 
-        try:
-            response_json = response.json()
-        except requests.exceptions.JSONDecodeError as e:
-            print(f"Failed to decode JSON response: {e}. Response text: {response.text}")
-            raise
+        retry_delay = RETRY_DELAY
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                response = requests.post(endpoint_url, headers=headers, json=payload)
 
-        if response.status_code == requests.codes.bad_request and "error_code" in response_json:
-            if response_json["error_code"] == "FunctionalRequirementTooComplex":
-                raise FunctionalRequirementTooComplex(response_json["message"], response_json.get("proposed_breakdown"))
+                try:
+                    response_json = response.json()
+                except requests.exceptions.JSONDecodeError as e:
+                    print(f"Failed to decode JSON response: {e}. Response text: {response.text}")
+                    raise
 
-            if response_json["error_code"] == "ConflictingRequirements":
-                raise ConflictingRequirements(response_json["message"])
+                if response.status_code == requests.codes.bad_request and "error_code" in response_json:
+                    if response_json["error_code"] == "FunctionalRequirementTooComplex":
+                        raise FunctionalRequirementTooComplex(
+                            response_json["message"], response_json.get("proposed_breakdown")
+                        )
 
-            if response_json["error_code"] == "CreditBalanceTooLow":
-                raise CreditBalanceTooLow(response_json["message"])
+                    if response_json["error_code"] == "ConflictingRequirements":
+                        raise ConflictingRequirements(response_json["message"])
 
-            if response_json["error_code"] == "LLMInternalError":
-                raise LLMInternalError(response_json["message"])
+                    if response_json["error_code"] == "CreditBalanceTooLow":
+                        raise CreditBalanceTooLow(response_json["message"])
 
-            if response_json["error_code"] == "MissingResource":
-                raise MissingResource(response_json["message"])
+                    if response_json["error_code"] == "LLMInternalError":
+                        raise LLMInternalError(response_json["message"])
 
-            if response_json["error_code"] == "PlainSyntaxError":
-                raise PlainSyntaxError(response_json["message"])
+                    if response_json["error_code"] == "MissingResource":
+                        raise MissingResource(response_json["message"])
 
-            if response_json["error_code"] == "OnlyRelativeLinksAllowed":
-                raise OnlyRelativeLinksAllowed(response_json["message"])
+                    if response_json["error_code"] == "PlainSyntaxError":
+                        raise PlainSyntaxError(response_json["message"])
 
-            if response_json["error_code"] == "LinkMustHaveTextSpecified":
-                raise LinkMustHaveTextSpecified(response_json["message"])
+                    if response_json["error_code"] == "OnlyRelativeLinksAllowed":
+                        raise OnlyRelativeLinksAllowed(response_json["message"])
 
-            if response_json["error_code"] == "NoRenderFound":
-                raise NoRenderFound(response_json["message"])
+                    if response_json["error_code"] == "LinkMustHaveTextSpecified":
+                        raise LinkMustHaveTextSpecified(response_json["message"])
 
-            if response_json["error_code"] == "MultipleRendersFound":
-                raise MultipleRendersFound(response_json["message"])
+                    if response_json["error_code"] == "NoRenderFound":
+                        raise NoRenderFound(response_json["message"])
 
-        response.raise_for_status()
+                    if response_json["error_code"] == "MultipleRendersFound":
+                        raise MultipleRendersFound(response_json["message"])
 
-        return response_json
+                response.raise_for_status()
+                return response_json
+
+            except (ConnectionError, Timeout, RequestException) as e:
+                if attempt < MAX_RETRIES:
+                    self.console.info(f"Connection error on attempt {attempt + 1}/{MAX_RETRIES + 1}: {e}")
+                    self.console.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    # Exponential backoff
+                    retry_delay *= 2
+                else:
+                    self.console.error(f"Max retries ({MAX_RETRIES}) exceeded. Last error: {e}")
+                    raise type(e)(f"Error requesting to the codeplain API: {e}")
 
     def get_plain_source_tree(self, plain_source, loaded_templates):
         """
