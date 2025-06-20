@@ -1095,7 +1095,7 @@ def render(args, run_state: RunState):
         console.info(full_plain_source)
         return
 
-    codeplainAPI = codeplain_api.CodeplainAPI(args.api_key)
+    codeplainAPI = codeplain_api.CodeplainAPI(args.api_key, console)
     codeplainAPI.debug = args.debug
     codeplainAPI.verbose = args.verbose
 
