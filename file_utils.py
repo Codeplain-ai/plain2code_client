@@ -85,10 +85,9 @@ def list_folders_in_directory(directory):
     return folders
 
 
-def delete_files_and_subfolders(directory, debug=False):
+def delete_files_and_subfolders(directory):
     total_files_deleted = 0
     total_folders_deleted = 0
-    items_deleted = []
 
     # Walk the directory in reverse order (bottom-up)
     for root, dirs, files in os.walk(directory, topdown=False):
@@ -97,25 +96,12 @@ def delete_files_and_subfolders(directory, debug=False):
             file_path = os.path.join(root, file)
             os.remove(file_path)
             total_files_deleted += 1
-            if debug and len(items_deleted) < 10:
-                items_deleted.append(f"Deleted file: {file_path}")
 
         # Delete directories
         for dir_ in dirs:
             dir_path = os.path.join(root, dir_)
             os.rmdir(dir_path)
             total_folders_deleted += 1
-            if debug and len(items_deleted) < 10:
-                items_deleted.append(f"Deleted folder: {dir_path}")
-
-    # Print the results
-    if debug:
-        if total_files_deleted + total_folders_deleted > 10:
-            print(f"Total files deleted: {total_files_deleted}")
-            print(f"Total folders deleted: {total_folders_deleted}")
-        else:
-            for item in items_deleted:
-                print(item)
 
 
 def copy_file(source_path, destination_path):
@@ -253,16 +239,6 @@ def get_loaded_templates(source_path, plain_source):
         raise Exception(f"Undefined liquid variable: {str(e)}")
 
     return plain_source, liquid_loader.loaded_templates
-
-
-def copy_unchanged_files_from_previous_build(
-    previous_build_folder, build_folder, existing_files, response_files, debug
-):
-    for file_name in existing_files:
-        if file_name not in response_files:
-            if debug:
-                print("Copying file: ", file_name)
-            copy_file(os.path.join(previous_build_folder, file_name), os.path.join(build_folder, file_name))
 
 
 def update_build_folder_with_rendered_files(build_folder, existing_files, response_files):

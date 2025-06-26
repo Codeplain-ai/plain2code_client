@@ -1,31 +1,61 @@
+import os
+from typing import Union
+
 from git import Repo
 
+import file_utils
+
 RENDERED_FRID_MESSAGE = "Changes related to Functional requirement ID (FRID): {}"
+RENDER_ID_MESSAGE = "Render ID: {}"
 BASE_FOLDER_COMMIT_MESSAGE = "Initialize build with Base Folder content"
+REFACTORED_CODE_COMMIT_MESSAGE = "Refactored code after implementing {}"
+CONFORMANCE_TESTS_PASSED_COMMIT_MESSAGE = (
+    "Fixed issues in the implementation code identified during conformance testing"
+)
+FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE = "Functional requirement ID (FRID): {} fully implemented"
 
 # The commit hash of the empty tree
 EMPTY_TREE_COMMIT_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 
-def init_clean_repo(repo_path):
-    """Initializes a new git repository in the given path."""
-    repo = Repo.init(repo_path)
+def init_git_repo(path_to_repo: Union[str, os.PathLike]) -> Repo:
+    """
+    Initializes a new git repository in the given path.
+    If folder does not exist, it creates it.
+    If the folder already exists, it deletes the content of the folder.
+    """
+    if os.path.isdir(path_to_repo):
+        file_utils.delete_files_and_subfolders(path_to_repo)
+    else:
+        os.makedirs(path_to_repo)
+
+    repo = Repo.init(path_to_repo)
 
     return repo
 
 
-def is_dirty(repo_path):
+def is_dirty(repo_path: Union[str, os.PathLike]) -> bool:
     """Checks if the repository is dirty."""
     repo = Repo(repo_path)
     return repo.is_dirty(untracked_files=True)
 
 
-def add_all_files_and_commit(repo_path, commit_message, frid):
+def add_all_files_and_commit(
+    repo_path: Union[str, os.PathLike], commit_message: str, frid: str = None, render_id: str = None
+) -> Repo:
     """Adds all files to the git repository and commits them."""
     repo = Repo(repo_path)
     repo.git.add(".")
 
-    message = f"{commit_message}\n\n{RENDERED_FRID_MESSAGE.format(frid)}" if frid else commit_message
+    message = f"{commit_message}"
+
+    if frid or render_id:
+        message += "\n\n" + "-" * 80
+
+    if frid:
+        message += f"\n\n{RENDERED_FRID_MESSAGE.format(frid)}"
+    if render_id:
+        message += f"\n\n{RENDER_ID_MESSAGE.format(render_id)}"
 
     # Check if there are any changes to commit
     if not repo.is_dirty(untracked_files=True):
@@ -36,7 +66,7 @@ def add_all_files_and_commit(repo_path, commit_message, frid):
     return repo
 
 
-def revert_changes(repo_path):
+def revert_changes(repo_path: Union[str, os.PathLike]) -> Repo:
     """Reverts all changes made since the last commit."""
     repo = Repo(repo_path)
     repo.git.reset("--hard")
@@ -44,7 +74,7 @@ def revert_changes(repo_path):
     return repo
 
 
-def revert_to_commit_with_frid(repo_path, frid):
+def revert_to_commit_with_frid(repo_path: Union[str, os.PathLike], frid: str) -> Repo:
     """Finds commit with given frid mentioned in the commit message and reverts the branch to it."""
     repo = Repo(repo_path)
     commit = _get_commit_with_frid(repo, frid)
@@ -53,7 +83,7 @@ def revert_to_commit_with_frid(repo_path, frid):
     return repo
 
 
-def diff(repo_path, previous_frid=None):
+def diff(repo_path: Union[str, os.PathLike], previous_frid: str = None) -> dict:
     """
     Get the git diff between the current code state and the previous frid using git's native diff command.
     If previous_frid is not provided, we try to find the commit related to the copy of the base folder.
@@ -61,7 +91,8 @@ def diff(repo_path, previous_frid=None):
 
 
     Args:
-        repo_path (str): Path to the git repository
+        repo_path (str | os.PathLike): Path to the git repository
+        previous_frid (str): Functional requirement ID (FRID) of the previous commit
 
     Returns:
         dict: Dictionary with file names as keys and their clean diff strings as values
@@ -134,14 +165,18 @@ def diff(repo_path, previous_frid=None):
     return diff_dict
 
 
-def _get_commit_with_frid(repo, frid):
+def _get_commit_with_frid(repo: Repo, frid: str) -> str:
     """Finds commit with given frid mentioned in the commit message."""
-    commit = repo.git.rev_list("main", "--grep", RENDERED_FRID_MESSAGE.format(frid), "-n", "1")
+    current_branch = repo.active_branch.name
+    commit = repo.git.rev_list(
+        current_branch, "--grep", FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid), "-n", "1"
+    )
     if not commit:
         raise Exception(f"No commit with frid {frid} found.")
     return commit
 
 
-def _get_base_folder_commit(repo):
+def _get_base_folder_commit(repo: Repo) -> str:
     """Finds commit related to copy of the base folder."""
-    return repo.git.rev_list("main", "--grep", BASE_FOLDER_COMMIT_MESSAGE, "-n", "1")
+    current_branch = repo.active_branch.name
+    return repo.git.rev_list(current_branch, "--grep", BASE_FOLDER_COMMIT_MESSAGE, "-n", "1")
