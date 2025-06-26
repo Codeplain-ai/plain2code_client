@@ -16,13 +16,7 @@ import plain_spec
 from codeplain_REST_api import CodeplainAPI
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
-from plain2code_state import (
-    CONFORMANCE_TESTS_BACKUP_FOLDER_SUFFIX,
-    CONFORMANCE_TESTS_DEFINITION_FILE_NAME,
-    ConformanceTestsState,
-    ExecutionState,
-    RunState,
-)
+from plain2code_state import CONFORMANCE_TESTS_DEFINITION_FILE_NAME, ConformanceTestsUtils, ExecutionState, RunState
 from system_config import system_config
 
 TEST_SCRIPT_EXECUTION_TIMEOUT = 120  # 120 seconds
@@ -30,11 +24,13 @@ LOGGING_CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "
 
 DEFAULT_TEMPLATE_DIRS = "standard_template_library"
 
-MAX_UNITTEST_FIX_ATTEMPTS = 10
-MAX_CONFORMANCE_TEST_FIX_ATTEMPTS = 10
+MAX_UNITTEST_FIX_ATTEMPTS = 20
+MAX_CONFORMANCE_TEST_FIX_ATTEMPTS = 20
 MAX_CONFORMANCE_TEST_RUNS = 10
 MAX_REFACTORING_ITERATIONS = 5
 MAX_UNIT_TEST_RENDER_RETRIES = 2
+
+MAX_ISSUE_LENGTH = 10000  # Characters.
 
 UNRECOVERABLE_ERROR_EXIT_CODES = [69]
 TIMEOUT_ERROR_EXIT_CODE = 124
@@ -158,6 +154,11 @@ def run_unittests(
                 "Unit tests script failed due to problems in the environment setup. Please check the your environment or update the script for running unittests.",
             )
 
+        if len(unittests_issue) > MAX_ISSUE_LENGTH:
+            console.warning(
+                f"Unit tests issue text is too long and will be smartly truncated to {MAX_ISSUE_LENGTH} characters."
+            )
+
         existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
         if args.verbose:
@@ -231,11 +232,11 @@ def generate_conformance_tests(
             )
 
         if args.verbose:
-            console.info(f"Storing conformance test files in subfolder {fr_subfolder_name}")
+            console.info(f"Storing conformance test files in subfolder {fr_subfolder_name}/")
 
         conformance_tests_folder_name = os.path.join(args.conformance_tests_folder, fr_subfolder_name)
 
-    file_utils.delete_files_and_subfolders(conformance_tests_folder_name, args.debug)
+    file_utils.delete_files_and_subfolders(conformance_tests_folder_name)
 
     if args.verbose:
         tmp_resources_list = []
@@ -343,6 +344,11 @@ def run_conformance_tests(  # noqa: C901
                 f"Conformance tests script {args.conformance_tests_script} for {conformance_tests_folder_name} still failed after {conformance_test_fix_count - 1} attempts at fixing issues."
             )
             return [False, False, existing_files, True]
+
+        if len(conformance_tests_issue) > MAX_ISSUE_LENGTH:
+            console.warning(
+                f"Conformance tests issue text is too long and will be smartly truncated to {MAX_ISSUE_LENGTH} characters."
+            )
 
         conformance_tests_files_content = file_utils.get_existing_files_content(
             conformance_tests_folder_name, conformance_tests_files
@@ -752,18 +758,8 @@ def render_functional_requirement(  # noqa: C901
                 console.info("-------------------------------------\n")
 
             return
-        else:
-            previous_frid = plain_spec.get_previous_frid(plain_source_tree, frid)
-
-            if frid == args.render_range[0] and previous_frid is not None and not args.dry_run:
-                if args.verbose:
-                    console.info(f"Checking out commit with frid {previous_frid}")
-
-                git_utils.revert_to_commit_with_frid(args.build_folder, previous_frid)
 
     specifications, _ = plain_spec.get_specifications_for_frid(plain_source_tree, frid)
-
-    is_first_frid = frid == plain_spec.get_first_frid(plain_source_tree)
 
     functional_requirement_text = specifications[plain_spec.FUNCTIONAL_REQUIREMENTS][-1]
 
@@ -773,33 +769,11 @@ def render_functional_requirement(  # noqa: C901
         console.info(f"[b]{functional_requirement_text}[/b]")
         console.info("-------------------------------------\n")
 
-    if not args.dry_run and is_first_frid:
-        if not os.path.isdir(args.build_folder):
-            os.makedirs(args.build_folder)
-
-            if args.debug:
-                console.debug(f"Initializing a new git repository in build folder {args.build_folder}.")
-        else:
-            file_utils.delete_files_and_subfolders(args.build_folder)
-
-        git_utils.init_clean_repo(args.build_folder)
-
-    conformance_tests_state = ConformanceTestsState(
+    conformance_tests_utils = ConformanceTestsUtils(
         conformance_tests_folder=args.conformance_tests_folder,
-        backup_folder_suffix=CONFORMANCE_TESTS_BACKUP_FOLDER_SUFFIX,
-        is_first_frid=is_first_frid,
         conformance_tests_definition_file_name=CONFORMANCE_TESTS_DEFINITION_FILE_NAME,
-        conformance_tests_script=args.conformance_tests_script,
         verbose=args.verbose,
-        debug=args.debug,
-        dry_run=args.dry_run,
     )
-    conformance_tests_state.init_backup_folder()
-
-    if is_first_frid and not args.dry_run:
-        if args.base_folder:
-            file_utils.copy_folder_content(args.base_folder, args.build_folder)
-            git_utils.add_all_files_and_commit(args.build_folder, git_utils.BASE_FOLDER_COMMIT_MESSAGE, None)
 
     resources_list = []
     plain_spec.collect_linked_resources(plain_source_tree, resources_list, None, True, frid)
@@ -808,7 +782,7 @@ def render_functional_requirement(  # noqa: C901
     for resource in resources_list:
         linked_resources[resource["target"]] = all_linked_resources[resource["target"]]
 
-    conformance_tests = conformance_tests_state.get_conformance_tests_json()
+    conformance_tests = conformance_tests_utils.get_conformance_tests_json()
 
     if args.dry_run:
         if args.verbose:
@@ -909,7 +883,9 @@ def render_functional_requirement(  # noqa: C901
                 else:
                     changed_files.add(file_name)
 
-            git_utils.add_all_files_and_commit(args.build_folder, f"{functional_requirement_text}", frid)
+            git_utils.add_all_files_and_commit(
+                args.build_folder, functional_requirement_text, frid, run_state.render_id
+            )
             break
 
         # If unittests generation&patching failed for the first time => retry rendering functional requirement
@@ -990,15 +966,18 @@ def render_functional_requirement(  # noqa: C901
             else:
                 changed_files.add(file_name)
 
-        git_utils.add_all_files_and_commit(args.build_folder, f"Refactored code after implementing {frid}.", frid)
+        git_utils.add_all_files_and_commit(
+            args.build_folder, git_utils.REFACTORED_CODE_COMMIT_MESSAGE.format(frid), frid, run_state.render_id
+        )
 
     # Phase 4: Conformance test the code.
-    console.info("\n[b]Implementing conformance tests...[/b]\n")
     if (
-        args.conformance_tests_script
+        args.render_conformance_tests
         and (plain_spec.TEST_REQUIREMENTS in specifications or plain_spec.ACCEPTANCE_TESTS in specifications)
         and (specifications[plain_spec.TEST_REQUIREMENTS] or specifications[plain_spec.ACCEPTANCE_TESTS])
     ):
+        console.info("\n[b]Implementing conformance tests...[/b]\n")
+
         conformance_tests, should_rerender_functional_requirement = conformance_and_acceptance_testing(
             args,
             codeplainAPI,
@@ -1013,8 +992,10 @@ def render_functional_requirement(  # noqa: C901
         if should_rerender_functional_requirement:
             # Restore the code state to initial
             git_utils.revert_changes(args.build_folder)
-            # Restore the conformance tests state to initial
-            conformance_tests_state.restore_from_backup()
+            if args.render_conformance_tests:
+                # Restore the conformance tests state to initial
+                git_utils.revert_changes(args.conformance_tests_folder)
+
             retry_state.mark_failed_conformance_testing_rendering()
 
             if retry_state.should_rerender_functional_requirement():
@@ -1033,13 +1014,28 @@ def render_functional_requirement(  # noqa: C901
                     run_state.render_id,
                 )
 
-        conformance_tests_state.dump_conformance_tests_json(conformance_tests)
         if git_utils.is_dirty(args.build_folder):
             git_utils.add_all_files_and_commit(
                 args.build_folder,
-                "Changes related to the conformance tests implementation.\nAll conformance tests passed.",
+                git_utils.CONFORMANCE_TESTS_PASSED_COMMIT_MESSAGE,
                 frid,
+                run_state.render_id,
             )
+
+        conformance_tests_utils.dump_conformance_tests_json(conformance_tests)
+        git_utils.add_all_files_and_commit(
+            args.conformance_tests_folder,
+            f"{functional_requirement_text}\n\n{git_utils.FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid)}",
+            None,
+            run_state.render_id,
+        )
+
+    git_utils.add_all_files_and_commit(
+        args.build_folder,
+        git_utils.FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid),
+        None,
+        run_state.render_id,
+    )
 
     return
 
@@ -1096,7 +1092,6 @@ def render(args, run_state: RunState):
         return
 
     codeplainAPI = codeplain_api.CodeplainAPI(args.api_key, console)
-    codeplainAPI.debug = args.debug
     codeplainAPI.verbose = args.verbose
 
     if args.api:
@@ -1116,6 +1111,8 @@ def render(args, run_state: RunState):
 
     all_linked_resources = file_utils.load_linked_resources(template_dirs, resources_list)
 
+    prepare_render_repositories(args, plain_source_tree, run_state.render_id)
+
     frid = plain_spec.get_first_frid(plain_source_tree)
 
     while frid is not None:
@@ -1127,6 +1124,34 @@ def render(args, run_state: RunState):
 
     console.info(f"Render ID: {run_state.render_id}")
     return
+
+
+def prepare_render_repositories(args, plain_source_tree, render_id):
+    if args.dry_run or args.full_plain:
+        return
+
+    if args.render_range is not None and args.render_range[0] != plain_spec.get_first_frid(plain_source_tree):
+        frid = args.render_range[0]
+        previous_frid = plain_spec.get_previous_frid(plain_source_tree, frid)
+
+        if args.verbose:
+            console.info(f"Reverting code to version implemented for {previous_frid}.")
+
+        git_utils.revert_to_commit_with_frid(args.build_folder, previous_frid)
+        if args.render_conformance_tests:
+            git_utils.revert_to_commit_with_frid(args.conformance_tests_folder, previous_frid)
+    else:
+        if args.verbose:
+            console.info("Initializing git repositories for the render folders.")
+
+        git_utils.init_git_repo(args.build_folder)
+
+        if args.base_folder:
+            file_utils.copy_folder_content(args.base_folder, args.build_folder)
+            git_utils.add_all_files_and_commit(args.build_folder, git_utils.BASE_FOLDER_COMMIT_MESSAGE, None, render_id)
+
+        if args.render_conformance_tests:
+            git_utils.init_git_repo(args.conformance_tests_folder)
 
 
 def exit_with_error(message, last_successful_frid=None, render_id=None):
@@ -1152,12 +1177,11 @@ if __name__ == "__main__":  # noqa: C901
     if args.api or codeplain_api_spec is None:
         if not args.api:
             args.api = "https://api.codeplain.ai"
-        if args.debug:
-            console.info(f"Running plain2code using REST API at {args.api}.")
+        console.debug(f"Running plain2code using REST API at {args.api}.")
         import codeplain_REST_api as codeplain_api
     else:
-        if args.debug or not args.full_plain:
-            console.info("Running plain2code using local API.\n")
+        if not args.full_plain:
+            console.debug("Running plain2code using local API.\n")
 
         codeplain_api = importlib.import_module(codeplain_api_module_name)
 
@@ -1166,8 +1190,7 @@ if __name__ == "__main__":  # noqa: C901
             "Error: API key is not provided. Please provide an API key using the --api-key flag or by setting the CLAUDE_API_KEY environment variable."
         )
     run_state = RunState(replay_with=args.replay_with)
-    if args.debug:
-        console.info(f"Render ID: {run_state.render_id}")
+    console.debug(f"Render ID: {run_state.render_id}")
 
     try:
         render(args, run_state)
@@ -1177,19 +1200,15 @@ if __name__ == "__main__":  # noqa: C901
         # see the render ID that's printed at the very start of the rendering process.
     except FileNotFoundError as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
-        if args.debug:
-            console.info(f"Render ID: {run_state.render_id}")
-            traceback.print_exc()
+        console.debug(f"Render ID: {run_state.render_id}")
     except TemplateNotFoundError as e:
         console.error(f"Error: Template not found: {str(e)}\n")
         console.error(system_config.get_error_message("template_not_found"))
     except KeyboardInterrupt:
         console.error("Keyboard interrupt")
-        if args.debug:
-            # Don't print the traceback here because it's going to be from keyboard interrupt and we don't really care about that
-            console.info(f"Render ID: {run_state.render_id}")
+        # Don't print the traceback here because it's going to be from keyboard interrupt and we don't really care about that
+        console.debug(f"Render ID: {run_state.render_id}")
     except Exception as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
-        if args.debug:
-            console.info(f"Render ID: {run_state.render_id}")
-            traceback.print_exc()
+        console.debug(f"Render ID: {run_state.render_id}")
+        traceback.print_exc()

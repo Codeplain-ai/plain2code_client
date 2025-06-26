@@ -8,8 +8,11 @@ CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 DEFAULT_BUILD_FOLDER = "build"
 DEFAULT_CONFORMANCE_TESTS_FOLDER = "conformance_tests"
 
+UNIT_TESTS_SCRIPT_NAME = "unittests_script"
+CONFORMANCE_TESTS_SCRIPT_NAME = "conformance_tests_script"
 
-def check_test_script_path(script_arg_name, config):
+
+def process_test_script_path(script_arg_name, config):
     """Resolve script paths in config."""
     config_file = config.config_name
     script_input_path = getattr(config, script_arg_name, None)
@@ -116,7 +119,6 @@ def parse_arguments():
         "so you can place custom templates here to override the defaults. See --template-dir for more details about template loading.",
     )
     parser.add_argument("--verbose", "-v", action="store_true", help="enable verbose output")
-    parser.add_argument("--debug", action="store_true", help="enable debug information")
     parser.add_argument("--base-folder", type=str, help="base folder for the build files")
     parser.add_argument(
         "--build-folder", type=non_empty_string, default=DEFAULT_BUILD_FOLDER, help="folder for build files"
@@ -179,8 +181,11 @@ def parse_arguments():
 
     args = parser.parse_args()
     args = update_args_with_config(args, parser)
-    script_arg_names = ["unittests_script", "conformance_tests_script"]
+
+    args.render_conformance_tests = args.conformance_tests_script is not None
+
+    script_arg_names = [UNIT_TESTS_SCRIPT_NAME, CONFORMANCE_TESTS_SCRIPT_NAME]
     for script_name in script_arg_names:
-        args = check_test_script_path(script_name, args)
+        args = process_test_script_path(script_name, args)
 
     return args
