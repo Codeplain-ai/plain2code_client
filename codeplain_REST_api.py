@@ -6,7 +6,7 @@ from requests.exceptions import ConnectionError, RequestException, Timeout
 
 from plain2code_state import RunState
 
-MAX_RETRIES = 3
+MAX_RETRIES = 4
 RETRY_DELAY = 3
 
 
@@ -131,7 +131,9 @@ class CodeplainAPI:
                     retry_delay *= 2
                 else:
                     self.console.error(f"Max retries ({MAX_RETRIES}) exceeded. Last error: {e}")
-                    raise type(e)(f"Error requesting to the codeplain API: {e}")
+                    raise RequestException(
+                        f"Connection error: Unable to reach the Codeplain API at {self.api_url}. Please try again or contact support."
+                    )
 
     def get_plain_source_tree(self, plain_source, loaded_templates):
         """

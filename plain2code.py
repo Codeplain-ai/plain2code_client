@@ -9,6 +9,7 @@ import traceback
 
 import yaml
 from liquid2.exceptions import TemplateNotFoundError
+from requests.exceptions import RequestException
 
 import file_utils
 import git_utils
@@ -584,11 +585,8 @@ def conformance_and_acceptance_testing(  # noqa: C901
         if args.verbose:
             console.info(f"Running conformance tests attempt {conformance_tests_run_count}.")
 
-        if frid == plain_spec.get_first_frid(plain_source_tree):
-            code_diff = git_utils.diff(args.build_folder)
-        else:
-            # full diff between the previous frid and the current frid (including refactoring commits)
-            code_diff = git_utils.diff(args.build_folder, plain_spec.get_previous_frid(plain_source_tree, frid))
+        # full diff between the previous frid and the current frid (including refactoring commits)
+        code_diff = git_utils.diff(args.build_folder, plain_spec.get_previous_frid(plain_source_tree, frid))
 
         [
             success,
@@ -794,6 +792,8 @@ def render_functional_requirement(  # noqa: C901
 
         return
 
+    previous_frid = plain_spec.get_previous_frid(plain_source_tree, frid)
+
     functional_requirement_render_attempt = 0
     while True:
         existing_files = file_utils.list_all_text_files(args.build_folder)
@@ -895,7 +895,7 @@ def render_functional_requirement(  # noqa: C901
                 "Unittests could not be fixed after rendering the functional requirement. "
                 f"Restarting rendering the functional requirement {frid} from scratch."
             )
-            git_utils.revert_changes(args.build_folder)
+            git_utils.revert_to_commit_with_frid(args.build_folder, previous_frid)
             continue
 
         exit_with_error(
@@ -991,10 +991,11 @@ def render_functional_requirement(  # noqa: C901
 
         if should_rerender_functional_requirement:
             # Restore the code state to initial
-            git_utils.revert_changes(args.build_folder)
+            git_utils.revert_to_commit_with_frid(args.build_folder, previous_frid)
+
             if args.render_conformance_tests:
                 # Restore the conformance tests state to initial
-                git_utils.revert_changes(args.conformance_tests_folder)
+                git_utils.revert_to_commit_with_frid(args.conformance_tests_folder, previous_frid)
 
             retry_state.mark_failed_conformance_testing_rendering()
 
@@ -1207,6 +1208,9 @@ if __name__ == "__main__":  # noqa: C901
     except KeyboardInterrupt:
         console.error("Keyboard interrupt")
         # Don't print the traceback here because it's going to be from keyboard interrupt and we don't really care about that
+        console.debug(f"Render ID: {run_state.render_id}")
+    except RequestException as e:
+        console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
     except Exception as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
