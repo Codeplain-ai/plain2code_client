@@ -1,21 +1,26 @@
 import os
-from typing import Union
+from typing import Optional, Union
 
 from git import Repo
 
 import file_utils
 
+INITIAL_COMMIT_MESSAGE = "[Codeplain] Initial commit"
+BASE_FOLDER_COMMIT_MESSAGE = "[Codeplain] Initialize build with Base Folder content"
+REFACTORED_CODE_COMMIT_MESSAGE = "[Codeplain] Refactored code after implementing {}"
+CONFORMANCE_TESTS_PASSED_COMMIT_MESSAGE = (
+    "[Codeplain] Fixed issues in the implementation code identified during conformance testing"
+)
+FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE = "[Codeplain] Functional requirement ID (FRID):{} fully implemented"
+
 RENDERED_FRID_MESSAGE = "Changes related to Functional requirement ID (FRID): {}"
 RENDER_ID_MESSAGE = "Render ID: {}"
-BASE_FOLDER_COMMIT_MESSAGE = "Initialize build with Base Folder content"
-REFACTORED_CODE_COMMIT_MESSAGE = "Refactored code after implementing {}"
-CONFORMANCE_TESTS_PASSED_COMMIT_MESSAGE = (
-    "Fixed issues in the implementation code identified during conformance testing"
-)
-FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE = "Functional requirement ID (FRID): {} fully implemented"
 
-# The commit hash of the empty tree
-EMPTY_TREE_COMMIT_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
+class InvalidGitRepositoryError(Exception):
+    """Raised when the git repository is in an invalid state."""
+
+    pass
 
 
 def init_git_repo(path_to_repo: Union[str, os.PathLike]) -> Repo:
@@ -30,6 +35,7 @@ def init_git_repo(path_to_repo: Union[str, os.PathLike]) -> Repo:
         os.makedirs(path_to_repo)
 
     repo = Repo.init(path_to_repo)
+    repo.git.commit("--allow-empty", "-m", INITIAL_COMMIT_MESSAGE)
 
     return repo
 
@@ -74,10 +80,23 @@ def revert_changes(repo_path: Union[str, os.PathLike]) -> Repo:
     return repo
 
 
-def revert_to_commit_with_frid(repo_path: Union[str, os.PathLike], frid: str) -> Repo:
-    """Finds commit with given frid mentioned in the commit message and reverts the branch to it."""
+def revert_to_commit_with_frid(repo_path: Union[str, os.PathLike], frid: Optional[str] = None) -> Repo:
+    """
+    Finds commit with given frid mentioned in the commit message and reverts the branch to it.
+
+    If frid argument is not provided (None), repo is reverted to the initial state. In case the base folder doesn't exist,
+    code is reverted to the initial repo commit. Otherwise, the repo is reverted to the base folder commit.
+
+    It is expected that the repo has at least one commit related to provided frid if frid is not None.
+    In case the frid related commit is not found, an exception is raised.
+    """
     repo = Repo(repo_path)
-    commit = _get_commit_with_frid(repo, frid)
+
+    commit = _get_commit(repo, frid)
+
+    if not commit:
+        raise InvalidGitRepositoryError("Git repository is in an invalid state. Relevant commit could not be found.")
+
     repo.git.reset("--hard", commit)
     repo.git.clean("-xdf")
     return repo
@@ -99,20 +118,13 @@ def diff(repo_path: Union[str, os.PathLike], previous_frid: str = None) -> dict:
     """
     repo = Repo(repo_path)
 
-    if previous_frid:
-        commit = _get_commit_with_frid(repo, previous_frid)
-    else:
-        commit = _get_base_folder_commit(repo)
+    commit = _get_commit(repo, previous_frid)
 
     # Add all files to the index to get a clean diff
     repo.git.add("-N", ".")
 
     # Get the raw git diff output, excluding .pyc files
-    if not commit:
-        # If there is no base commit, we are listing all files as new
-        diff_output = repo.git.diff(EMPTY_TREE_COMMIT_HASH, "--text", ":!*.pyc")
-    else:
-        diff_output = repo.git.diff(commit, "--text", ":!*.pyc")
+    diff_output = repo.git.diff(commit, "--text", ":!*.pyc")
 
     if not diff_output:
         return {}
@@ -165,18 +177,37 @@ def diff(repo_path: Union[str, os.PathLike], previous_frid: str = None) -> dict:
     return diff_dict
 
 
+def _get_commit(repo: Repo, frid: str = None) -> str:
+    if frid:
+        commit = _get_commit_with_frid(repo, frid)
+    else:
+        commit = _get_base_folder_commit(repo)
+        if not commit:
+            commit = _get_initial_commit(repo)
+
+    return commit
+
+
 def _get_commit_with_frid(repo: Repo, frid: str) -> str:
     """Finds commit with given frid mentioned in the commit message."""
-    current_branch = repo.active_branch.name
-    commit = repo.git.rev_list(
-        current_branch, "--grep", FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid), "-n", "1"
-    )
+    commit = _get_commit_with_message(repo, FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid))
     if not commit:
-        raise Exception(f"No commit with frid {frid} found.")
+        raise InvalidGitRepositoryError(f"No commit with frid {frid} found.")
     return commit
 
 
 def _get_base_folder_commit(repo: Repo) -> str:
     """Finds commit related to copy of the base folder."""
-    current_branch = repo.active_branch.name
-    return repo.git.rev_list(current_branch, "--grep", BASE_FOLDER_COMMIT_MESSAGE, "-n", "1")
+    return _get_commit_with_message(repo, BASE_FOLDER_COMMIT_MESSAGE)
+
+
+def _get_initial_commit(repo: Repo) -> str:
+    """Finds initial commit."""
+    return _get_commit_with_message(repo, INITIAL_COMMIT_MESSAGE)
+
+
+def _get_commit_with_message(repo: Repo, message: str) -> str:
+    """Finds commit with given message."""
+    escaped_message = message.replace("[", "\\[").replace("]", "\\]")
+
+    return repo.git.rev_list(repo.active_branch.name, "--grep", escaped_message, "-n", "1")

@@ -11,12 +11,6 @@ if [ $VERBOSE -eq 1 ]; then
     echo "Running Go lang hello world example in verbose mode."
 fi
 
-# Check if render-range and render-from exist in config.yaml
-if ! (grep -q "render-range:" $CONFIG_FILE || grep -q "render-from:" $CONFIG_FILE); then
-    echo "Removing conformance tests folder"
-    rm -rf conformance_tests
-fi
-
 # Execute the command
 python ../../plain2code.py hello_world_golang.plain
 
