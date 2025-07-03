@@ -18,6 +18,7 @@ from codeplain_REST_api import CodeplainAPI
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
 from plain2code_state import CONFORMANCE_TESTS_DEFINITION_FILE_NAME, ConformanceTestsUtils, ExecutionState, RunState
+from plain2code_utils import RetryOnlyFilter
 from system_config import system_config
 
 TEST_SCRIPT_EXECUTION_TIMEOUT = 120  # 120 seconds
@@ -884,7 +885,10 @@ def render_functional_requirement(  # noqa: C901
                     changed_files.add(file_name)
 
             git_utils.add_all_files_and_commit(
-                args.build_folder, functional_requirement_text, frid, run_state.render_id
+                args.build_folder,
+                f"{git_utils.FUNCTIONAL_REQUIREMENT_IMPLEMENTED_COMMIT_MESSAGE.format(frid)}\n\n{functional_requirement_text}",
+                frid,
+                run_state.render_id,
             )
             break
 
@@ -907,12 +911,20 @@ def render_functional_requirement(  # noqa: C901
     # Phase 3: Refactor the source code if needed.
     console.info("[b]Refactoring the generated code...[/b]")
     num_refactoring_iterations = 0
-    while num_refactoring_iterations < MAX_REFACTORING_ITERATIONS:
+    while True:
         num_refactoring_iterations += 1
+
+        existing_files = file_utils.list_all_text_files(args.build_folder)
+
+        if num_refactoring_iterations > MAX_REFACTORING_ITERATIONS:
+            console.info(
+                f"Refactoring iterations limit of {MAX_REFACTORING_ITERATIONS} reached for functional requirement {frid}."
+            )
+            break
+
         if args.verbose:
             console.info(f"\nRefactoring iteration {num_refactoring_iterations}.")
 
-        existing_files = file_utils.list_all_text_files(args.build_folder)
         existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
         if args.verbose:
             console.print_files(
@@ -1043,6 +1055,16 @@ def render_functional_requirement(  # noqa: C901
 
 def render(args, run_state: RunState):
     if args.verbose:
+
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("httpcore").setLevel(logging.WARNING)
+        logging.getLogger("anthropic").setLevel(logging.WARNING)
+        logging.getLogger("langsmith").setLevel(logging.WARNING)
+        logging.getLogger("git").setLevel(logging.WARNING)
+        logging.getLogger("anthropic._base_client").setLevel(logging.DEBUG)
+
         # Try to load logging configuration from YAML file
         if os.path.exists(LOGGING_CONFIG_PATH):
             try:
@@ -1050,16 +1072,12 @@ def render(args, run_state: RunState):
                     config = yaml.safe_load(f)
                     logging.config.dictConfig(config)
                     console.info(f"Loaded logging configuration from {LOGGING_CONFIG_PATH}")
-            except Exception:
-                pass
+            except Exception as e:
+                console.warning(f"Failed to load logging configuration from {LOGGING_CONFIG_PATH}: {str(e)}")
 
-        logging.basicConfig(level=logging.DEBUG)
-
-        logging.getLogger("urllib3").setLevel(logging.WARNING)
-        logging.getLogger("httpx").setLevel(logging.WARNING)
-        logging.getLogger("httpcore").setLevel(logging.WARNING)
-        logging.getLogger("anthropic").setLevel(logging.WARNING)
-        logging.getLogger("langsmith").setLevel(logging.WARNING)
+        # if we have debug level for anthropic._base_client to debug, catch only logs relevant to retrying (ones that are relevant for us)
+        if logging.getLogger("anthropic._base_client").level == logging.DEBUG:
+            logging.getLogger("anthropic._base_client").addFilter(RetryOnlyFilter())
 
         formatter = IndentedFormatter("%(levelname)s:%(name)s:%(message)s")
         console_handler = logging.StreamHandler()

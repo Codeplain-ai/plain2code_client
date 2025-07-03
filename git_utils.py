@@ -5,13 +5,20 @@ from git import Repo
 
 import file_utils
 
-INITIAL_COMMIT_MESSAGE = "[Codeplain] Initial commit"
-BASE_FOLDER_COMMIT_MESSAGE = "[Codeplain] Initialize build with Base Folder content"
-REFACTORED_CODE_COMMIT_MESSAGE = "[Codeplain] Refactored code after implementing {}"
+FUNCTIONAL_REQUIREMENT_IMPLEMENTED_COMMIT_MESSAGE = (
+    "[Codeplain] Implemented code and unit tests for functional requirement {}"
+)
+REFACTORED_CODE_COMMIT_MESSAGE = "[Codeplain] Refactored code after implementing functional requirement {}"
 CONFORMANCE_TESTS_PASSED_COMMIT_MESSAGE = (
     "[Codeplain] Fixed issues in the implementation code identified during conformance testing"
 )
+
+# Following messages are used as checkpoints in the git history
+# Changing them will break backwards compatibility so change them with care
 FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE = "[Codeplain] Functional requirement ID (FRID):{} fully implemented"
+INITIAL_COMMIT_MESSAGE = "[Codeplain] Initial commit"
+BASE_FOLDER_COMMIT_MESSAGE = "[Codeplain] Initialize build with Base Folder content"
+
 
 RENDERED_FRID_MESSAGE = "Changes related to Functional requirement ID (FRID): {}"
 RENDER_ID_MESSAGE = "Render ID: {}"
