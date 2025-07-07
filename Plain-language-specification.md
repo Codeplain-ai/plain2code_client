@@ -196,7 +196,44 @@ Here's an example of a linked resource (see Task manager example application for
 - Show The Task List. The details of the user interface are provided in the file [task_list_ui_specification.yaml](task_list_ui_specification.yaml).
 ```
 
-Please note that only links to files in the same folder (and its subfolders) as the Plain specification are supported. Links to external resources are not supported.
+**Important Notes:**
+- Only links to files in the same folder (and its subfolders) as the Plain specification are supported. Links to external resources are not supported.
+- File paths are resolved relative to the location of the Plain specification file.
+
+### Hierarchical Resource Visibility
+
+Due to the hierarchical structure of the Plain specification, file attachments follow a scoping rule: **a functional requirement can only access linked resources that are defined in its own section or in any parent section**.
+
+Here's an example demonstrating this hierarchical nature:
+
+```plain
+# Section 1
+
+***Non-Functional Requirements:***
+
+- Simple non-functional requirement with [file_attachment_1.yaml](file_attachment_1.yaml)
+
+# Section 2
+
+***Non-Functional Requirements:***
+
+- Simple non-functional requirement with [file_attachment_2.yaml](file_attachment_2.yaml)
+
+## Section 2.1
+
+***Functional Requirements:***
+
+- Simple functional requirement with [file_attachment_2_1.yaml](file_attachment_2_1.yaml)
+```
+
+**Resource visibility for Section 2.1:**
+- ✅ `file_attachment_2_1.yaml` - same section
+- ✅ `file_attachment_2.yaml` - parent section (Section 2)
+- ❌ `file_attachment_1.yaml` - sibling section (Section 1), not accessible
+
+This hierarchical scoping ensures that resources are properly encapsulated and prevents accidental access to unrelated files.
+
+This design allows you to optimize context size by attaching only the necessary resources to the functional requirements that need them, improving the performance of the rendering process.
 
 ## Liquid templates
 
