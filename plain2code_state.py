@@ -62,15 +62,19 @@ class RunState:
     """Contains information about the identifiable state of the rendering process."""
 
     def __init__(self, replay_with: Optional[str] = None):
-        self.replay = replay_with is not None
+        self.replay: bool = replay_with is not None
         if replay_with:
-            self.render_id = replay_with
+            self.render_id: str = replay_with
         else:
-            self.render_id = str(uuid.uuid4())
-        self.call_count = 0
+            self.render_id: str = str(uuid.uuid4())
+        self.call_count: int = 0
+        self.unittest_batch_id: int = 0
 
     def increment_call_count(self):
         self.call_count += 1
+
+    def increment_unittest_batch_id(self):
+        self.unittest_batch_id += 1
 
     def to_dict(self):
         return {

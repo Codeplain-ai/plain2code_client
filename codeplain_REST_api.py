@@ -213,6 +213,7 @@ class CodeplainAPI:
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
             "unittests_issue": unittests_issue,
+            "unittest_batch_id": run_state.unittest_batch_id,
         }
 
         return self.post_request(endpoint_url, headers, payload, run_state)

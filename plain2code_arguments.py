@@ -7,6 +7,8 @@ from plain2code_read_config import get_args_from_config
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 DEFAULT_BUILD_FOLDER = "build"
 DEFAULT_CONFORMANCE_TESTS_FOLDER = "conformance_tests"
+DEFAULT_BUILD_DEST = "dist"
+DEFAULT_CONFORMANCE_TESTS_DEST = "dist_conformance_tests"
 
 UNIT_TESTS_SCRIPT_NAME = "unittests_script"
 CONFORMANCE_TESTS_SCRIPT_NAME = "conformance_tests_script"
@@ -90,7 +92,7 @@ def update_args_with_config(args, parser):
                 arg_action = action_types.get(key)
                 if arg_action and isinstance(arg_action, argparse._StoreAction):
                     # For regular arguments, only skip if explicitly provided
-                    if getattr(args, key) is not None:
+                    if getattr(args, key) is not None and (arg_action.default is None or value == arg_action.default):
                         continue
                 elif arg_action and isinstance(arg_action, argparse._StoreTrueAction):
                     # For boolean flags, skip if True (explicitly set)
@@ -178,11 +180,43 @@ def parse_arguments():
         "2) this custom template directory (if provided), "
         "3) built-in standard_template_library directory",
     )
+    parser.add_argument(
+        "--copy-build",
+        action="store_true",
+        default=False,
+        help="If set, copy the build folder to --build-dest after every successful functional requirement rendering.",
+    )
+    parser.add_argument(
+        "--build-dest",
+        type=non_empty_string,
+        default=DEFAULT_BUILD_DEST,
+        help="Target folder to copy build output to (used only if --copy-build is set).",
+    )
+    parser.add_argument(
+        "--copy-conformance-tests",
+        action="store_true",
+        default=False,
+        help="If set, copy the conformance tests folder to --conformance-tests-dest after every successful functional requirement rendering. Requires --conformance-tests-script.",
+    )
+    parser.add_argument(
+        "--conformance-tests-dest",
+        type=non_empty_string,
+        default=DEFAULT_CONFORMANCE_TESTS_DEST,
+        help="Target folder to copy conformance tests output to (used only if --copy-conformance-tests is set).",
+    )
 
     args = parser.parse_args()
     args = update_args_with_config(args, parser)
 
+    if args.build_folder == args.build_dest:
+        parser.error("--build-folder and --build-dest cannot be the same")
+    if args.conformance_tests_folder == args.conformance_tests_dest:
+        parser.error("--conformance-tests-folder and --conformance-tests-dest cannot be the same")
+
     args.render_conformance_tests = args.conformance_tests_script is not None
+
+    if not args.render_conformance_tests and args.copy_conformance_tests:
+        parser.error("--copy-conformance-tests requires --conformance-tests-script to be set")
 
     script_arg_names = [UNIT_TESTS_SCRIPT_NAME, CONFORMANCE_TESTS_SCRIPT_NAME]
     for script_name in script_arg_names:
