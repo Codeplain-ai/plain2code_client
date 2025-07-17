@@ -28,7 +28,7 @@ DEFAULT_TEMPLATE_DIRS = "standard_template_library"
 
 MAX_UNITTEST_FIX_ATTEMPTS = 20
 MAX_CONFORMANCE_TEST_FIX_ATTEMPTS = 20
-MAX_CONFORMANCE_TEST_RUNS = 10
+MAX_CONFORMANCE_TEST_RUNS = 20
 MAX_REFACTORING_ITERATIONS = 5
 MAX_UNIT_TEST_RENDER_RETRIES = 2
 
@@ -138,6 +138,7 @@ def run_unittests(
         console.info(f"\n[b]Running unit tests script:[/b] {args.unittests_script}")
 
     unit_test_run_count = 0
+    fix_unittest_called = False
     while unit_test_run_count < MAX_UNITTEST_FIX_ATTEMPTS:
         unit_test_run_count += 1
 
@@ -184,6 +185,10 @@ def run_unittests(
                 existing_files_content,
                 style=console.INPUT_STYLE,
             )
+
+        if not fix_unittest_called:
+            run_state.increment_unittest_batch_id()
+        fix_unittest_called = True
 
         with console.status(f"[{console.INFO_STYLE}]Fixing unit tests issue for functional requirement {frid}...\n"):
             response_files = codeplainAPI.fix_unittests_issue(
@@ -1049,11 +1054,10 @@ def render_functional_requirement(  # noqa: C901
         None,
         run_state.render_id,
     )
-
     return
 
 
-def render(args, run_state: RunState):
+def render(args, run_state: RunState):  # noqa: C901
     if args.verbose:
 
         logging.basicConfig(level=logging.DEBUG)
@@ -1140,6 +1144,22 @@ def render(args, run_state: RunState):
             args, codeplainAPI, plain_source_tree, frid, all_linked_resources, retry_state, run_state
         )
         frid = plain_spec.get_next_frid(plain_source_tree, frid)
+
+    # Copy build and conformance tests folders to output folders if specified
+    if args.copy_build:
+        file_utils.copy_folder_to_output(args.build_folder, args.build_dest)
+        if args.verbose:
+            console.info(f"Copied build folder to {args.build_dest}")
+    if args.copy_conformance_tests:
+        file_utils.copy_folder_to_output(args.conformance_tests_folder, args.conformance_tests_dest)
+        if args.verbose:
+            console.info(f"Copied conformance tests folder to {args.conformance_tests_dest}")
+
+    console.info(f"\n[bold blue]Code rendering {run_state.render_id} was successfully finished![/bold blue]")
+    if args.copy_build:
+        console.info(f"The generated source code is available in {args.build_dest}")
+    if args.copy_conformance_tests:
+        console.info(f"Related conformance tests are placed in {args.conformance_tests_dest}")
 
     console.info(f"Render ID: {run_state.render_id}")
     return

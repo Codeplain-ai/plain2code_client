@@ -250,12 +250,23 @@ def update_build_folder_with_rendered_files(build_folder, existing_files, respon
     return existing_files, changed_files
 
 
-def copy_folder_content(source_folder, destination_folder):
+def copy_folder_content(source_folder, destination_folder, ignore_folders=None):
     """
     Recursively copy all files and folders from source_folder to destination_folder.
     Uses shutil.copytree which handles all edge cases including permissions and symlinks.
+
+    Args:
+        source_folder: Source directory to copy from
+        destination_folder: Destination directory to copy to
+        ignore_folders: List of folder names to ignore during copy (default: empty list)
     """
-    shutil.copytree(source_folder, destination_folder, dirs_exist_ok=True)
+    if ignore_folders is None:
+        ignore_folders = []
+
+    ignore_func = (
+        (lambda dir, files: [f for f in files if f in ignore_folders]) if ignore_folders else None  # noqa: U100,U101
+    )
+    shutil.copytree(source_folder, destination_folder, dirs_exist_ok=True, ignore=ignore_func)
 
 
 def get_template_directories(plain_file_path, custom_template_dir=None, default_template_dir=None) -> list[str]:
@@ -281,3 +292,16 @@ def get_template_directories(plain_file_path, custom_template_dir=None, default_
         template_dirs.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), default_template_dir))
 
     return template_dirs
+
+
+def copy_folder_to_output(source_folder, output_folder):
+    """Copy source folder contents directly to the specified output folder."""
+    # Create output folder if it doesn't exist
+    os.makedirs(output_folder, exist_ok=True)
+
+    # If output folder exists, clean it first to ensure clean copy
+    if os.path.exists(output_folder):
+        delete_files_and_subfolders(output_folder)
+
+    # Copy source folder contents directly to output folder (excluding .git)
+    copy_folder_content(source_folder, output_folder, ignore_folders=[".git"])
