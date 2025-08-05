@@ -199,6 +199,7 @@ Here's an example of a linked resource (see Task manager example application for
 **Important Notes:**
 - Only links to files in the same folder (and its subfolders) as the Plain specification are supported. Links to external resources are not supported.
 - File paths are resolved relative to the location of the Plain specification file.
+- All types are supported, except binary files.
 
 ### Hierarchical Resource Visibility
 
