@@ -63,22 +63,21 @@ def collect_specification_linked_resources(specification, specification_heading,
 def collect_linked_resources_in_section(
     section, linked_resources_list, specifications_list, include_acceptance_tests, frid=Optional[str]
 ):
-    # When should we collect resources in the current section (should_collect_resources_in_current_section):
+    # When should we collect specification headings in the current section. Either when one of the following holds true:
     # - frid wasn't specified
-    # - section has no ID <==> it's the root section
+    # - section has no ID (and that's exactly when it's the root section)
     # - section has ID, frid was specified and the specified frid inside the current section tree
-    should_collect_resources_in_current_section = frid is None or "ID" not in section or frid.startswith(section["ID"])
-    if not should_collect_resources_in_current_section:
-        return False
-
-    specifications_to_collect = list(set([DEFINITIONS, NON_FUNCTIONAL_REQUIREMENTS, TEST_REQUIREMENTS]))
-    if specifications_list:
-        specifications_to_collect = list(set(specifications_to_collect) & set(specifications_list))
-
-    for specification_heading in specifications_to_collect:
-        if specification_heading in section:
-            for requirement in section[specification_heading]:
-                collect_specification_linked_resources(requirement, specification_heading, linked_resources_list)
+    should_collect_specification_headings_in_current_section = (
+        frid is None or "ID" not in section or frid.startswith(section["ID"])
+    )
+    if should_collect_specification_headings_in_current_section:
+        specifications_to_collect = list(set([DEFINITIONS, NON_FUNCTIONAL_REQUIREMENTS, TEST_REQUIREMENTS]))
+        if specifications_list:
+            specifications_to_collect = list(set(specifications_to_collect) & set(specifications_list))
+        for specification_heading in specifications_to_collect:
+            if specification_heading in section:
+                for requirement in section[specification_heading]:
+                    collect_specification_linked_resources(requirement, specification_heading, linked_resources_list)
 
     if FUNCTIONAL_REQUIREMENTS in section and (
         not specifications_list or FUNCTIONAL_REQUIREMENTS in specifications_list
@@ -97,7 +96,9 @@ def collect_linked_resources_in_section(
                         acceptance_test, FUNCTIONAL_REQUIREMENTS, linked_resources_list
                     )
 
-            if current_frid == frid:
+            if frid is not None and current_frid == frid:
+                # here, we rely on the fact that FRIDs are incrementing. And if we have reached the current FRID, we should
+                # not collect any FRIDs after the current one.
                 return True
 
     if "sections" in section:

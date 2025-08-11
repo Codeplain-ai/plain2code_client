@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import traceback
 
 import yaml
@@ -32,7 +33,7 @@ MAX_CONFORMANCE_TEST_RUNS = 20
 MAX_REFACTORING_ITERATIONS = 5
 MAX_UNIT_TEST_RENDER_RETRIES = 2
 
-MAX_ISSUE_LENGTH = 10000  # Characters.
+MAX_ISSUE_LENGTH = 15000  # Characters.
 
 UNRECOVERABLE_ERROR_EXIT_CODES = [69]
 TIMEOUT_ERROR_EXIT_CODE = 124
@@ -78,6 +79,7 @@ def _get_frids_range(plain_source_tree, start, end=None):
 
 def execute_test_script(test_script, scripts_args, verbose, test_type):
     try:
+        start_time = time.time()
         result = subprocess.run(
             [file_utils.add_current_path_if_no_path(test_script)] + scripts_args,
             stdout=subprocess.PIPE,
@@ -85,7 +87,7 @@ def execute_test_script(test_script, scripts_args, verbose, test_type):
             text=True,
             timeout=TEST_SCRIPT_EXECUTION_TIMEOUT,
         )
-
+        elapsed_time = time.time() - start_time
         # Log the info about the tests
         if verbose:
             with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".test_output") as temp_file:
@@ -97,6 +99,7 @@ def execute_test_script(test_script, scripts_args, verbose, test_type):
                     temp_file.write(f"Test script {test_script} failed with exit code {result.returncode}.\n")
                 else:
                     temp_file.write(f"Test script {test_script} successfully passed.\n")
+                temp_file.write(f"Test execution time: {elapsed_time:.2f} seconds.\n")
 
             console.info(f"[b]Test output stored in: {temp_file_path}[/b]")
 
