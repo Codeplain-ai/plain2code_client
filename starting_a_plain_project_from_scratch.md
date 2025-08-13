@@ -22,8 +22,27 @@ pip install -r requirements.txt
 ```
 
 ### 2. Environment Setup
-Activate your target virtual environment and set up your Claude API key:
 
+#### Activate your target virtual environment and set up your Claude API key
+
+##### A Note on Python Virtual Environments
+A Python virtual environment is an isolated workspace for your Python project. It allows you to install dependencies specific to your project without affecting your system-wide Python installation or other projects.
+
+- Keeps your project's dependencies separate and organized
+- Prevents version conflicts between projects
+- Makes it easier to reproduce and share your setup
+
+##### Example:
+```bash
+   # Create virtual environment
+   python -m venv my_project_env
+   
+   # Activate on Windows
+   my_project_env\Scripts\activate
+   
+   # Activate on macOS/Linux
+   source my_project_env/bin/activate
+```
 #### Export your API key (replace with your actual key)
 export CLAUDE_API_KEY="your_api_key_here"
 
@@ -36,14 +55,15 @@ echo $CLAUDE_API_KEY
 - If you get "module not found" or "API key not found", double-check you're in the correct venv and CLAUDE_API_KEY is set.
 ```
 
-## 3. Create Your Project Directory
+### 3. Create Your Project Directory
 
 ```bash
 # Create your project folder
-mkdir my-new-project && cd my-new-project
+mkdir my-new-project 
+cd my-new-project
 ```
 
-## 4. Define Your .plain File
+### 4. Define Your .plain File
 
 Create a `.plain` file that describes your application. This is the core of your project.  
 Add your specifications. For more details, have a look at Plain-language-specification.md
@@ -69,10 +89,10 @@ Add your specifications. For more details, have a look at Plain-language-specifi
     - The App should complete execution in under 1 second
 ```
 
-### Template System
+#### Template System
 - `{% include %}` syntax allows you to use predefined templates
 
-## 5. Configure config.yaml
+### 5. Configure config.yaml
 
 Create a `config.yaml` file to configure your project behavior:
 
@@ -94,7 +114,7 @@ copy-conformance-tests: true
 - copy-conformance-tests: When true, copies the generated conformance test files to your project directory, allowing you to review and modify the acceptance tests
 
 
-## 6. Add Test Scripts
+### 6. Add Test Scripts
 
 Copy the appropriate test scripts to your project:
 
@@ -108,7 +128,7 @@ cp /path/to/plain2code_client/test_scripts/run_conformance_tests_python.sh ./tes
 
 ```
 
-## 7. Create .gitignore
+### 7. Create .gitignore
 
 Create a `.gitignore` file to exclude generated artifacts:
 
@@ -119,7 +139,7 @@ build/
 conformance_tests/
 ```
 
-## 8. Run Your Project
+### 8. Run Your Project
 
 ```bash
 # Generate code from your plain file
@@ -128,7 +148,7 @@ python ../plain2code_client/plain2code.py my_app.plain
 
 ```
 
-## 9. Expected Project Layout
+### 9. Expected Project Layout
 
 ```
 my-new-project/
