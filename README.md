@@ -63,17 +63,18 @@ export CLAUDE_API_KEY="your_actual_api_key_here"
    ```
    pip install -r requirements.txt
    ```
+## Render Your Code
 
-4. Create a file, for example `hello.plain`, with your Plain specification.
+1. Create a plain file for your project with your Plain specification.
 
-5. Create a `config.yaml` file to configure your project behavior.
+2. Create a `config.yaml` file to configure your project behavior.
  
-6. Execute:
+3. Execute:
 
    ```
-   python plain2code.py hello.plain
+   python plain2code.py your_project_name.plain
    ```
-7. The generated code will appear in the output folder (by default, `build/`).
+4. The generated code will appear in the output folder (by default, `build/`).
 
 # Additional Resources
 
