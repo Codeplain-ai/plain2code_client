@@ -12,7 +12,8 @@ plain2code.py [OPTIONS] filename
 
 ## Command Line Arguments
 
-> **Tip:** While all arguments can be provided via the command line, it is better to manage your configuration through a `config.yaml` file. This keeps your setup more organized and makes it easier to maintain and reuse settings across runs.
+**Default Configuration:**  
+By default, configuration options are specified in the `config.yaml` file. Using a config file is recommended for clarity and reusability, as it keeps your settings organized and makes it easy to manage them across different runs.
 
 ### Positional Arguments
 
