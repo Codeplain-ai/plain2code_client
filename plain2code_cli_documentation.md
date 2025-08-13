@@ -12,6 +12,8 @@ plain2code.py [OPTIONS] filename
 
 ## Command Line Arguments
 
+> **Tip:** While all arguments can be provided via the command line, it is better to manage your configuration through a `config.yaml` file. This keeps your setup more organized and makes it easier to maintain and reuse settings across runs.
+
 ### Positional Arguments
 
 - **`filename`** - Path to the plain file to render. The directory containing this file has highest precedence for template loading, so you can place custom templates here to override the defaults. See `--template-dir` for more details about template loading.
