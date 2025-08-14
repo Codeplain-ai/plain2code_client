@@ -138,22 +138,22 @@ def create_parser():
 
     render_range_group = parser.add_mutually_exclusive_group()
     render_range_group.add_argument(
-        "--render-range", type=frid_range_string, help="which functional requirements should be generated"
+        "--render-range", type=frid_range_string, help="specify the range of functional requirements to render (e.g. '1.1,2.3')"
     )
     render_range_group.add_argument(
-        "--render-from", type=frid_string, help="from which functional requirements generation should be continued"
+        "--render-from", type=frid_string, help="continue generation starting from this specific functional requirement (e.g. '2.1')"
     )
 
-    parser.add_argument("--unittests-script", type=str, help="a script to run unit tests")
+    parser.add_argument("--unittests-script", type=str, help="path to a script that runs unit tests for the generated code")
     parser.add_argument(
         "--conformance-tests-folder",
         type=non_empty_string,
         default=DEFAULT_CONFORMANCE_TESTS_FOLDER,
         help="folder for conformance test files",
     )
-    parser.add_argument("--conformance-tests-script", type=str, help="a script to run conformance tests")
+    parser.add_argument("--conformance-tests-script", type=str, help="path to a script that runs conformance tests")
     parser.add_argument(
-        "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="force using the API (for internal use)"
+        "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="Render via the API instead of locally. If no URL is given, uses https://api.codeplain.ai (internal use)"
     )
     parser.add_argument(
         "--api-key",
@@ -163,13 +163,13 @@ def create_parser():
     )
     parser.add_argument("--full-plain", action="store_true", help="emit full plain text to render")
     parser.add_argument(
-        "--dry-run", action="store_true", help="preview what plain2code would do without actually making any changes"
+        "--dry-run", action="store_true", help="Preview the functional requirements and acceptance tests without rendering code or creating files"
     )
     parser.add_argument(
         "--replay-with",
         type=str,
         default=None,
-        help="Replay the already executed render with provided render ID.",
+        help="Replay a previous render using its Render ID instead of starting a new render",
     )
 
     parser.add_argument(
