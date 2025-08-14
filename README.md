@@ -21,7 +21,68 @@ An example application in Plain
 
 See [Plain language specification](Plain-language-specification.md) for documentation how to use Plain language.
 
-## Examples
+
+# Getting started
+
+## Prerequisites
+
+### System requirements
+
+To run the plain2code client, you need Python 3.11 or a later version.
+Review the [Platform specifics](#platform-specifics) section for setup details for your environment.
+
+### Anthropic API Key
+
+For now you need to bring your own Anthropic API key to use Codeplain API. If you don't have Anthropic API key, you can create a free developer account at [console.anthropic.com](https://console.anthropic.com/). To experiment with Codeplain you need to top up your Anthropic account with $5-10.
+
+With Anthropic API Key ready, please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic API key added to the list of authorized API keys.
+
+To have the hash generated use the following command:
+
+`python hash_key.py $CLAUDE_API_KEY`
+
+### Setting Up Your API Key
+
+```bash
+# Export API key directly
+export CLAUDE_API_KEY="your_actual_api_key_here"
+```
+
+## Installation Steps
+
+1. Clone this repository
+   ```
+   git clone https://github.com/Codeplain-ai/plain2code.git
+   cd plain2code
+   ```
+2. Set your Codeplain API key as an environment variable:
+   ```
+   export CLAUDE_API_KEY=your_api_key_here
+   ```
+3. Install required libraries
+   ```
+   pip install -r requirements.txt
+   ```
+## Render Your Code
+
+1. Create a plain file for your project with your Plain specification.
+
+2. Create a `config.yaml` file to configure your project behavior.
+ 
+3. Execute:
+
+   ```
+   python plain2code.py your_project_name.plain
+   ```
+4. The generated code will appear in the output folder (by default, `build/`).
+
+# Additional Resources
+
+- For more details on the Plain format, see the [Plain language specification](Plain-language-specification.md).
+- Step-by-step instructions for creating your first Plain project. [Kickstart your plain project](Starting_a_plain_project_from_scratch.md)
+- For complete CLI documentation and usage examples, see [plain2code CLI documentation](plain2code_cli_documentation.md)
+
+# Examples
 
 ### "hello, world"
 
@@ -38,66 +99,69 @@ For example application how to implement task manager in Plain see [example-task
 
 For example application how to implement SaaS connectors in Plain see [example-saas-connectors](https://github.com/Codeplain-ai/example-saas-connectors) repository.
 
-## Prerequisites
 
-### System requirements
+# Platform specifics
 
-To run the plain2code client, you need Python 3.11 or a later version.
+## Windows Environment Specifics
 
-### Anthropic API Key
+---
 
-For now you need to bring your own Anthropic API key to use Codeplain API. If you don't have Anthropic API key, you can create a free developer account at [console.anthropic.com](https://console.anthropic.com/). To experiment with Codeplain you need to top up your Anthropic account with $5-10.
+### 1. Prerequisites
 
-With Anthropic API Key ready, please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic API key added to the list of authorized API keys.
+- **Operating System:** Windows 10 or 11
+- **Python:** Python 3.11 or later
+- **WSL2 (Windows Subsystem for Linux):** Recommended if you encounter issues with shell scripts or need Unix tool compatibility
+- **plain2code tool and API key:** See the [Getting started](#getting-started) section for instructions.
 
-To have the hash generated use the following command:
+---
 
-`python hash_key.py $CLAUDE_API_KEY`
+### 2. Troubleshooting Common Issues
 
-## Setup
+#### Issue 1: CRLF Line Ending Problems
 
-1. Clone this repository
-2. Set your Codeplain API key as an environment variable:
-   ```
-   export CLAUDE_API_KEY=your_api_key_here
-   ```
-3. Install required libraries
-   ```
-   pip install -r requirements.txt
-   ```
+**Error:** `Error rendering plain code: [Errno 2] No such file or directory: '/path_to_test_scripts/test_scripts/run_unittests_python.sh'`
 
-## Usage
+**Solution:**
+```bash
+# Check line endings
+file /path_to_test_scripts/test_scripts/run_conformance_tests_python.sh
+
+# Convert if needed
+sudo apt-get install dos2unix
+dos2unix /path_to_test_scripts/test_scripts/run_unittests_python.sh
+dos2unix /path_to_test_scripts/test_scripts/run_conformance_tests_python.sh
 ```
-plain2code.py [-h] [--verbose] [--debug] [--base-folder BASE_FOLDER] [--build-folder BUILD_FOLDER]
-    [--render-range RENDER_RANGE] [--unittests-script UNITTESTS_SCRIPT] [--conformance-tests-folder CONFORMANCE_TESTS_FOLDER]
-    [--conformance-tests-script CONFORMANCE_TESTS_SCRIPT] [--api [API]] [--api-key API_KEY] filename
 
-Render Plain source to software code.
+#### Issue 2: Permission Issues
 
-positional arguments:
-  filename              Path to The Plain Source file.
+**Problem:** Scripts not executable
 
-options:
-  -h, --help            Show this help message and exit.
-  --verbose, -v         Enable verbose output.
-  --debug               Enable debug information.
-  --base-folder BASE_FOLDER
-                        Location of a folder whose content shoud be copied to the build folder
-                        at the start of the rendering.
-  --build-folder BUILD_FOLDER
-                        Location of the build folder (default: build)
-  --render-range RENDER_RANGE
-                        Range of functional requirements to be renered
-                        (e.g. "3,6" renders functional requirements 3, 4, 5, and 6).
-  --unittests-script UNITTESTS_SCRIPT
-                        Name of a shell script to run unit tests. The script will receive
-                        the build folder as its parameter.
-  --conformance-tests-folder CONFORMANCE_TESTS_FOLDER
-                        Location of the folder where generated conformance test files will be written.
-  --conformance-tests-script CONFORMANCE_TESTS_SCRIPT
-                        Name of a shell script to run conformance tests. The script will receive
-                        the build folder and the conformance tests subfolder as its parameters.
-  --api [API]           Force using the API (for internal use).
-  --api-key API_KEY     API key used to access the API. If not provided, the CLAUDE_API_KEY
-                        environment variable is used.
+**Solution:**
+```bash
+# Make scripts executable
+chmod +x test_scripts/run_unittests_python.sh
+chmod +x test_scripts/run_conformance_tests_python.sh
 ```
+
+#### Issue 3: Virtual Environment Issues
+
+**Problem:** Module not found or API key not found
+
+**Solution:**
+```bash
+source wsl_venv/bin/activate
+which python  # Verify path
+pip install -r requirements.txt --force-reinstall
+```
+
+### 3. Verification Steps
+
+```bash
+python --version
+which python  # Should show wsl_venv
+echo $CLAUDE_API_KEY
+ls -la test_scripts/
+file test_scripts/*.sh
+```
+
+## Mac Environment Specifics
