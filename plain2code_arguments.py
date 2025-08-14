@@ -111,7 +111,8 @@ def update_args_with_config(args, parser):
     return args
 
 
-def parse_arguments():
+def create_parser():
+    """Create the argument parser without parsing arguments."""
     parser = argparse.ArgumentParser(description="Render plain code to target code.")
 
     parser.add_argument(
@@ -184,7 +185,7 @@ def parse_arguments():
         "--copy-build",
         action="store_true",
         default=False,
-        help="If set, copy the build folder to --build-dest after every successful functional requirement rendering.",
+        help="If set, copy the build folder to --build-dest after every successful rendering.",
     )
     parser.add_argument(
         "--build-dest",
@@ -196,7 +197,7 @@ def parse_arguments():
         "--copy-conformance-tests",
         action="store_true",
         default=False,
-        help="If set, copy the conformance tests folder to --conformance-tests-dest after every successful functional requirement rendering. Requires --conformance-tests-script.",
+        help="If set, copy the conformance tests folder to --conformance-tests-dest after every successful rendering. Requires --conformance-tests-script.",
     )
     parser.add_argument(
         "--conformance-tests-dest",
@@ -204,6 +205,12 @@ def parse_arguments():
         default=DEFAULT_CONFORMANCE_TESTS_DEST,
         help="Target folder to copy conformance tests output to (used only if --copy-conformance-tests is set).",
     )
+
+    return parser
+
+
+def parse_arguments():
+    parser = create_parser()
 
     args = parser.parse_args()
     args = update_args_with_config(args, parser)
