@@ -111,7 +111,8 @@ def update_args_with_config(args, parser):
     return args
 
 
-def parse_arguments():
+def create_parser():
+    """Create the argument parser without parsing arguments."""
     parser = argparse.ArgumentParser(description="Render plain code to target code.")
 
     parser.add_argument(
@@ -120,10 +121,10 @@ def parse_arguments():
         help="Path to the plain file to render. The directory containing this file has highest precedence for template loading, "
         "so you can place custom templates here to override the defaults. See --template-dir for more details about template loading.",
     )
-    parser.add_argument("--verbose", "-v", action="store_true", help="enable verbose output")
-    parser.add_argument("--base-folder", type=str, help="base folder for the build files")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
+    parser.add_argument("--base-folder", type=str, help="Base folder for the build files")
     parser.add_argument(
-        "--build-folder", type=non_empty_string, default=DEFAULT_BUILD_FOLDER, help="folder for build files"
+        "--build-folder", type=non_empty_string, default=DEFAULT_BUILD_FOLDER, help="Folder for build files"
     )
 
     # Add config file arguments
@@ -132,27 +133,27 @@ def parse_arguments():
         "--config-name",
         type=non_empty_string,
         default="config.yaml",
-        help="path to the config file, defaults to config.yaml",
+        help="Path to the config file, defaults to config.yaml",
     )
 
     render_range_group = parser.add_mutually_exclusive_group()
     render_range_group.add_argument(
-        "--render-range", type=frid_range_string, help="which functional requirements should be generated"
+        "--render-range", type=frid_range_string, help="Specify the range of functional requirements to render (e.g. '1.1,2.3')"
     )
     render_range_group.add_argument(
-        "--render-from", type=frid_string, help="from which functional requirements generation should be continued"
+        "--render-from", type=frid_string, help="Continue rendering starting from this specific functional requirement (e.g. '2.1')"
     )
 
-    parser.add_argument("--unittests-script", type=str, help="a script to run unit tests")
+    parser.add_argument("--unittests-script", type=str, help="Path to unit test shell script that accepts build folder path as its first argument")
     parser.add_argument(
         "--conformance-tests-folder",
         type=non_empty_string,
         default=DEFAULT_CONFORMANCE_TESTS_FOLDER,
-        help="folder for conformance test files",
+        help="Folder for conformance test files",
     )
-    parser.add_argument("--conformance-tests-script", type=str, help="a script to run conformance tests")
+    parser.add_argument("--conformance-tests-script", type=str, help="Path to conformance tests shell script that accepts source code path as first argument and conformance tests folder path as second argument")
     parser.add_argument(
-        "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="force using the API (for internal use)"
+        "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="Alternative base URL for the API, If no URL is given, uses https://api.codeplain.ai"
     )
     parser.add_argument(
         "--api-key",
@@ -160,15 +161,15 @@ def parse_arguments():
         default=CLAUDE_API_KEY,
         help="API key used to access the API. If not provided, the CLAUDE_API_KEY environment variable is used.",
     )
-    parser.add_argument("--full-plain", action="store_true", help="emit full plain text to render")
+    parser.add_argument("--full-plain", action="store_true", help="Emit full plain text to render")
     parser.add_argument(
-        "--dry-run", action="store_true", help="preview what plain2code would do without actually making any changes"
+        "--dry-run", action="store_true", help="Preview of the functional requirements and acceptance tests without rendering code or creating files"
     )
     parser.add_argument(
         "--replay-with",
         type=str,
         default=None,
-        help="Replay the already executed render with provided render ID.",
+        help="Replay a previous render using its Render ID instead of starting a new render",
     )
 
     parser.add_argument(
@@ -184,7 +185,7 @@ def parse_arguments():
         "--copy-build",
         action="store_true",
         default=False,
-        help="If set, copy the build folder to --build-dest after every successful functional requirement rendering.",
+        help="If set, copy the build folder to `--build-dest` after every successful rendering.",
     )
     parser.add_argument(
         "--build-dest",
@@ -196,7 +197,7 @@ def parse_arguments():
         "--copy-conformance-tests",
         action="store_true",
         default=False,
-        help="If set, copy the conformance tests folder to --conformance-tests-dest after every successful functional requirement rendering. Requires --conformance-tests-script.",
+        help="If set, copy the conformance tests folder to `--conformance-tests-dest` after every successful rendering. Requires --conformance-tests-script.",
     )
     parser.add_argument(
         "--conformance-tests-dest",
@@ -204,6 +205,12 @@ def parse_arguments():
         default=DEFAULT_CONFORMANCE_TESTS_DEST,
         help="Target folder to copy conformance tests output to (used only if --copy-conformance-tests is set).",
     )
+
+    return parser
+
+
+def parse_arguments():
+    parser = create_parser()
 
     args = parser.parse_args()
     args = update_args_with_config(args, parser)
