@@ -11,7 +11,7 @@ parser = create_parser()
 help_text = parser.format_help()
 
 # Create markdown
-md = "# CLI Reference\n\n```text\n" + help_text + "\n```"
+md = "# Plain2Code CLI Reference\n\n```text\n" + help_text + "\n```"
 
 # Generate cli.md in the docs folder
 docs_dir = os.path.dirname(os.path.abspath(__file__))
