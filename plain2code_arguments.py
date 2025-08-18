@@ -57,20 +57,6 @@ def frid_string(s):
     if not s:
         raise argparse.ArgumentTypeError("The functional requirement ID cannot be empty.")
 
-    # Convert to string in case it's a float or other numeric type
-    s = str(s).strip()
-
-    # Handle cases where shell passes floats as numbers
-    if re.match(r"^\d+\.\d+$", s):
-        # Keep format like 1.1, 2.3
-        pass
-    else:
-        # For integers or more complex formats like 1.2.3
-        try:
-            float_val = float(s)
-            s = f"{float_val:g}"  # remove unnecessary trailing zeros
-        except ValueError:
-            pass  # keep as-is
     
     if not re.match(r"^\d+(\.\d+)*$", s):
         raise argparse.ArgumentTypeError(
@@ -169,10 +155,7 @@ def create_parser():
     parser.add_argument(
         "--unittests-script", 
         type=str, 
-        help="Shell script to run unit tests on generated code. "
-             "It should receive the build folder path (containing generated source code) as first argument. "
-             "The build folder is the directory where plain2code generates all the source code files based on your plain specification. "
-             "It's named 'build' by default (unless you change it with --build-folder)."
+        help="Shell script to run unit tests on generated code. Receives the build folder path as its first argument (default: 'build')."
     )
     parser.add_argument(
         "--conformance-tests-folder",
@@ -186,8 +169,7 @@ def create_parser():
         help="Path to conformance tests shell script. The conformance tests shell script should accept "
              "the build folder path (containing generated source code) as its first argument and "
              "the conformance tests folder path (containing test files) as its second argument. "
-             "The build folder is the directory where plain2code generates all the source code files based on your plain specification. "
-             "The conformance tests folder contains the test files that verify the generated code meets the requirements."
+             
     )
     parser.add_argument(
         "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="Alternative base URL for the API. Default: `https://api.codeplain.ai`"
@@ -201,9 +183,9 @@ def create_parser():
     parser.add_argument(
         "--full-plain", 
         action="store_true", 
-        help="Show the complete specification that will be sent to the API for code generation. "
-             "This displays your plain file content plus any additional requirements "
-             "that get automatically added. Useful for understanding what content is being processed."
+        help="Display the complete plain specification before code generation. "
+             "This shows your plain file with "
+             "any included template content expanded. Useful for understanding what content is being processed."
     )
     parser.add_argument(
         "--dry-run", action="store_true", help="Preview of what Codeplain would do without actually making any changes."
