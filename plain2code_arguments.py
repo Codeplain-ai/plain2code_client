@@ -184,7 +184,7 @@ def create_parser():
         "--replay-with",
         type=str,
         default=None,
-        help="Replay a previous render using its Render ID instead of starting a new render",
+        help="",
     )
 
     parser.add_argument(
