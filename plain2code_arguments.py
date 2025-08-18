@@ -153,20 +153,42 @@ def create_parser():
 
     render_range_group = parser.add_mutually_exclusive_group()
     render_range_group.add_argument(
-        "--render-range", type=frid_range_string, help="Specify the range of functional requirements to render (e.g. '1.1,2.3')"
+        "--render-range", 
+        type=frid_range_string, 
+        help="Specify a range of functional requirements to render (e.g. '1.1,2.3'). "
+             "Use comma to separate start and end IDs. If only one ID is provided, only that requirement is rendered. "
+             "Range is inclusive of both start and end IDs."
     )
     render_range_group.add_argument(
-        "--render-from", type=frid_string, help="Continue rendering starting from this specific functional requirement (e.g. '2.1')"
+        "--render-from", 
+        type=frid_string, 
+        help="Continue generation starting from this specific functional requirement (e.g. '2.1'). "
+             "The requirement with this ID will be included in the output. The ID must match one of the functional requirements in your plain file."
     )
 
-    parser.add_argument("--unittests-script", type=str, help="Path to unit test shell script that accepts build folder path as its first argument")
+    parser.add_argument(
+        "--unittests-script", 
+        type=str, 
+        help="Shell script to run unit tests on generated code. "
+             "It should receive the build folder path (containing generated source code) as first argument. "
+             "The build folder is the directory where plain2code generates all the source code files based on your plain specification. "
+             "It's named 'build' by default (unless you change it with --build-folder)."
+    )
     parser.add_argument(
         "--conformance-tests-folder",
         type=non_empty_string,
         default=DEFAULT_CONFORMANCE_TESTS_FOLDER,
         help="Folder for conformance test files",
     )
-    parser.add_argument("--conformance-tests-script", type=str, help="Path to conformance tests shell script that accepts source code path as first argument and conformance tests folder path as second argument")
+    parser.add_argument(
+        "--conformance-tests-script", 
+        type=str, 
+        help="Path to conformance tests shell script. The conformance tests shell script should accept "
+             "the build folder path (containing generated source code) as its first argument and "
+             "the conformance tests folder path (containing test files) as its second argument. "
+             "The build folder is the directory where plain2code generates all the source code files based on your plain specification. "
+             "The conformance tests folder contains the test files that verify the generated code meets the requirements."
+    )
     parser.add_argument(
         "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="Alternative base URL for the API. Default: `https://api.codeplain.ai`"
     )
@@ -176,9 +198,15 @@ def create_parser():
         default=CLAUDE_API_KEY,
         help="API key used to access the API. If not provided, the CLAUDE_API_KEY environment variable is used.",
     )
-    parser.add_argument("--full-plain", action="store_true", help="Emit full plain text to render")
     parser.add_argument(
-        "--dry-run", action="store_true", help="Preview of the functional requirements and acceptance tests without rendering code or creating files"
+        "--full-plain", 
+        action="store_true", 
+        help="Show the complete specification that will be sent to the API for code generation. "
+             "This displays your plain file content plus any additional requirements "
+             "that get automatically added. Useful for understanding what content is being processed."
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Preview of what Codeplain would do without actually making any changes."
     )
     parser.add_argument(
         "--replay-with",
