@@ -57,6 +57,21 @@ def frid_string(s):
     if not s:
         raise argparse.ArgumentTypeError("The functional requirement ID cannot be empty.")
 
+    # Convert to string in case it's a float or other numeric type
+    s = str(s).strip()
+
+    # Handle cases where shell passes floats as numbers
+    if re.match(r"^\d+\.\d+$", s):
+        # Keep format like 1.1, 2.3
+        pass
+    else:
+        # For integers or more complex formats like 1.2.3
+        try:
+            float_val = float(s)
+            s = f"{float_val:g}"  # remove unnecessary trailing zeros
+        except ValueError:
+            pass  # keep as-is
+    
     if not re.match(r"^\d+(\.\d+)*$", s):
         raise argparse.ArgumentTypeError(
             "Functional requirement ID string must contain only numbers optionally separated by dots (e.g. '1', '1.2.3')"
