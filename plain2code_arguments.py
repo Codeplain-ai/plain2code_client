@@ -168,7 +168,7 @@ def create_parser():
     )
     parser.add_argument("--conformance-tests-script", type=str, help="Path to conformance tests shell script that accepts source code path as first argument and conformance tests folder path as second argument")
     parser.add_argument(
-        "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="Alternative base URL for the API, If no URL is given, uses https://api.codeplain.ai"
+        "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="Alternative base URL for the API. Default: `https://api.codeplain.ai`"
     )
     parser.add_argument(
         "--api-key",
