@@ -166,10 +166,9 @@ def create_parser():
     parser.add_argument(
         "--conformance-tests-script", 
         type=str, 
-        help="Path to conformance tests shell script. The conformance tests shell script should accept "
-             "the build folder path (containing generated source code) as its first argument and "
-             "the conformance tests folder path (containing test files) as its second argument. "
-             
+        help="Path to conformance tests shell script. The script should accept two arguments: "
+             "1) First argument: path to a folder (e.g. 'build') containing generated source code, "
+             "2) Second argument: path to a subfolder of the conformance tests folder (e.g. 'conformance_tests/subfoldername') containing test files."
     )
     parser.add_argument(
         "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="Alternative base URL for the API. Default: `https://api.codeplain.ai`"
