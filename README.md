@@ -58,23 +58,26 @@ export CLAUDE_API_KEY="your_actual_api_key_here"
    python -m venv .venv
    source .venv/bin/activate
    ```
-   ***Note***: For Windows setup see [Windows environment specifics](platform_specifics/Windows_environment_specifics.md).
+   ***Note***: For Windows setup refer to [Windows environment specifics](platform_specifics/Windows_environment_specifics.md).
 4. Install required libraries
    ```
    pip install -r requirements.txt
    ```
 
-### Quick Start Example
-
+### Quick Start
 
 After completing the installation steps above, you can immediately test the system with a simple "Hello World" example:
 
-1. Download the quick start example: [example_hello_world_python](examples/example_hello_world_python)
+1. Change to the example folder:
+   ```
+   cd examples/example_hello_world_python
+   ```
 
 2. Run the example:
    ```
-   python plain2code.py examples/example_hello_world_python/hello_world_python.plain
+   python ../../plain2code.py hello_world_python.plain
    ```
+   *(This step can take a bit to finish.)*
 
 3. The system will generate a Python application in the `build` directory. You can run it with:
    ```
@@ -89,8 +92,6 @@ After completing the installation steps above, you can immediately test the syst
 - See the [examples](examples) folder for sample projects in Golang, Python, and React.
 - For example application how to implement task manager in Plain see [example-task-manager](https://github.com/Codeplain-ai/example-task-manager) repository.
 - For example application how to implement SaaS connectors in Plain see [example-saas-connectors](https://github.com/Codeplain-ai/example-saas-connectors) repository.
-
-
 
 ### Documentation
 
