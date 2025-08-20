@@ -1,25 +1,39 @@
 # How to Start a New Plain Project from Scratch
 
 This guide will walk you through creating your first Plain project from scratch.
-It assumes you have already met all [prerequisites](../README.md#prerequisites), completed the [installation steps](../README.md/#installation-steps) and successfully rendered your first example. If you haven't done so yet, please refer to the [quick start section](../README.md#quick-start).
+It assumes you have already:
+
+✅ Met all [prerequisites](../README.md#prerequisites),
+✅ Completed the [installation steps](../README.md/#installation-steps),
+✅ Successfully rendered your [first example](../README.md#quick-start).
+
+If you haven't done so yet, please refer to [README](../README.md).
+
 After following this guide, you'll be equipped to turn your ideas into working code with Plain.
 
+## Project Structure Overview
 
-We’ll use a simple array-sorting program as our example.
-## 1. Create Your Project Directory
+Every Plain project follows this basic structure:
 
-```bash
-mkdir my-new-project
-cd my-new-project
+```
+my-new-project/
+├── my_app.plain                        # Your application specification
+├── config.yaml                         # CLI configuration
+├── run_unittests_[language].sh         # Unit test script
+├── run_conformance_tests_[language].sh # Conformance test script
+├── build/                              # Generated
+└── conformance_tests/                  # Generated
 ```
 
-## 2. Define Your .plain File
+In this guide we will cover how to create each of these step by step.
 
-Create a `.plain` file to specify your application's functionality, data structures, and acceptance tests. The following example shows a template for the array sorting problem. For more details, see [Plain language specifications](plain_language_specification.md).
+## 1. Define Your .plain File
 
-**Example: `my_app.plain`**
+Create a `.plain` file. The following example shows how to specify the array sorting problem. For more details, see [Plain language specifications](plain_language_specification.md).
+
+**Example: `array_sorting.plain`**
 ```plain
-{% include "python-console-app-template.plain", main_executable_file_name: "my_app.py" %}
+{% include "python-console-app-template.plain", main_executable_file_name: "array_sorting.py" %}
 
 ***Definitions:***
 - The Array is an array of integers received as input.
@@ -31,79 +45,48 @@ Create a `.plain` file to specify your application's functionality, data structu
 
     ***Acceptance Tests:***
     - When given input "5 2 8 1 9", The App should output "1 2 5 8 9"
-    - When given input "-5 10 -2 0", The App should output "-5 -2 0 10"
     - When given input "1 2 3 4 5", The App should output "1 2 3 4 5"
-    - When given input "42", The App should output "42"
 
 ```
-**Notes:** 
-- Use specific input/output examples to make tests concrete and verifiable.
-- When including templates, use `--full-plain` flag to preview the complete specification including all template content before rendering. You can find predefined templates in [standard template library](../standard_template_library/).
 
-## 3. Configure config.yaml
+- When including templates, use `--full-plain` flag to preview the complete specification including all template content before rendering. You can find predefined templates in [standard template library](../standard_template_library/). (This flag can be configured in your config file.)
 
-Create a `config.yaml` file to configure your project behavior:
-
-Example:
-```yaml
-# Test script configurations
-unittests-script: ./test_scripts/run_unittests_python.sh
-conformance-tests-script: ./test_scripts/run_conformance_tests_python.sh
-
-# Output control
-verbose: true
-copy-build: true
-copy-conformance-tests: true
-```
-- Specify the test scripts so that Plain knows how to run unit and conformance tests.
-- Indicate where to copy the generated files and whether to display detailed output during code generation like shown in output control. 
-- For full argument explanations, see the [plain2code CLI documentation](docs/plain2code_cli.md).
-
-
-## 4. Add Test Scripts
+## 2. Add Test Scripts
 
 Include the appropriate test scripts to your project:
 
 ```bash
-mkdir test_scripts
-cp /path/to/plain2code_client/test_scripts/run_unittests_python.sh ./test_scripts/
-cp /path/to/plain2code_client/test_scripts/run_conformance_tests_python.sh ./test_scripts/
+cp /path/to/plain2code_client/test_scripts/run_unittests_python.sh ./
+cp /path/to/plain2code_client/test_scripts/run_conformance_tests_python.sh ./
 ```
 - You may need to modify these scripts based on your specific project requirements.
 
-## 5. Create .gitignore
+## 3. Configure Parameters
 
-Exclude generated artifacts from version control:
+Create a `config.yaml` (default name, which you can change with `--config-name` argument in the file) file to configure the plain2code CLI parameters.
 
-```gitignore
-# AI-generated code/tests
-build/
-conformance_tests/
+Example of a basic `config.yaml` file:
+
+```yaml
+
+unittests-script: ./run_unittests_python.sh
+conformance-tests-script: ./run_conformance_tests_python.sh
+verbose: true
+
 ```
+- Specify the test scripts so that Plain knows how to run unit and conformance tests.
+- Indicate whether to display detailed output during code generation like shown in output control. 
+- For additional options and advanced configuration, see the [plain2code CLI documentation](docs/plain2code_cli.md).
 
-## 6. Generate & Run Your Project
+## 4. Generate & Run Your Project
 
 ```bash
 python ../plain2code_client/plain2code.py my_app.plain
 ```
 - Generated code will appear in build/ and conformance_tests/.
 
-## 7. Expected Project Layout
 
-```
-my-new-project/
-├── my_app.plain                   
-├── config.yaml                     
-├── test_scripts/                  
-├── README.md                     
-├── .gitignore                      
-├── build/                          # Generated
-├── conformance_tests/              # Generated
-├── dist/                           # Build output (if copy-build: true)
-└── dist_conformance_tests/         # Test output (if copy-conformance-tests: true)
-```
-
-## 8. Notes
+## 5. Notes
 - `build/` and `conformance_tests/` folders are generated automatically
 - These folders are excluded from git via `.gitignore`
 - `dist/` and `dist_conformance_tests/` are created if you set `copy-build: true` and `copy-conformance-tests: true` in your config.yaml
