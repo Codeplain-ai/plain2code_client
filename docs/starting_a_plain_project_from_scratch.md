@@ -15,7 +15,7 @@ cd my-new-project
 
 ## 2. Define Your .plain File
 
-Create a `.plain` file to specify your application's functionality, data structures, and acceptance tests. The following example shows a template for the array sorting problem. For more details, see [Plain language specifications](plain-language-specification.md).
+Create a `.plain` file to specify your application's functionality, data structures, and acceptance tests. The following example shows a template for the array sorting problem. For more details, see [Plain language specifications](plain_language_specification.md).
 
 **Example: `my_app.plain`**
 ```plain
@@ -30,12 +30,15 @@ Create a `.plain` file to specify your application's functionality, data structu
 - Display The Array.
 
     ***Acceptance Tests:***
-    - The App should display the sorted array in a readable format
-    - The App should preserve all original values in The Array (no data loss)
-    - The App should handle arrays with single elements correctly
-    - Complete the execution in under 1 second
+    - When given input "5 2 8 1 9", The App should output "1 2 5 8 9"
+    - When given input "-5 10 -2 0", The App should output "-5 -2 0 10"
+    - When given input "1 2 3 4 5", The App should output "1 2 3 4 5"
+    - When given input "42", The App should output "42"
 
 ```
+**Notes:** 
+- Use specific input/output examples to make tests concrete and verifiable.
+- When including templates, use `--full-plain` flag to preview the complete specification including all template content before rendering. You can find predefined templates in [standard template library](../standard_template_library/).
 
 ## 3. Configure config.yaml
 
@@ -52,18 +55,21 @@ verbose: true
 copy-build: true
 copy-conformance-tests: true
 ```
+- Specify the test scripts so that Plain knows how to run unit and conformance tests.
+- Indicate where to copy the generated files and whether to display detailed output during code generation like shown in output control. 
 - For full argument explanations, see the [plain2code CLI documentation](docs/plain2code_cli.md).
 
 
 ## 4. Add Test Scripts
 
-Copy the appropriate test scripts to your project:
+Include the appropriate test scripts to your project:
 
 ```bash
 mkdir test_scripts
 cp /path/to/plain2code_client/test_scripts/run_unittests_python.sh ./test_scripts/
 cp /path/to/plain2code_client/test_scripts/run_conformance_tests_python.sh ./test_scripts/
 ```
+- You may need to modify these scripts based on your specific project requirements.
 
 ## 5. Create .gitignore
 
