@@ -1,5 +1,6 @@
 # Windows Environment Specifics
-Windows-specific commands and configurations for plain2code setup.
+
+This is a guide for users running Codeplain on the Windows operating system. Codeplain supports running on Windows via WSL, so please make sure you have WSL installed before proceeding.
 
 ## 1. Prerequisites
 
@@ -25,12 +26,8 @@ Windows-specific commands and configurations for plain2code setup.
    ```
    You should see `(.venv)` at the beginning of your command prompt
 
-## 3. Troubleshooting Common Issues
 
-### Issue 1: Shell Script Issues
-If shell scripts (`.sh` files) don't run on Windows, use WSL2 or run the equivalent Python commands directly on Windows.
-
-### Issue 2: CRLF Line Ending Problems
+### 3. CRLF Line Ending Problems
 Convert line endings if you run into script execution errors:
 
 ```bash
