@@ -29,6 +29,8 @@ An example application in Plain
 
 To run the plain2code client, you need Python 3.11 or a later version.
 
+**Windows users:** Please install WSL (Windows Subsystem for Linux) as this is currently the supported environment for running plain code on Windows.
+
 #### Anthropic API Key
 
 For now you need to bring your own Anthropic API key to use Codeplain API. If you don't have Anthropic API key, you can create a free developer account at [console.anthropic.com](https://console.anthropic.com/). To experiment with Codeplain you need to top up your Anthropic account with $5-10.
@@ -58,7 +60,6 @@ export CLAUDE_API_KEY="your_actual_api_key_here"
    python -m venv .venv
    source .venv/bin/activate
    ```
-   ***Note***: For Windows setup refer to [Windows environment specifics](platform_specifics/Windows_environment_specifics.md).
 4. Install required libraries
    ```
    pip install -r requirements.txt
@@ -95,5 +96,5 @@ After completing the installation steps above, you can immediately test the syst
 - For more details on the Plain format, see the [Plain language specification](Plain-language-specification.md).
 - For step-by-step instructions for creating your first Plain project see the [Kickstart your plain project](Starting_a_plain_project_from_scratch.md).
 - For complete CLI documentation and usage examples, see [plain2code CLI documentation](plain2code_cli_documentation.md).
-- For details on setting up your environment, see the [platform specifics](Platform_specifics).
+
 
