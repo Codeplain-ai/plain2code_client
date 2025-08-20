@@ -68,18 +68,15 @@ export CLAUDE_API_KEY="your_actual_api_key_here"
 
 After completing the installation steps above, you can immediately test the system with a simple "Hello World" example:
 
-1. Change to the example folder:
+- Change to the example folder and run the example:
    ```
    cd examples/example_hello_world_python
-   ```
-
-2. Run the example:
-   ```
    python ../../plain2code.py hello_world_python.plain
    ```
-   *(This step can take a bit to finish.)*
 
-3. The system will generate a Python application in the `build` directory. You can run it with:
+   *Note: Rendering will take a few minutes to complete.*
+
+- The system will generate a Python application in the `build` directory. You can run it with:
    ```
    cd build
    python hello_world.py
