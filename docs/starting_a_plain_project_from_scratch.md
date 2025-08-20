@@ -1,9 +1,11 @@
 # How to Start a New Plain Project from Scratch
 
-This guide explains how to set up a new Plain project from scratch, write your `.plain` specification files, and generate your initial code outputs.
+This guide will walk you through creating your first Plain project from scratch.
+It assumes you have already met all [prerequisites](../README.md#prerequisites), completed the [installation steps](../README.md/#installation-steps) and successfully rendered your first example. If you haven't done so yet, please refer to the [quick start section](../README.md#quick-start).
+After following this guide, you'll be equipped to turn your ideas into working code with Plain.
 
-- For installation and environment setup see the main [README](README.md).
 
+We’ll use a simple array-sorting program as our example.
 ## 1. Create Your Project Directory
 
 ```bash
@@ -13,7 +15,7 @@ cd my-new-project
 
 ## 2. Define Your .plain File
 
-Create a `.plain` file to specify your application's functionality, data structures, and acceptance tests. For more details, see [Plain language specifications](Plain-language-specification.md).
+Create a `.plain` file to specify your application's functionality, data structures, and acceptance tests. The following example shows a template for the array sorting problem. For more details, see [Plain language specifications](plain-language-specification.md).
 
 **Example: `my_app.plain`**
 ```plain
@@ -28,13 +30,12 @@ Create a `.plain` file to specify your application's functionality, data structu
 - Display The Array.
 
     ***Acceptance Tests:***
+    - The App should display the sorted array in a readable format
+    - The App should preserve all original values in The Array (no data loss)
+    - The App should handle arrays with single elements correctly
+    - Complete the execution in under 1 second
 
-    - The App should exit with status code 0 indicating successful execution
-    - The App should complete execution in under 1 second
 ```
-
-### Template System
-- `{% include %}` syntax allows you to use predefined templates.
 
 ## 3. Configure config.yaml
 

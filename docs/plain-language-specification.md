@@ -186,6 +186,16 @@ Lines starting with `>` are ignored when rendering software code.
 > This is an example of a comment in Plain
 ```
 
+## Template System
+
+Plain supports template inclusion using the `{% include %}` syntax, which allows you to use predefined templates in your specifications.
+
+```plain
+{% include "python-console-app-template.plain", main_executable_file_name: "my_app.py" %}
+```
+
+The template system enables code reuse and standardization across Plain projects.
+
 ## Linked Resources
 
 If you include a link using the markdown syntax, the linked resource will be passed along with the Plain specification to the renderer.
