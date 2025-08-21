@@ -95,6 +95,6 @@ After completing the installation steps above, you can immediately test the syst
 
 - For more details on the Plain format, see the [Plain language specification](docs/plain_language_specification.md).
 - For step-by-step instructions for creating your first Plain project see the [Kickstart your plain project](docs/starting_a_plain_project_from_scratch.md).
-- For complete CLI documentation and usage examples, see [plain2code CLI documentation](plain2code_cli_documentation.md).
+- For complete CLI documentation and usage examples, see [plain2code CLI documentation](docs/plain2code_cli.md).
 
 
