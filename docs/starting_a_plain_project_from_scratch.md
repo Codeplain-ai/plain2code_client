@@ -76,7 +76,7 @@ verbose: true
 ```
 - Specify the test scripts so that Plain knows how to run unit and conformance tests.
 - Indicate whether to display detailed output during code generation like shown in output control. 
-- For additional options and advanced configuration, see the [plain2code CLI documentation](docs/plain2code_cli.md).
+- For additional options and advanced configuration, see the [plain2code CLI documentation](plain2code_cli.md).
 
 ## 4. Generate & Run Your Project
 
