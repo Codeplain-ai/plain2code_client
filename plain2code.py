@@ -57,10 +57,13 @@ def get_render_range_from(start, plain_source_tree):
 def _get_frids_range(plain_source_tree, start, end=None):
     frids = list(plain_spec.get_frids(plain_source_tree))
 
+    start = str(start)
+
     if start not in frids:
         raise InvalidFridArgument(f"Invalid start functional requirement ID: {start}. Valid IDs are: {frids}.")
 
     if end is not None:
+        end = str(end)
         if end not in frids:
             raise InvalidFridArgument(f"Invalid end functional requirement ID: {end}. Valid IDs are: {frids}.")
 
