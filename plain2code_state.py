@@ -69,12 +69,16 @@ class RunState:
             self.render_id: str = str(uuid.uuid4())
         self.call_count: int = 0
         self.unittest_batch_id: int = 0
+        self.frid_render_anaysis: dict[str, str] = {}
 
     def increment_call_count(self):
         self.call_count += 1
 
     def increment_unittest_batch_id(self):
         self.unittest_batch_id += 1
+
+    def add_rendering_analysis_for_frid(self, frid, rendering_analysis) -> None:
+        self.frid_render_anaysis[frid] = rendering_analysis
 
     def to_dict(self):
         return {

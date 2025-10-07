@@ -57,7 +57,6 @@ def frid_string(s):
     if not s:
         raise argparse.ArgumentTypeError("The functional requirement ID cannot be empty.")
 
-    
     if not re.match(r"^\d+(\.\d+)*$", s):
         raise argparse.ArgumentTypeError(
             "Functional requirement ID string must contain only numbers optionally separated by dots (e.g. '1', '1.2.3')"
@@ -139,23 +138,23 @@ def create_parser():
 
     render_range_group = parser.add_mutually_exclusive_group()
     render_range_group.add_argument(
-        "--render-range", 
-        type=frid_range_string, 
+        "--render-range",
+        type=frid_range_string,
         help="Specify a range of functional requirements to render (e.g. '1.1,2.3'). "
-             "Use comma to separate start and end IDs. If only one ID is provided, only that requirement is rendered. "
-             "Range is inclusive of both start and end IDs."
+        "Use comma to separate start and end IDs. If only one ID is provided, only that requirement is rendered. "
+        "Range is inclusive of both start and end IDs.",
     )
     render_range_group.add_argument(
-        "--render-from", 
-        type=frid_string, 
+        "--render-from",
+        type=frid_string,
         help="Continue generation starting from this specific functional requirement (e.g. '2.1'). "
-             "The requirement with this ID will be included in the output. The ID must match one of the functional requirements in your plain file."
+        "The requirement with this ID will be included in the output. The ID must match one of the functional requirements in your plain file.",
     )
 
     parser.add_argument(
-        "--unittests-script", 
-        type=str, 
-        help="Shell script to run unit tests on generated code. Receives the build folder path as its first argument (default: 'build')."
+        "--unittests-script",
+        type=str,
+        help="Shell script to run unit tests on generated code. Receives the build folder path as its first argument (default: 'build').",
     )
     parser.add_argument(
         "--conformance-tests-folder",
@@ -164,14 +163,18 @@ def create_parser():
         help="Folder for conformance test files",
     )
     parser.add_argument(
-        "--conformance-tests-script", 
-        type=str, 
+        "--conformance-tests-script",
+        type=str,
         help="Path to conformance tests shell script. The script should accept two arguments: "
-             "1) First argument: path to a folder (e.g. 'build') containing generated source code, "
-             "2) Second argument: path to a subfolder of the conformance tests folder (e.g. 'conformance_tests/subfoldername') containing test files."
+        "1) First argument: path to a folder (e.g. 'build') containing generated source code, "
+        "2) Second argument: path to a subfolder of the conformance tests folder (e.g. 'conformance_tests/subfoldername') containing test files.",
     )
     parser.add_argument(
-        "--api", type=str, nargs="?", const="https://api.codeplain.ai", help="Alternative base URL for the API. Default: `https://api.codeplain.ai`"
+        "--api",
+        type=str,
+        nargs="?",
+        const="https://api.codeplain.ai",
+        help="Alternative base URL for the API. Default: `https://api.codeplain.ai`",
     )
     parser.add_argument(
         "--api-key",
@@ -180,11 +183,11 @@ def create_parser():
         help="API key used to access the API. If not provided, the CLAUDE_API_KEY environment variable is used.",
     )
     parser.add_argument(
-        "--full-plain", 
-        action="store_true", 
+        "--full-plain",
+        action="store_true",
         help="Display the complete plain specification before code generation. "
-             "This shows your plain file with "
-             "any included template content expanded. Useful for understanding what content is being processed."
+        "This shows your plain file with "
+        "any included template content expanded. Useful for understanding what content is being processed.",
     )
     parser.add_argument(
         "--dry-run", action="store_true", help="Preview of what Codeplain would do without actually making any changes."

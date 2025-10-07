@@ -9,16 +9,40 @@ if [ -z "$1" ]; then
   exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
+PYTHON_BUILD_SUBFOLDER=python_$1
+
+if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+  printf "Preparing Python build subfolder: $PYTHON_BUILD_SUBFOLDER\n"
+fi
+
+# Check if the Python build subfolder exists
+if [ -d "$PYTHON_BUILD_SUBFOLDER" ]; then
+  # Find and delete all files and folders
+  find "$PYTHON_BUILD_SUBFOLDER" -mindepth 1 -exec rm -rf {} +
+
+  if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+    printf "Cleanup completed.\n"
+  fi
+else
+  if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+    printf "Subfolder does not exist. Creating it...\n"
+  fi
+
+  mkdir $PYTHON_BUILD_SUBFOLDER
+fi
+
+cp -R $1/* $PYTHON_BUILD_SUBFOLDER
+
 # Move to the subfolder
-cd "$1" 2>/dev/null
+cd "$PYTHON_BUILD_SUBFOLDER" 2>/dev/null
 
 if [ $? -ne 0 ]; then
-  echo "Error: Subfolder '$1' does not exist."
+  printf "Error: Python build folder '$PYTHON_BUILD_SUBFOLDER' does not exist.\n"
   exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 # Execute all Python unittests in the subfolder
-echo "Running Python unittests in $1..."
+echo "Running Python unittests in $PYTHON_BUILD_SUBFOLDER..."
 
 output=$(timeout 60s python -m unittest discover -b 2>&1)
 exit_code=$?
