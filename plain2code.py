@@ -56,16 +56,11 @@ def get_render_range_from(start, plain_source_tree):
 
 def _get_frids_range(plain_source_tree, start, end=None):
     frids = list(plain_spec.get_frids(plain_source_tree))
-    
-    # Convert start to string to handle numeric inputs
-    start = str(start)
 
     if start not in frids:
         raise InvalidFridArgument(f"Invalid start functional requirement ID: {start}. Valid IDs are: {frids}.")
 
     if end is not None:
-        # Convert end to string to handle numeric inputs
-        end = str(end)
         if end not in frids:
             raise InvalidFridArgument(f"Invalid end functional requirement ID: {end}. Valid IDs are: {frids}.")
 
@@ -166,9 +161,7 @@ def run_unittests(
             )
 
         if len(unittests_issue) > MAX_ISSUE_LENGTH:
-            console.warning(
-                f"Unit tests issue text is too long and will be smartly truncated to {MAX_ISSUE_LENGTH} characters."
-            )
+            console.warning("Unit tests issue text is too long and will be summarized.")
 
         existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
 
@@ -361,9 +354,7 @@ def run_conformance_tests(  # noqa: C901
             return [False, False, existing_files, True]
 
         if len(conformance_tests_issue) > MAX_ISSUE_LENGTH:
-            console.warning(
-                f"Conformance tests issue text is too long and will be smartly truncated to {MAX_ISSUE_LENGTH} characters."
-            )
+            console.warning("Conformance tests issue text is too long and will be summarized.")
 
         conformance_tests_files_content = file_utils.get_existing_files_content(
             conformance_tests_folder_name, conformance_tests_files
@@ -996,10 +987,9 @@ def render_functional_requirement(  # noqa: C901
         )
 
     # Phase 4: Conformance test the code.
-    if (
-        args.render_conformance_tests
-        and (plain_spec.TEST_REQUIREMENTS in specifications or plain_spec.ACCEPTANCE_TESTS in specifications)
-        and (specifications[plain_spec.TEST_REQUIREMENTS] or specifications[plain_spec.ACCEPTANCE_TESTS])
+    if args.render_conformance_tests and (
+        (len(specifications.get(plain_spec.TEST_REQUIREMENTS, [])) > 0)
+        or (len(specifications.get(plain_spec.ACCEPTANCE_TESTS, [])) > 0)
     ):
         console.info("\n[b]Implementing conformance tests...[/b]\n")
 

@@ -18,11 +18,35 @@ fi
 
 current_dir=$(pwd)
 
+PYTHON_BUILD_SUBFOLDER=python_$1
+
+if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+  printf "Preparing Python build subfolder: $PYTHON_BUILD_SUBFOLDER\n"
+fi
+
+# Check if the Python build subfolder exists
+if [ -d "$PYTHON_BUILD_SUBFOLDER" ]; then
+  # Find and delete all files and folders
+  find "$PYTHON_BUILD_SUBFOLDER" -mindepth 1 -exec rm -rf {} +
+
+  if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+    printf "Cleanup completed.\n"
+  fi
+else
+  if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+    printf "Subfolder does not exist. Creating it...\n"
+  fi
+
+  mkdir $PYTHON_BUILD_SUBFOLDER
+fi
+
+cp -R $1/* $PYTHON_BUILD_SUBFOLDER
+
 # Move to the subfolder
-cd "$1" 2>/dev/null
+cd "$PYTHON_BUILD_SUBFOLDER" 2>/dev/null
 
 if [ $? -ne 0 ]; then
-  printf "Error: Build folder '$1' does not exist.\n"
+  printf "Error: Python build folder '$PYTHON_BUILD_SUBFOLDER' does not exist.\n"
   exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 

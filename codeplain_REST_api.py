@@ -346,3 +346,27 @@ class CodeplainAPI:
         }
 
         return self.post_request(endpoint_url, headers, payload, run_state)
+
+    def analyze_rendering(
+        self,
+        frid,
+        plain_source_tree,
+        linked_resources,
+        existing_files_content,
+        implementation_code_diff,
+        fixed_implementation_code_diff,
+        run_state: RunState,
+    ):
+        endpoint_url = f"{self.api_url}/analyze_rendering"
+        headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+
+        payload = {
+            "frid": frid,
+            "plain_source_tree": plain_source_tree,
+            "linked_resources": linked_resources,
+            "existing_files_content": existing_files_content,
+            "implementation_code_diff": implementation_code_diff,
+            "fixed_implementation_code_diff": fixed_implementation_code_diff,
+        }
+
+        return self.post_request(endpoint_url, headers, payload, run_state)

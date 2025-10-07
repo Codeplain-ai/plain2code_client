@@ -1,5 +1,13 @@
 import logging
 
+AMBIGUITY_CAUSES = {
+    "reference_resource_ambiguity": "Ambiguity is in the reference resources",
+    "definition_ambiguity": "Ambiguity is in the definitions",
+    "non_functional_requirement_ambiguity": "Ambiguity is in the non-functional requirements",
+    "functional_requirement_ambiguity": "Ambiguity is in the functional requirements",
+    "other": "Ambiguity in the other parts of the specification",
+}
+
 
 class RetryOnlyFilter(logging.Filter):
     def filter(self, record):

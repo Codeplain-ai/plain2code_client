@@ -6,6 +6,7 @@ from liquid2 import Environment, FileSystemLoader, StrictUndefined
 from liquid2.exceptions import UndefinedError
 
 import plain_spec
+from plain2code_nodes import Plain2CodeIncludeTag, Plain2CodeLoaderMixin
 
 BINARY_FILE_EXTENSIONS = [".pyc"]
 
@@ -212,7 +213,7 @@ def load_linked_resources(template_dirs: list[str], resources_list):
     return linked_resources
 
 
-class TrackingFileSystemLoader(FileSystemLoader):
+class TrackingFileSystemLoader(Plain2CodeLoaderMixin, FileSystemLoader):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.loaded_templates = {}
@@ -226,8 +227,10 @@ class TrackingFileSystemLoader(FileSystemLoader):
 def get_loaded_templates(source_path, plain_source):
     # Render the plain source with Liquid templating engine
     # to identify the templates that are being loaded
+
     liquid_loader = TrackingFileSystemLoader(source_path)
     liquid_env = Environment(loader=liquid_loader, undefined=StrictUndefined)
+    liquid_env.tags["include"] = Plain2CodeIncludeTag(liquid_env)
 
     liquid_env.filters["code_variable"] = plain_spec.code_variable_liquid_filter
     liquid_env.filters["prohibited_chars"] = plain_spec.prohibited_chars_liquid_filter

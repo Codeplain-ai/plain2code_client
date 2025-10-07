@@ -1,10 +1,12 @@
 #!/bin/bash
 
+UNRECOVERABLE_ERROR_EXIT_CODE=69
+
 # Check if subfolder name is provided
 if [ -z "$1" ]; then
   echo "Error: No subfolder name provided."
   echo "Usage: $0 <subfolder_name>"
-  exit 1
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 GO_BUILD_SUBFOLDER=go_$1
@@ -36,7 +38,7 @@ cd "$GO_BUILD_SUBFOLDER" 2>/dev/null
 
 if [ $? -ne 0 ]; then
   printf "Error: Go build folder '$GO_BUILD_SUBFOLDER' does not exist.\n"
-  exit 2
+  exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
 echo "Running go get..."
