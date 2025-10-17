@@ -8,7 +8,7 @@
 
   ***Acceptance Tests:***
     
-  - The App shouldn't show logging output in the console output (neither in stdout nor stderr).
   - The App should exit with status code 0 indicating successful execution.
+
   - The App should complete execution in under 1 second.
 

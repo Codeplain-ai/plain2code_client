@@ -4,7 +4,13 @@ import re
 
 from plain2code_read_config import get_args_from_config
 
-CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
+CODEPLAIN_API_KEY = os.getenv("CODEPLAIN_API_KEY")
+if not CODEPLAIN_API_KEY:
+    CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
+    if not CLAUDE_API_KEY:
+        raise ValueError("CODEPLAIN_API_KEY or CLAUDE_API_KEY environment variable is not set")
+
+
 DEFAULT_BUILD_FOLDER = "build"
 DEFAULT_CONFORMANCE_TESTS_FOLDER = "conformance_tests"
 DEFAULT_BUILD_DEST = "dist"
@@ -179,8 +185,8 @@ def create_parser():
     parser.add_argument(
         "--api-key",
         type=str,
-        default=CLAUDE_API_KEY,
-        help="API key used to access the API. If not provided, the CLAUDE_API_KEY environment variable is used.",
+        default=CODEPLAIN_API_KEY,
+        help="API key used to access the API. If not provided, the CODEPLAIN_API_KEY environment variable is used.",
     )
     parser.add_argument(
         "--full-plain",

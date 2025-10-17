@@ -135,7 +135,7 @@ class CodeplainAPI:
                         f"Connection error: Unable to reach the Codeplain API at {self.api_url}. Please try again or contact support."
                     )
 
-    def get_plain_source_tree(self, plain_source, loaded_templates):
+    def get_plain_source_tree(self, plain_source, loaded_templates, run_state: RunState):
         """
         Builds plain source tree from the given plain text source in Markdown format.
 
@@ -154,7 +154,7 @@ class CodeplainAPI:
 
         payload = {"plain_source": plain_source, "loaded_templates": loaded_templates}
 
-        return self.post_request(endpoint_url, headers, payload, None)
+        return self.post_request(endpoint_url, headers, payload, run_state)
 
     def render_functional_requirement(
         self,
@@ -367,6 +367,16 @@ class CodeplainAPI:
             "existing_files_content": existing_files_content,
             "implementation_code_diff": implementation_code_diff,
             "fixed_implementation_code_diff": fixed_implementation_code_diff,
+        }
+
+        return self.post_request(endpoint_url, headers, payload, run_state)
+
+    def finish_functional_requirement(self, frid, run_state: RunState):
+        endpoint_url = f"{self.api_url}/finish_functional_requirement"
+        headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+
+        payload = {
+            "frid": frid,
         }
 
         return self.post_request(endpoint_url, headers, payload, run_state)

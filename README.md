@@ -31,21 +31,14 @@ To run the plain2code client, you need Python 3.11 or a later version.
 
 **Windows users:** Please install WSL (Windows Subsystem for Linux) as this is currently the supported environment for running plain code on Windows.
 
-#### Anthropic API Key
+#### Authorization - Codeplain API Key
 
-For now you need to bring your own Anthropic API key to use Codeplain API. If you don't have Anthropic API key, you can create a free developer account at [console.anthropic.com](https://console.anthropic.com/). To experiment with Codeplain you need to top up your Anthropic account with $5-10.
+We are using Codeplain API Key to authorize requests to the Codeplain API. To get your Codeplain API Key, please contact Codeplain.ai support at support@codeplain.ai.
 
-With Anthropic API Key ready, please contact Codeplain.ai support at support@codeplain.ai to have the hash of your Anthropic API key added to the list of authorized API keys.
-
-To have the hash generated use the following command:
-
-`python hash_key.py $CLAUDE_API_KEY`
-
-To set up your API key run:
+In order to generate code, you need to export the following environment variable:
 
 ```bash
-# Export API key directly
-export CLAUDE_API_KEY="your_actual_api_key_here"
+export CODEPLAIN_API_KEY="your_actual_api_key_here"
 ```
 
 ### Installation Steps
@@ -53,7 +46,7 @@ export CLAUDE_API_KEY="your_actual_api_key_here"
 1. Clone this repository
 2. Set your Codeplain API key as an environment variable:
    ```
-   export CLAUDE_API_KEY=your_api_key_here
+   export CODEPLAIN_API_KEY=your_api_key_here
    ```
 3. (Recommended) Create and activate a virtual environment:
    ```bash
