@@ -19,6 +19,7 @@ from codeplain_REST_api import CodeplainAPI
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
 from plain2code_state import CONFORMANCE_TESTS_DEFINITION_FILE_NAME, ConformanceTestsUtils, ExecutionState, RunState
+# from plain2code_utils import AMBIGUITY_CAUSES, RetryOnlyFilter
 from plain2code_utils import RetryOnlyFilter
 from system_config import system_config
 
@@ -33,7 +34,7 @@ MAX_CONFORMANCE_TEST_RUNS = 20
 MAX_REFACTORING_ITERATIONS = 5
 MAX_UNIT_TEST_RENDER_RETRIES = 2
 
-MAX_ISSUE_LENGTH = 15000  # Characters.
+MAX_ISSUE_LENGTH = 10000  # Characters.
 
 UNRECOVERABLE_ERROR_EXIT_CODES = [69]
 TIMEOUT_ERROR_EXIT_CODE = 124
@@ -1041,6 +1042,41 @@ def render_functional_requirement(  # noqa: C901
                 run_state.render_id,
             )
 
+            # fixed_implementation_code_diff = git_utils.get_fixed_implementation_code_diff(args.build_folder, frid)
+            # if fixed_implementation_code_diff is None:
+            #     raise Exception(
+            #         "Fixes to the implementation code found during conformance testing are not committed to git."
+            #     )
+
+            # git_utils.checkout_commit_with_frid(args.build_folder, previous_frid)
+            # existing_files = file_utils.list_all_text_files(args.build_folder)
+            # existing_files_content = file_utils.get_existing_files_content(args.build_folder, existing_files)
+            # git_utils.checkout_previous_branch(args.build_folder)
+
+            # implementation_code_diff = git_utils.get_implementation_code_diff(args.build_folder, frid, previous_frid)
+
+            # rendering_analysis = codeplainAPI.analyze_rendering(
+            #     frid,
+            #     plain_source_tree,
+            #     linked_resources,
+            #     existing_files_content,
+            #     implementation_code_diff,
+            #     fixed_implementation_code_diff,
+            #     run_state,
+            # )
+
+            # if rendering_analysis:
+            #     # TODO: Before this output is exposed to the user, we should check the 'guidance' field using LLM in the same way as we do conflicting requirements.
+            #     console.info(
+            #         f"Specification ambiguity detected! {AMBIGUITY_CAUSES[rendering_analysis['cause']]} of the functional requirement {frid}."
+            #     )
+            #     console.info(rendering_analysis["guidance"])
+            #     run_state.add_rendering_analysis_for_frid(frid, rendering_analysis)
+            # else:
+            #     console.warning(
+            #         f"During conformance testing, the implementation code of the functional requirement {frid} was fixed, but the cause of the issue was not identified."
+            #     )
+
         conformance_tests_utils.dump_conformance_tests_json(conformance_tests)
         git_utils.add_all_files_and_commit(
             args.conformance_tests_folder,
@@ -1055,6 +1091,15 @@ def render_functional_requirement(  # noqa: C901
         None,
         run_state.render_id,
     )
+
+    # Copy build and conformance tests folders to output folders if specified
+    if args.copy_build:
+        file_utils.copy_folder_to_output(args.build_folder, args.build_dest)
+    if args.copy_conformance_tests:
+        file_utils.copy_folder_to_output(args.conformance_tests_folder, args.conformance_tests_dest)
+
+    codeplainAPI.finish_functional_requirement(frid, run_state)
+
     return
 
 
@@ -1069,6 +1114,7 @@ def render(args, run_state: RunState):  # noqa: C901
         logging.getLogger("langsmith").setLevel(logging.WARNING)
         logging.getLogger("git").setLevel(logging.WARNING)
         logging.getLogger("anthropic._base_client").setLevel(logging.DEBUG)
+        logging.getLogger("services.langsmith.langsmith_service").setLevel(logging.INFO)
 
         # Try to load logging configuration from YAML file
         if os.path.exists(LOGGING_CONFIG_PATH):
@@ -1123,7 +1169,7 @@ def render(args, run_state: RunState):  # noqa: C901
 
     console.info(f"Rendering {args.filename} to target code.")
 
-    plain_source_tree = codeplainAPI.get_plain_source_tree(plain_source, loaded_templates)
+    plain_source_tree = codeplainAPI.get_plain_source_tree(plain_source, loaded_templates, run_state)
 
     if args.render_range is not None:
         args.render_range = get_render_range(args.render_range, plain_source_tree)
@@ -1145,6 +1191,17 @@ def render(args, run_state: RunState):  # noqa: C901
             args, codeplainAPI, plain_source_tree, frid, all_linked_resources, retry_state, run_state
         )
         frid = plain_spec.get_next_frid(plain_source_tree, frid)
+
+    # if args.verbose and len(run_state.frid_render_anaysis.items()) > 0:
+    #     console.warning("\nWhile generating the code following ambiguities in the specs were identified:\n")
+    #     for frid, render_analysis in run_state.frid_render_anaysis.items():
+    #         specifications, _ = plain_spec.get_specifications_for_frid(plain_source_tree, frid)
+    #         functional_requirement_text = specifications[plain_spec.FUNCTIONAL_REQUIREMENTS][-1]
+    #         console.info("\n-------------------------------------")
+    #         console.info(f"Functional requirement {frid}:")
+    #         console.output(f"{functional_requirement_text}")
+    #         console.info(f"Guidance: {render_analysis['guidance']}")
+    #         console.info("-------------------------------------\n")
 
     # Copy build and conformance tests folders to output folders if specified
     if args.copy_build:
@@ -1225,10 +1282,6 @@ if __name__ == "__main__":  # noqa: C901
 
         codeplain_api = importlib.import_module(codeplain_api_module_name)
 
-    if not args.api_key or args.api_key == "":
-        exit_with_error(
-            "Error: API key is not provided. Please provide an API key using the --api-key flag or by setting the CLAUDE_API_KEY environment variable."
-        )
     run_state = RunState(replay_with=args.replay_with)
     console.debug(f"Render ID: {run_state.render_id}")
 

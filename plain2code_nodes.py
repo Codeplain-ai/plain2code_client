@@ -92,7 +92,7 @@ class Plain2CodeLoaderMixin:
         source, full_name, uptodate, matter = self.get_source(env, name, context=context, **kwargs)
         whitespaces = kwargs.get("whitespaces", 0)
         assert isinstance(whitespaces, int)
-        source = source.replace("\n", "\n" + " " * whitespaces)
+        source = source.rstrip().replace("\n", "\n" + " " * whitespaces)
 
         path = Path(full_name)
 
