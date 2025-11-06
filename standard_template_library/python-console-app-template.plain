@@ -1,32 +1,36 @@
 ***Definitions:***
 
-- The App is a console application.
+- :App: is a console application.
+
+- :Implementation: is the technical implementation of :App:.
+
+- :Unittests: are the unit tests of :App: and are part of :Implementation:.
 
 
 ***Non-Functional Requirements:***
 
-- The App should be implemented in Python (The Implementation).
+- :Implementation: should be in Python.
 
-- The Implementation should include unit tests using Unittest framework (The Unittests)! If the unittests are put in the subfolder, make sure to include __init__.py to make them discoverable.
+- :Implementation: should include :Unittests: using Unittest framework! If :Unittests: are put in the subfolder, make sure to include __init__.py to make them discoverable.
 
-- The main executable code file of The App should be called "{{ main_executable_file_name | code_variable }}". The main executable code file does not have any semantic meaning and it should be completely disregarded when generating the code (except for the file name).
+- The main executable code file of :App: should be called "{{ main_executable_file_name | code_variable }}". The main executable code file does not have any semantic meaning and it should be completely disregarded when generating the code (except for the file name).
 
 
 ***Test Requirements:***
 
-- The Conformance Tests of The App should be implemented in Python using Unittest framework. The Conformance Tests will be run using "python -m unittest discover" command. Therefore, if the unittests are put in the subfolder, make sure to include __init__.py to make them discoverable. 
+- :ConformanceTests: of :App: should be implemented in Python using Unittest framework. :ConformanceTests: will be run using "python -m unittest discover" command. Therefore, if :ConformanceTests: are put in the subfolder, make sure to include __init__.py to make them discoverable. 
 
-- The Conformance Tests must be implemented and executed - do not use unittest.skip() or “any other test skipping functionality.
+- :ConformanceTests: must be implemented and executed - do not use unittest.skip() or “any other test skipping functionality.
 
-- The main executable code file of The App is "{{ main_executable_file_name | code_variable }}".
+- The main executable code file of :App: is "{{ main_executable_file_name | code_variable }}".
 
 - The current working directory contains the file "{{ main_executable_file_name | code_variable }}".
 
-- The App can be executed using the command "python {{ main_executable_file_name | code_variable }}".
+- :App: can be executed using the command "python {{ main_executable_file_name | code_variable }}".
 
 
 # The Python console application boilerplate
 
 ***Functional Requirements:***
 
-- Implement the entry point for The App.
+- Implement the entry point for :App:.
