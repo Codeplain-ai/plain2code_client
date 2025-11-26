@@ -4,53 +4,11 @@ from typing import Optional
 import requests
 from requests.exceptions import ConnectionError, RequestException, Timeout
 
+import plain2code_exceptions
 from plain2code_state import RunState
 
 MAX_RETRIES = 4
 RETRY_DELAY = 3
-
-
-class FunctionalRequirementTooComplex(Exception):
-    def __init__(self, message, proposed_breakdown=None):
-        self.message = message
-        self.proposed_breakdown = proposed_breakdown
-        super().__init__(self.message)
-
-
-class ConflictingRequirements(Exception):
-    pass
-
-
-class CreditBalanceTooLow(Exception):
-    pass
-
-
-class LLMInternalError(Exception):
-    pass
-
-
-class MissingResource(Exception):
-    pass
-
-
-class PlainSyntaxError(Exception):
-    pass
-
-
-class OnlyRelativeLinksAllowed(Exception):
-    pass
-
-
-class LinkMustHaveTextSpecified(Exception):
-    pass
-
-
-class NoRenderFound(Exception):
-    pass
-
-
-class MultipleRendersFound(Exception):
-    pass
 
 
 class CodeplainAPI:
@@ -88,36 +46,36 @@ class CodeplainAPI:
 
                 if response.status_code == requests.codes.bad_request and "error_code" in response_json:
                     if response_json["error_code"] == "FunctionalRequirementTooComplex":
-                        raise FunctionalRequirementTooComplex(
+                        raise plain2code_exceptions.FunctionalRequirementTooComplex(
                             response_json["message"], response_json.get("proposed_breakdown")
                         )
 
                     if response_json["error_code"] == "ConflictingRequirements":
-                        raise ConflictingRequirements(response_json["message"])
+                        raise plain2code_exceptions.ConflictingRequirements(response_json["message"])
 
                     if response_json["error_code"] == "CreditBalanceTooLow":
-                        raise CreditBalanceTooLow(response_json["message"])
+                        raise plain2code_exceptions.CreditBalanceTooLow(response_json["message"])
 
                     if response_json["error_code"] == "LLMInternalError":
-                        raise LLMInternalError(response_json["message"])
+                        raise plain2code_exceptions.LLMInternalError(response_json["message"])
 
                     if response_json["error_code"] == "MissingResource":
-                        raise MissingResource(response_json["message"])
+                        raise plain2code_exceptions.MissingResource(response_json["message"])
 
                     if response_json["error_code"] == "PlainSyntaxError":
-                        raise PlainSyntaxError(response_json["message"])
+                        raise plain2code_exceptions.PlainSyntaxError(response_json["message"])
 
                     if response_json["error_code"] == "OnlyRelativeLinksAllowed":
-                        raise OnlyRelativeLinksAllowed(response_json["message"])
+                        raise plain2code_exceptions.OnlyRelativeLinksAllowed(response_json["message"])
 
                     if response_json["error_code"] == "LinkMustHaveTextSpecified":
-                        raise LinkMustHaveTextSpecified(response_json["message"])
+                        raise plain2code_exceptions.LinkMustHaveTextSpecified(response_json["message"])
 
                     if response_json["error_code"] == "NoRenderFound":
-                        raise NoRenderFound(response_json["message"])
+                        raise plain2code_exceptions.NoRenderFound(response_json["message"])
 
                     if response_json["error_code"] == "MultipleRendersFound":
-                        raise MultipleRendersFound(response_json["message"])
+                        raise plain2code_exceptions.MultipleRendersFound(response_json["message"])
 
                 response.raise_for_status()
                 return response_json
@@ -237,6 +195,9 @@ class CodeplainAPI:
         plain_source_tree,
         linked_resources,
         existing_files_content,
+        conformance_tests_folder_name,
+        conformance_tests_json,
+        all_acceptance_tests,
         run_state: RunState,
     ):
         endpoint_url = f"{self.api_url}/render_conformance_tests"
@@ -248,9 +209,13 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "conformance_tests_folder_name": conformance_tests_folder_name,
+            "conformance_tests_json": conformance_tests_json,
+            "all_acceptance_tests": all_acceptance_tests,
         }
 
-        return self.post_request(endpoint_url, headers, payload, run_state)
+        response = self.post_request(endpoint_url, headers, payload, run_state)
+        return response["patched_response_files"], response["conformance_tests_plan_summary_string"]
 
     def generate_folder_name_from_functional_requirement(
         self,
@@ -282,6 +247,8 @@ class CodeplainAPI:
         acceptance_tests,
         conformance_tests_issue,
         implementation_fix_count,
+        conformance_tests_folder_name,
+        current_testing_frid_high_level_implementation_plan: Optional[str],
         run_state: RunState,
     ):
         endpoint_url = f"{self.api_url}/fix_conformance_tests_issue"
@@ -297,6 +264,8 @@ class CodeplainAPI:
             "conformance_tests_files": conformance_tests_files,
             "conformance_tests_issue": conformance_tests_issue,
             "implementation_fix_count": implementation_fix_count,
+            "conformance_tests_folder_name": conformance_tests_folder_name,
+            "current_testing_frid_high_level_implementation_plan": current_testing_frid_high_level_implementation_plan,
         }
 
         if acceptance_tests is not None:
@@ -377,6 +346,25 @@ class CodeplainAPI:
 
         payload = {
             "frid": frid,
+        }
+
+        return self.post_request(endpoint_url, headers, payload, run_state)
+
+    def summarize_finished_conformance_tests(
+        self,
+        frid,
+        plain_source_tree,
+        linked_resources,
+        conformance_test_files_content,
+        run_state: RunState,
+    ):
+        endpoint_url = f"{self.api_url}/summarize_finished_conformance_tests"
+        headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+        payload = {
+            "frid": frid,
+            "plain_source_tree": plain_source_tree,
+            "linked_resources": linked_resources,
+            "conformance_test_files_content": conformance_test_files_content,
         }
 
         return self.post_request(endpoint_url, headers, payload, run_state)

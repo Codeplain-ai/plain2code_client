@@ -111,6 +111,7 @@ def collect_linked_resources_in_section(
     return False
 
 
+# TODO: check if this function can be refactored to return the list of linked resources instead of modifying it in place
 def collect_linked_resources(
     plain_source_tree, linked_resources_list, specifications_list, include_acceptance_tests, frid=None
 ):

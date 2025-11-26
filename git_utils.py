@@ -54,7 +54,7 @@ def is_dirty(repo_path: Union[str, os.PathLike]) -> bool:
 
 
 def add_all_files_and_commit(
-    repo_path: Union[str, os.PathLike], commit_message: str, frid: str = None, render_id: str = None
+    repo_path: Union[str, os.PathLike], commit_message: str, frid: Optional[str] = None, render_id: Optional[str] = None
 ) -> Repo:
     """Adds all files to the git repository and commits them."""
     repo = Repo(repo_path)
@@ -224,7 +224,7 @@ def diff(repo_path: Union[str, os.PathLike], previous_frid: str = None) -> dict:
     return _get_diff_dict(diff_output)
 
 
-def _get_commit(repo: Repo, frid: str = None) -> str:
+def _get_commit(repo: Repo, frid: Optional[str]) -> str:
     if frid:
         commit = _get_commit_with_frid(repo, frid)
     else:

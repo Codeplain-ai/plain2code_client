@@ -8,7 +8,6 @@
 
   ***Acceptance Tests:***
     
-  - The App should exit with status code 0 indicating successful execution.
+  - :App: should exit with status code 0 indicating successful execution.
 
-  - The App should complete execution in under 1 second.
-
+  - :App: should complete execution in under 1 second.

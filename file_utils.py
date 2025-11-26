@@ -86,6 +86,12 @@ def list_folders_in_directory(directory):
     return folders
 
 
+# delete a folder and all its subfolders and files
+def delete_folder(folder_name):
+    if os.path.exists(folder_name):
+        shutil.rmtree(folder_name)
+
+
 def delete_files_and_subfolders(directory):
     total_files_deleted = 0
     total_folders_deleted = 0
