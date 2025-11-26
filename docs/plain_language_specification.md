@@ -1,21 +1,21 @@
 # Overview
 
-## About Plain programming language
+## About ***plain programming language
 
-Plain is a novel programming language that helps abstracting away complexity of using large language models for code generation.
+***plain is a novel programming language that helps abstracting away complexity of using large language models for code generation.
 
-Plain specification is rendered to software code that can be executed. You can therefore think of Plain as *executable specification*.
+***plain specification is rendered to software code that can be executed. You can therefore think of ***plain as *executable specification*.
 
 ## Syntax
 
-Plain language is structured English based on markdown syntax.
+***plain language is structured English based on markdown syntax.
 
-Here's an example of a "hello,world" program in Plain.
+Here's an example of a "hello, world" program in ***plain.
 
 ```plain
 ***Non-Functional Requirements:***
 
-- Implementation should be in Python.
+- :Implementation: should be in Python.
 
 ***Functional Requirements:***
 
@@ -26,7 +26,7 @@ Here's an example of a "hello,world" program in Plain.
 
 ## Source organization
 
-Plain source can be organized in sections and subsection using markdown headers.
+***plain source can be organized in sections and subsection using markdown headers.
 
 ```plain
 # Section 1
@@ -35,14 +35,29 @@ Plain source can be organized in sections and subsection using markdown headers.
 
 ***Non-Functional Requirements:***
 
-- Simple non-functional requirement
-
-## Section 2.1
+- First simple non-functional requirement
 
 ***Functional Requirements:***
 
-- Simple functional requirement
+- First simple functional requirement
+
+## Section 2.1
+
+***Non-Functional Requirements:***
+
+- Second simple non-functional requirement
+
+***Functional Requirements:***
+
+- Second simple functional requirement
 ```
+
+This enables hierarchical organization of the specification. 
+
+In example above:
+
+- While rendering the "First simple functional requirement", the renderer will not have access to the "Second simple non-functional requirement".
+- While rendering the "Second simple functional requirement", the renderer will not have access to the "First simple non-functional requirement".
 
 ### Specifications
 
@@ -59,26 +74,40 @@ Functional requirements must reside in leaf sections while other specifications 
 
 ## Definitions
 
-The `***Definitions:***` specification is a list of definitions of new terms.
+The `***Definitions:***` specification is a list of definitions of new concepts.
 
 Here's an example of a simple definiton.
 
 ```plain
-- The App implements a task manager application.
+- :App: implements a task manager application.
 ```
 
-The definitions should follow **The Noun convention**. That is, the introduced terms should start with the word **The** (capitalized) followed by a capitalized word (e.g. **The App**).
+In this case, the concept name is `:App:`. Concepts are important for refering to definitions in the rest of the specification.
 
-Definitons are the mechanism for definining data structures in Plain. Here's an example of a such a definition.
+While providing definitions, you should adhere to the following 4 rules:
+
+- Every definition must start with the name of the concept you are defining.
+- Every concept name starts and ends with colon (`:`) following by concept name in PascalCase. Examples: `:App:`, `:Tasks:`, `:ListOfUsers:`, `:CLI:`. 
+- Concept names must be globally unique (meaning, you cannot provide two definitions with the same concept name).
+- When referencing concepts in ***Test Requirements:***, ***Functional Requirements:***, ***Non-Functional Requirements:*** and ***Acceptance Tests:***, the concept name must exist in the ***Definitions:*** section.
+
+Furthermore, there are special concepts that are already defined and are ready to use. They should not be redefined:
+
+- `:ConformanceTests:`
+- `:UnitTests:`
+- `:AcceptanceTests:`
+- `:Implementation:`
+
+Definitions are the mechanism for definining data structures in ***plain. Here's an example of two definitions.
 
 ```plain
-- The Task describes an activity that needs to be done by The User. The Task has the following attributes
-  - Name - a short description of The Task. This is a required attribute. The name must be at least 3 characters long.
-  - Notes - additional details about The Task
-  - Due Date - optional date by which The User is supposed to complete The Task.
-```
+- :User: is a person who uses the application.
 
-The definition of a term is provided in natural language. There are no restrictions on the form of the description. When referring to other terms **The Noun convention** should be followed.
+- :Task: describes an activity that needs to be done by :User:. :Task: has the following attributes:
+  - Name - a short description of :Task:. This is a required attribute. The name must be at least 3 characters long.
+  - Notes - additional details about :Task:
+  - Due Date - optional date by which :User: is supposed to complete :Task:.
+```
 
 ## Non-Functional Requirements
 
@@ -87,24 +116,24 @@ The `***Non-Functional Requirements:***` specification is a list of instructions
 Here's an example of a simple instruction specifying only that the Plain specification should be rendered to Python software code.
 
 ```plain
-- Implementation should be in Python.
+- :Implementation: should be in Python.
 ```
 
-The instructions should be provided in natural language. There are no restrictions on the form or the complexity of the instruction except that they need to be given as a markdown list. When referring to other terms **The Noun convention** should be followed.
+The instructions should be provided in natural language. There are no restrictions on the form or the complexity of the instruction except that they need to be given as a markdown list.
 
 Here's an example of more complex instructions.
 
 ```plain
-- Implementation of The Program should be in Python (The Implementation).
+- :Implementation: of :App: should be in Python.
 
-- The Implementation should include unit tests using Unittest framework (The Unittests).
+- :Implementation: should include unit tests using Unittest framework.
 
-- The main executable file of The Program should be called hello_world.py
+- The main executable file of :App: should be called hello_world.py
 ```
 
 ## Functional Requirements
 
-The `***Functional Requirements:***` specification provides a description of functionality that should be rendered to software code. The descriptions should be provided in natural language as a markdown list. When referring to other terms **The Noun convention** should be followed.
+The `***Functional Requirements:***` specification provides a description of functionality that should be rendered to software code. The descriptions should be provided in natural language as a markdown list.
 
 Here's an example of a simple description of the functionality of the "hello, world" application.
 
@@ -115,7 +144,7 @@ Here's an example of a simple description of the functionality of the "hello, wo
 Each functional requirement must be limited in complexity. For example, for the functional requirement
 
 ```plain
-- Implement a task manager application.
+- :App: should implement a task manager application.
 ```
 
 the renderer of Plain source to software code should respond with
@@ -129,17 +158,17 @@ In such case you need to break down the functioanlity into smaller, less-complex
 Here's an example how to do such a break down in the case of a task manager application.
 
 ```plain
-- Implement the entry point for The App.
+- Implement the entry point for :App:.
 
-- Show The Task List.
+- Show :Task: List.
 
-- The User should be able to add The Task. Only valid The Task items can be added.
+- :User: should be able to add :Task:. Only valid :Task: items can be added.
 
-- The User should be able to delete The Task.
+- :User: should be able to delete :Task:.
 
-- The User should be able to edit The Task.
+- :User: should be able to edit :Task:.
 
-- The User should be able to mark The Task as completed.
+- :User: should be able to mark :Task: as completed.
 ```
 
 Functional requirements are rendered incrementally one by one. Consequently earlier functional requirements cannot reference later functional requirements.
@@ -159,7 +188,7 @@ Here's an example of a "Hello, World" application with one acceptance test.
 
   ***Acceptance Tests:***
     
-  - The App shouldn't show logging output in the console output (neither in stdout nor stderr).
+  - :App: shouldn't show logging output in the console output (neither in stdout nor stderr).
 ```
 
 Acceptance tests extend **conformance tests**. The acceptance tests are implemented according to the ***Test Requirements:*** specification (see next section).
@@ -173,7 +202,7 @@ The `***Test Requirements:***` specification is a list of instructions that stee
 Here's an example specification of test requirements.
 
 ```plain
-- The Conformance Tests of The Program should be implemented in Python using Unittest framework. 
+- :ConformanceTests: of :App: should be implemented in Python using Unittest framework. 
 ```
 
 # Extended Syntax
@@ -183,7 +212,7 @@ Here's an example specification of test requirements.
 Lines starting with `>` are ignored when rendering software code.
 
 ```plain
-> This is an example of a comment in Plain
+> This is an example of a comment in ***plain
 ```
 
 ## Template System
@@ -204,48 +233,13 @@ If you include a link using the markdown syntax, the linked resource will be pas
 Here's an example of a linked resource (see Task manager example application for the full specification).
 
 ```plain
-- Show The Task List. The details of the user interface are provided in the file [task_list_ui_specification.yaml](task_list_ui_specification.yaml).
+- Show :Task: List. The details of the user interface are provided in the file [task_list_ui_specification.yaml](task_list_ui_specification.yaml).
 ```
 
 **Important Notes:**
 - Only links to files in the same folder (and its subfolders) as the Plain specification are supported. Links to external resources are not supported.
 - File paths are resolved relative to the location of the Plain specification file.
 - All types are supported, except binary files.
-
-### Hierarchical Resource Visibility
-
-Due to the hierarchical structure of the Plain specification, file attachments follow a scoping rule: **a functional requirement can only access linked resources that are defined in its own section or in any parent section**.
-
-Here's an example demonstrating this hierarchical nature:
-
-```plain
-# Section 1
-
-***Non-Functional Requirements:***
-
-- Simple non-functional requirement with [file_attachment_1.yaml](file_attachment_1.yaml)
-
-# Section 2
-
-***Non-Functional Requirements:***
-
-- Simple non-functional requirement with [file_attachment_2.yaml](file_attachment_2.yaml)
-
-## Section 2.1
-
-***Functional Requirements:***
-
-- Simple functional requirement with [file_attachment_2_1.yaml](file_attachment_2_1.yaml)
-```
-
-**Resource visibility for Section 2.1:**
-- ✅ `file_attachment_2_1.yaml` - same section
-- ✅ `file_attachment_2.yaml` - parent section (Section 2)
-- ❌ `file_attachment_1.yaml` - sibling section (Section 1), not accessible
-
-This hierarchical scoping ensures that resources are properly encapsulated and prevents accidental access to unrelated files.
-
-This design allows you to optimize context size by attaching only the necessary resources to the functional requirements that need them, improving the performance of the rendering process.
 
 ## Liquid templates
 
