@@ -87,7 +87,9 @@ In this case, the concept name is `:App:`. Concepts are important for refering t
 While providing definitions, you should adhere to the following 4 rules:
 
 - Every definition must start with the name of the concept you are defining.
-- Every concept name starts and ends with colon (`:`) following by concept name in PascalCase. Examples: `:App:`, `:Tasks:`, `:ListOfUsers:`, `:CLI:`. 
+- Each concept name must be enclosed in colons (`:`) at both the beginning and end.
+  - Valid characters for concept name include: Plus sign (`+`), Minus sign (`-`), Dot sign (`.`), Digits (`0`-`9`), Uppercase letters (`A`-`Z`), Underscore (`_`), Lowercase letters (`a`-`z`)
+  - Examples: `:App:`, `:Tasks:`, `:ListOfUsers:`, `:CLI:`. 
 - Concept names must be globally unique (meaning, you cannot provide two definitions with the same concept name).
 - When referencing concepts in ***Test Requirements:***, ***Functional Requirements:***, ***Non-Functional Requirements:*** and ***Acceptance Tests:***, the concept name must exist in the ***Definitions:*** section.
 
