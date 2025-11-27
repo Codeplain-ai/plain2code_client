@@ -1,0 +1,50 @@
+from typing import Any
+
+import file_utils
+import git_utils
+import plain_spec
+from plain2code_console import console
+from render_machine.actions.base_action import BaseAction
+from render_machine.render_context import RenderContext
+
+
+class PrepareRepositories(BaseAction):
+    SUCCESSFUL_OUTCOME = "repositories_prepared"
+
+    def execute(self, render_context: RenderContext, _previous_action_payload: Any | None):
+
+        if render_context.args.render_range is not None and render_context.args.render_range[
+            0
+        ] != plain_spec.get_first_frid(render_context.plain_source_tree):
+            frid = render_context.args.render_range[0]
+
+            render_context.starting_frid = frid
+
+            previous_frid = plain_spec.get_previous_frid(render_context.plain_source_tree, frid)
+
+            if render_context.args.verbose:
+                console.info(f"Reverting code to version implemented for {previous_frid}.")
+
+            git_utils.revert_to_commit_with_frid(render_context.args.build_folder, previous_frid)
+            # conformance tests are still not fully implemented
+            if render_context.args.render_conformance_tests:
+                git_utils.revert_to_commit_with_frid(render_context.args.conformance_tests_folder, previous_frid)
+        else:
+            if render_context.args.verbose:
+                console.info("Initializing git repositories for the render folders.")
+
+            git_utils.init_git_repo(render_context.args.build_folder)
+
+            if render_context.args.base_folder:
+                file_utils.copy_folder_content(render_context.args.base_folder, render_context.args.build_folder)
+                git_utils.add_all_files_and_commit(
+                    render_context.args.build_folder,
+                    git_utils.BASE_FOLDER_COMMIT_MESSAGE,
+                    None,
+                    render_context.run_state.render_id,
+                )
+
+            if render_context.args.render_conformance_tests:
+                git_utils.init_git_repo(render_context.args.conformance_tests_folder)
+
+        return self.SUCCESSFUL_OUTCOME, None

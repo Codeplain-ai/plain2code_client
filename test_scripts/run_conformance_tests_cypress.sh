@@ -171,6 +171,18 @@ while true; do
   if grep -iq -E "compiled successfully|compiled with warnings" app.log; then
     break
   fi
+
+  if curl -s http://localhost:3000 >/dev/null 2>&1; then
+    break
+  fi
+
+   # Check if the React app process is still running
+  if ! ps -p $REACT_APP_PID > /dev/null 2>&1; then
+    printf "Error in :ImplementationCode: (React app process (PID: $REACT_APP_PID) has terminated unexpectedly).\n"
+    cat "app.log"
+    exit 2
+  fi
+
   sleep 0.1
 done
 

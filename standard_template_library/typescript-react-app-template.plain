@@ -1,22 +1,22 @@
 ***Definitions:***
 
-- The App is a web application.
+- :App: is a web application.
 
 
 ***Non-Functional Requirements:***
 
-- The App should be implemented in TypeScript, using React as a web framework.
+- :App: should be implemented in TypeScript, using React as a web framework.
 
-- Please note that The App will be executed using npm.
+- :App: will run on Node.js as the runtime environment.
 
 
 ***Test Requirements:***
 
-- The Conformance Tests of The App should be written in TypeScript, using Cypress as the framework for The Conformance Tests.
+- :ConformanceTests: of :App: should be written in TypeScript, using Cypress as the framework for :ConformanceTests:.
 
 
 # The React boilerplate
 
 ***Functional Requirements:***
 
-- Implement the entry point for The App.
+- Implement the entry point for :App:.

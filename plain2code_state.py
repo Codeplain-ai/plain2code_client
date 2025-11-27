@@ -10,21 +10,6 @@ from plain2code_console import console
 CONFORMANCE_TESTS_DEFINITION_FILE_NAME = "conformance_tests.json"
 
 
-class ExecutionState:
-    """Manages the counter of retries for a given functional requirement."""
-
-    MAX_CONFORMANCE_TESTING_RENDERING_RETRIES = 2  # We're retrying 2 times failed conformance testing
-
-    def __init__(self):
-        self.conformance_testing_rendering_retries = 0
-
-    def mark_failed_conformance_testing_rendering(self):
-        self.conformance_testing_rendering_retries += 1
-
-    def should_rerender_functional_requirement(self):
-        return self.conformance_testing_rendering_retries < self.MAX_CONFORMANCE_TESTING_RENDERING_RETRIES
-
-
 class ConformanceTestsUtils:
     """Manages the state of conformance tests."""
 
@@ -61,12 +46,13 @@ class ConformanceTestsUtils:
 class RunState:
     """Contains information about the identifiable state of the rendering process."""
 
-    def __init__(self, replay_with: Optional[str] = None):
+    def __init__(self, spec_filename: str, replay_with: Optional[str] = None):
         self.replay: bool = replay_with is not None
         if replay_with:
             self.render_id: str = replay_with
         else:
             self.render_id: str = str(uuid.uuid4())
+        self.spec_filename: str = spec_filename
         self.call_count: int = 0
         self.unittest_batch_id: int = 0
         self.frid_render_anaysis: dict[str, str] = {}
@@ -85,4 +71,5 @@ class RunState:
             "render_id": self.render_id,
             "call_count": self.call_count,
             "replay": self.replay,
+            "spec_filename": self.spec_filename,
         }

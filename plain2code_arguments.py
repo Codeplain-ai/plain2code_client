@@ -239,6 +239,13 @@ def create_parser():
         help="Target folder to copy conformance tests output to (used only if --copy-conformance-tests is set).",
     )
 
+    parser.add_argument(
+        "--render-machine-graph",
+        action="store_true",
+        default=False,
+        help="If set, render the state machine graph.",
+    )
+
     return parser
 
 

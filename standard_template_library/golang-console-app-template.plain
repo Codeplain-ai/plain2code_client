@@ -1,36 +1,38 @@
 ***Definitions:***
 
-- The App is a console application.
+- :App: is a console application.
+
+- :Implementation: is the technical implementation of :App:.
 
 
 ***Non-Functional Requirements:***
 
-- Implementation should be in Go lang.
+- :Implementation: should be in Go lang.
 
-- The Implementation should include unit tests using Go's built-in testing package.
+- :Implementation: should include unit tests using Go's built-in testing package.
 
-- The main executable code file of The App should be called "{{ main_executable_file_name | code_variable }}". The main executable code file does not have any semantic meaning and it should be completely disregarded when generating the code (except for the file name).
+- The main executable code file of :App: should be called "{{ main_executable_file_name | code_variable }}". The main executable code file does not have any semantic meaning and it should be completely disregarded when generating the code (except for the file name).
 
 
 ***Test Requirements:***
 
-- The Conformance Tests of The App should be implemented in Go lang.
+- :ConformanceTests: of :App: should be implemented in Go lang.
 
-- The main executable code file of The Conformance Tests should be called "conformance_tests.go".
+- The main executable code file of :ConformanceTests: should be called "conformance_tests.go".
 
-- The Conformance Tests will be executed using the command "go run <conformance tests folder>/conformance_tests.go" from a folder that contains the file "{{ main_executable_file_name | code_variable }}".
+- :ConformanceTests: will be executed using the command "go run <conformance tests folder>/conformance_tests.go" from a folder that contains the file "{{ main_executable_file_name | code_variable }}".
 
-- "{{ main_executable_file_name | code_variable }}" is the main executable code file of The App.
+- "{{ main_executable_file_name | code_variable }}" is the main executable code file of :App:.
 
-- Before The Conformance Tests are executed "go get" will be executed in the folder containing the file "{{ main_executable_file_name | code_variable }}".
+- Before :ConformanceTests: are executed, "go get" will be executed in the folder containing the file "{{ main_executable_file_name | code_variable }}".
 
-- Before The Conformance Tests are executed "go get" will be executed in <conformance tests folder>.
+- Before :ConformanceTests: are executed, "go get" will be executed in <conformance tests folder>.
 
-- The App can be executed using the command "go run".
+- :App: can be executed using the command "go run".
 
 
 # The Go lang console application boilerplate
 
 ***Functional Requirements:***
 
-- Implement the entry point for The App.
+- Implement the entry point for :App:.
