@@ -175,6 +175,13 @@ def create_parser():
         "1) First argument: path to a folder (e.g. 'build') containing generated source code, "
         "2) Second argument: path to a subfolder of the conformance tests folder (e.g. 'conformance_tests/subfoldername') containing test files.",
     )
+
+    parser.add_argument(
+        "--prepare-environment-script",
+        type=str,
+        help="Path to a shell script that prepares the testing environment. The script should accept the build folder path as its first argument (default: 'build').",
+    )
+
     parser.add_argument(
         "--api",
         type=str,

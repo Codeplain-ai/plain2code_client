@@ -38,7 +38,8 @@ class States(Enum):
     # Conformance test processing states
     PROCESSING_CONFORMANCE_TESTS = "processingConformanceTests"
     CONFORMANCE_TESTING_INITIALISED = "conformanceTestingInitialised"
-    CONFORMANCE_TEST_READY = "conformanceTestReady"
+    CONFORMANCE_TEST_GENERATED = "conformanceTestGenerated"
+    CONFORMANCE_TEST_ENV_PREPARED = "conformanceTestEnvironmentPrepared"
     CONFORMANCE_TEST_FAILED = "conformanceTestFailed"
 
     # Postprocessing conformance tests states

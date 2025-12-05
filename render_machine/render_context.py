@@ -175,6 +175,13 @@ class RenderContext:
                 )
             self.machine.dispatch(triggers.PROCEED_FRID_PROCESSING)
 
+    def start_testing_environment_preparation(self):
+        if (
+            self.args.prepare_environment_script is None
+            or not self.conformance_tests_running_context.should_prepare_testing_environment
+        ):
+            self.machine.dispatch(triggers.MARK_TESTING_ENVIRONMENT_PREPARED)
+
     def start_conformance_tests_processing(self):
         console.info("\n[b]Implementing conformance tests...[/b]\n")
         conformance_tests_json = self.conformance_tests_utils.get_conformance_tests_json()
@@ -185,6 +192,7 @@ class RenderContext:
             fix_attempts=0,
             conformance_tests_json=conformance_tests_json,
             conformance_tests_render_attempts=0,
+            should_prepare_testing_environment=True,
         )
 
     def finish_conformance_tests_processing(self):

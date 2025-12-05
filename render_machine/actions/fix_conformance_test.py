@@ -115,6 +115,7 @@ class FixConformanceTest(BaseAction):
                         response_files,
                         style=console.OUTPUT_STYLE,
                     )
+                render_context.conformance_tests_running_context.should_prepare_testing_environment = True
                 return self.IMPLEMENTATION_CODE_UPDATED, None
             else:
                 return self.IMPLEMENTATION_CODE_NOT_UPDATED, None

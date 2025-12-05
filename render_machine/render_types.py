@@ -33,3 +33,4 @@ class ConformanceTestsRunningContext:
     # - current_testing_frid == frid  noqa: E800
     # - conformance_test_phase_index == 0 (conformance tests phase)
     current_testing_frid_high_level_implementation_plan: Optional[str] = None
+    should_prepare_testing_environment: bool = False
