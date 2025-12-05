@@ -63,4 +63,4 @@ if [ $TEST_EXIT_CODE -ne 0 ]; then
   exit $TEST_EXIT_CODE
 fi
 
-exit $UNRECOVERABLE_ERROR_EXIT_CODE
+exit $TEST_EXIT_CODE

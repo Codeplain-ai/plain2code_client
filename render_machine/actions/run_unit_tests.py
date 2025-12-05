@@ -18,11 +18,11 @@ class RunUnitTests(BaseAction):
             console.info(
                 f"[b]Running unit tests script {render_context.args.unittests_script}.[/b] (attempt: {render_context.unit_tests_running_context.fix_attempts + 1})"
             )
-        exit_code, unittests_issue = render_utils.execute_test_script(
+        exit_code, unittests_issue = render_utils.execute_script(
             render_context.args.unittests_script,
             [render_context.args.build_folder],
             render_context.args.verbose,
-            "unit",
+            "Unit Tests",
         )
 
         if exit_code == 0:

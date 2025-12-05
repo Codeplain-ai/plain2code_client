@@ -1,4 +1,2 @@
-unittests-script: ../../test_scripts/run_unittests_react.sh
 conformance-tests-script: ../../test_scripts/run_conformance_tests_cypress.sh
 verbose: true # verbose flag, defaults to false if not set
-

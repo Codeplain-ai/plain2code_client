@@ -24,11 +24,11 @@ class RunConformanceTests(BaseAction):
             console.info(
                 f"\n[b]Running conformance tests script {render_context.args.conformance_tests_script} for {conformance_tests_folder_name} (functional requirement {render_context.conformance_tests_running_context.current_testing_frid}).[/b]"
             )
-        exit_code, conformance_tests_issue = render_utils.execute_test_script(
+        exit_code, conformance_tests_issue = render_utils.execute_script(
             render_context.args.conformance_tests_script,
             [render_context.args.build_folder, conformance_tests_folder_name],
             render_context.args.verbose,
-            "conformance",
+            "Conformance Tests",
         )
 
         if exit_code == 0:
