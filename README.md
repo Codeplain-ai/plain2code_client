@@ -1,21 +1,21 @@
 # Codeplain plain2code renderer
 
-Render Plain source to software code using the Codeplain API.
+Render ***plain source to software code using the Codeplain API.
 
 ## Codeplain.ai - Code Generation as a Service
 
-Codeplain is a platform that generates software code using large language models based on requirements you specify in Plain specification language.
+Codeplain is a platform that generates software code using large language models based on requirements you specify in ***plain specification language.
 
 Schematic overview of the Codeplain's code generation service
 
 <img src="resources/codeplain_overview.png">
 
-### Abstracting Away Code Generation Complexity with Plain
+### Abstracting Away Code Generation Complexity with ***plain
 
 
-Plain is a novel specification language that helps abstracting away complexity of using large language models for code generation.
+***plain is a novel specification language that helps abstracting away complexity of using large language models for code generation.
 
-An example application in Plain
+An example application in ***plain
 
 <img src="resources/plain_example.png" width="50%" height="50%">
 
@@ -81,13 +81,13 @@ After completing the installation steps above, you can immediately test the syst
 ### Examples and Sample Projects
 
 - See the [examples](examples) folder for sample projects in Golang, Python, and React.
-- For example application how to implement task manager in Plain see [example-task-manager](https://github.com/Codeplain-ai/example-task-manager) repository.
-- For example application how to implement SaaS connectors in Plain see [example-saas-connectors](https://github.com/Codeplain-ai/example-saas-connectors) repository.
+- For example application how to implement task manager in ***plain see [example-task-manager](https://github.com/Codeplain-ai/example-task-manager) repository.
+- For example application how to implement SaaS connectors in ***plain see [example-saas-connectors](https://github.com/Codeplain-ai/example-saas-connectors) repository.
 
 ### Documentation
 
-- For more details on the Plain format, see the [Plain language specification](docs/plain_language_specification.md).
-- For step-by-step instructions for creating your first Plain project see the [Kickstart your plain project](docs/starting_a_plain_project_from_scratch.md).
+- For more details on the ***plain format, see the [***plain language specification](docs/plain_language_specification.md).
+- For step-by-step instructions for creating your first ***plain project see the [Kickstart your plain project](docs/starting_a_plain_project_from_scratch.md).
 - For complete CLI documentation and usage examples, see [plain2code CLI documentation](docs/plain2code_cli.md).
 
 
