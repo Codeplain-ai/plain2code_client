@@ -1,6 +1,6 @@
-# How to Start a New Plain Project from Scratch
+# How to Start a New ***plain Project from Scratch
 
-This guide will walk you through creating your first Plain project from scratch.
+This guide will walk you through creating your first ***plain project from scratch.
 It assumes you have already:
 
 ✅ Met all [prerequisites](../README.md#prerequisites),
@@ -9,11 +9,11 @@ It assumes you have already:
 
 If you haven't done so yet, please refer to [README](../README.md).
 
-After following this guide, you'll be equipped to turn your ideas into working code with Plain.
+After following this guide, you'll be equipped to turn your ideas into working code with ***plain.
 
 ## Project Structure Overview
 
-Every Plain project follows this basic structure:
+Every ***plain project follows this basic structure:
 
 ```
 my-new-project/
@@ -29,7 +29,7 @@ In this guide we will cover how to create each of these step by step.
 
 ## 1. Define Your .plain File
 
-Create a `.plain` file. The following example shows how to specify the array sorting problem. For more details, see [Plain language specifications](plain_language_specification.md).
+Create a `.plain` file. The following example shows how to specify the array sorting problem. For more details, see [***plain language specifications](plain_language_specification.md).
 
 **Example: `array_sorting.plain`**
 ```plain
@@ -74,7 +74,7 @@ conformance-tests-script: ./run_conformance_tests_python.sh
 verbose: true
 
 ```
-- Specify the test scripts so that Plain knows how to run unit and conformance tests.
+- Specify the test scripts so that ***plain knows how to run unit and conformance tests.
 - Indicate whether to display detailed output during code generation like shown in output control. 
 - For additional options and advanced configuration, see the [plain2code CLI documentation](plain2code_cli.md).
 
