@@ -1,3 +1,107 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codeplain"
+version = "0.1.1"
+description = "Transform plain language specifications into working code"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [    
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Code Generators",
+]
+dependencies = [
+    "python-liquid2==0.3.0",
+    "mistletoe==1.3.0",
+    "langchain==1.0.8",
+    "langchain-core==1.2.3",
+    "langchain-openai==1.0.3",
+    "langchain-anthropic==1.1.0",
+    "langchain-aws==1.0.0",
+    "langchain-cerebras==0.8.0",
+    "langchain-google-genai==4.1.2",
+    "langchain-ollama==1.0.0",
+    "requests==2.32.3",
+    "langsmith==0.4.4",
+    "rich==14.2.0",
+    "tiktoken==0.12.0",
+    "PyYAML==6.0.2",
+    "gitpython==3.1.42",
+    "lizard==1.18.0",
+    "textual==1.0.0",
+    "SQLAlchemy==2.0.36",
+    "psycopg2==2.9.10",
+    "python-dotenv==1.1.0",
+    "transitions==0.9.3",
+    "cryptography==46.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.5",
+    "flake8==7.0.0",
+    "black==24.2.0",
+    "isort==5.13.2",
+    "flake8-bugbear==24.12.12",
+    "flake8-unused-arguments==0.0.13",
+    "flake8-eradicate==1.5.0",
+    "pep8-naming==0.15.1",
+    "mypy==1.11.2",
+]
+
+[project.scripts]
+codeplain = "plain2code:main"
+
+[tool.setuptools]
+py-modules = [
+    "plain2code",
+    "plain2code_arguments",
+    "plain2code_console",
+    "plain2code_events",
+    "plain2code_exceptions",
+    "plain2code_nodes",
+    "plain2code_read_config",
+    "plain2code_state",
+    "plain2code_tui",
+    "plain2code_utils",
+    "plain_file",
+    "plain_spec",
+    "codeplain_constants",
+    "codeplain_local_api",
+    "codeplain_models",
+    "codeplain_REST_api",
+    "codeplain_types",
+    "codeplain_utils",
+    "codeplain",
+    "code_complexity",
+    "config",
+    "content_extractor",
+    "event_bus",
+    "file_utils",
+    "git_utils",
+    "hash_key",
+    "llm_exceptions",
+    "llm_handler",
+    "llm_selector",
+    "llm",
+    "render_cache",
+    "spinner",
+    "system_config",
+    "tui_components",
+]
+
+[tool.setuptools.packages.find]
+include = ["config*", "patch*", "prompt_templates*", "render_machine*", "repositories*", "services*", "standard_template_library*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.css", "*.plain"]
+
 [tool.black]
 line-length = 120
 target-version = ['py311']
@@ -18,11 +122,6 @@ ensure_newline_before_comments = true
 line_length = 120
 skip = [".git", ".venv", "dist", "venv", ".conda", "tests/data"]
 skip_gitignore = true
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
-norecursedirs = ["tests/data"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -61,3 +160,8 @@ exclude = [
     "^src/services/langsmith/",
     "^deploy/",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+norecursedirs = ["tests/data"]

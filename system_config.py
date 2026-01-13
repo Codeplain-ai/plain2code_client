@@ -1,4 +1,4 @@
-import os
+import importlib.resources
 import shutil
 import sys
 
@@ -22,9 +22,9 @@ class SystemConfig:
 
     def _load_config(self):
         """Load system configuration from YAML file."""
-        config_path = os.path.join(os.path.dirname(__file__), "system_config.yaml")
+        config_path = importlib.resources.files("config").joinpath("system_config.yaml")
         try:
-            with open(config_path, "r") as f:
+            with config_path.open("r") as f:
                 yaml_data = yaml.safe_load(f)
                 return yaml_data
         except Exception as e:

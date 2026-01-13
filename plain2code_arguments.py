@@ -276,6 +276,13 @@ def create_parser():
         help="If set, render the state machine graph.",
     )
 
+    parser.add_argument(
+        "--logging-config-path",
+        action="store_true",
+        default="logging_config.yaml",
+        help="Path to the logging configuration file.",
+    )
+
     return parser
 
 
