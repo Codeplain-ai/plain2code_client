@@ -23,5 +23,8 @@ examples/**/node_plain_modules/
 *.log
 
 .venv
+build
+dist
+*.egg-info
 
 .env

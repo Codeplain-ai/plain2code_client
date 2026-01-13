@@ -1,4 +1,4 @@
-import importlib.util
+import importlib.resources
 import logging
 import logging.config
 import os
@@ -9,6 +9,7 @@ import yaml
 from liquid2.exceptions import TemplateNotFoundError
 from requests.exceptions import RequestException
 
+import codeplain_REST_api as codeplain_api
 import file_utils
 import plain_file
 import plain_spec
@@ -31,9 +32,8 @@ from system_config import system_config
 from tui.plain2code_tui import Plain2CodeTUI
 
 TEST_SCRIPT_EXECUTION_TIMEOUT = 120  # 120 seconds
-LOGGING_CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging_config.yaml")
 
-DEFAULT_TEMPLATE_DIRS = "standard_template_library"
+DEFAULT_TEMPLATE_DIRS = importlib.resources.files("standard_template_library")
 
 MAX_UNITTEST_FIX_ATTEMPTS = 20
 MAX_CONFORMANCE_TEST_FIX_ATTEMPTS = 20
@@ -109,16 +109,15 @@ def setup_logging(
 
     log_file_path = get_log_file_path(plain_file_path, log_file_name)
 
-    # Try to load logging configuration from YAML file
-    if os.path.exists(LOGGING_CONFIG_PATH):
-        try:
-            with open(LOGGING_CONFIG_PATH, "r") as f:
-                config = yaml.safe_load(f)
-                logging.config.dictConfig(config)
-                console.info(f"Loaded logging configuration from {LOGGING_CONFIG_PATH}")
-        except Exception as e:
-            logging.basicConfig()
-            console.warning(f"Failed to load logging configuration from {LOGGING_CONFIG_PATH}: {str(e)}")
+        # Try to load logging configuration from YAML file
+        if args.logging_config_path and os.path.exists(args.logging_config_path):
+            try:
+                with open(args.logging_config_path, "r") as f:
+                    config = yaml.safe_load(f)
+                    logging.config.dictConfig(config)
+                    console.info(f"Loaded logging configuration from {args.logging_config_path}")
+            except Exception as e:
+                console.warning(f"Failed to load logging configuration from {args.logging_config_path}: {str(e)}")
 
     # Silence noisy third-party libraries
     logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -170,7 +169,7 @@ def render(args, run_state: RunState, codeplain_api, event_bus: EventBus):  # no
 
     template_dirs = file_utils.get_template_directories(args.filename, args.template_dir, DEFAULT_TEMPLATE_DIRS)
 
-    _, plain_source, _ = plain_file.plain_file_parser(args.filename, template_dirs)
+        _, plain_source, _ = plain_file.plain_file_parser(args.filename, template_dirs)
 
     if args.render_range is not None:
         args.render_range = get_render_range(args.render_range, plain_source)
@@ -194,7 +193,32 @@ def render(args, run_state: RunState, codeplain_api, event_bus: EventBus):  # no
     if args.api:
         codeplainAPI.api_url = args.api
 
-    module_renderer = ModuleRenderer(
+    console.info(f"Rendering {args.filename} to target code.")
+
+    plain_source_tree = codeplainAPI.get_plain_source_tree(plain_source, loaded_templates, run_state)
+
+    if args.render_range is not None:
+        args.render_range = get_render_range(args.render_range, plain_source)
+    elif args.render_from is not None:
+        args.render_range = get_render_range_from(args.render_from, plain_source)
+
+    # Handle dry run and full plain here (outside of state machine)
+    if args.dry_run:
+        console.info("Printing dry run output...")
+        print_dry_run_output(plain_source, args.render_range)
+        return
+
+    if args.full_plain:
+        console.info("Printing full plain output...")
+        console.info(plain_source)
+        return
+
+    codeplainAPI = codeplain_api.CodeplainAPI(args.api_key, console)
+    codeplainAPI.verbose = args.verbose
+    assert args.api is not None and args.api != "", "API URL is required"
+    codeplainAPI.api_url = args.api
+
+     module_renderer = ModuleRenderer(
         codeplainAPI,
         args.filename,
         args.render_range,
@@ -223,22 +247,12 @@ def render(args, run_state: RunState, codeplain_api, event_bus: EventBus):  # no
     return
 
 
-def main():  # noqa: C901
+def main():
     args = parse_arguments()
 
     event_bus = EventBus()
 
     setup_logging(event_bus, args.log_to_file, args.log_file_name, args.filename)
-
-    codeplain_api_module_name = "codeplain_local_api"
-
-    codeplain_api_spec = importlib.util.find_spec(codeplain_api_module_name)
-    if args.api or codeplain_api_spec is None:
-        if not args.api:
-            args.api = "https://api.codeplain.ai"
-        import codeplain_REST_api as codeplain_api
-    else:
-        codeplain_api = importlib.import_module(codeplain_api_module_name)
 
     run_state = RunState(spec_filename=args.filename, replay_with=args.replay_with)
 
@@ -276,7 +290,6 @@ def main():  # noqa: C901
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
         traceback.print_exc()
-        dump_crash_logs(args)
 
 
 if __name__ == "__main__":  # noqa: C901
