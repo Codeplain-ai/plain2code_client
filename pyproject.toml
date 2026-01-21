@@ -4,16 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codeplain"
-version = "0.1.1"
+version = "0.1.3"
 description = "Transform plain language specifications into working code"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 classifiers = [    
     "Environment :: Console",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.11",
+    "Intended Audience :: Developers",    
+    "Operating System :: OS Independent",    
     "Topic :: Software Development :: Code Generators",
 ]
 dependencies = [
@@ -40,6 +38,8 @@ dependencies = [
     "python-dotenv==1.1.0",
     "transitions==0.9.3",
     "cryptography==46.0.1",
+    "python-frontmatter==1.1.0",
+    "networkx==3.6.1"
 ]
 
 [project.optional-dependencies]
@@ -94,10 +94,14 @@ py-modules = [
     "spinner",
     "system_config",
     "tui_components",
+    "concept_utils",
+    "module_renderer",
+    "plain_modules",
+    "plain2code_logger",
 ]
 
 [tool.setuptools.packages.find]
-include = ["config*", "patch*", "prompt_templates*", "render_machine*", "repositories*", "services*", "standard_template_library*"]
+include = ["config*", "patch*", "prompt_templates*", "render_machine*", "repositories*", "services*", "standard_template_library*", "tui*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml", "*.css", "*.plain"]
