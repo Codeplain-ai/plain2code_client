@@ -5,12 +5,12 @@ from typing import Optional
 
 from liquid2.filter import with_context
 
-DEFINITIONS = "Definitions:"
-NON_FUNCTIONAL_REQUIREMENTS = "Non-Functional Requirements:"
-TEST_REQUIREMENTS = "Test Requirements:"
-FUNCTIONAL_REQUIREMENTS = "Functional Requirements:"
+DEFINITIONS = "definitions"
+NON_FUNCTIONAL_REQUIREMENTS = "technical specs"
+TEST_REQUIREMENTS = "test specs"
+FUNCTIONAL_REQUIREMENTS = "functional specs"
 ACCEPTANCE_TESTS = "acceptance_tests"
-ACCEPTANCE_TEST_HEADING = "Acceptance Tests:"
+ACCEPTANCE_TEST_HEADING = "acceptance tests"
 
 ALLOWED_SPECIFICATION_HEADINGS = [
     DEFINITIONS,
@@ -19,6 +19,8 @@ ALLOWED_SPECIFICATION_HEADINGS = [
     FUNCTIONAL_REQUIREMENTS,
     ACCEPTANCE_TEST_HEADING,
 ]
+
+ALLOWED_IMPORT_SPECIFICATION_HEADINGS = [DEFINITIONS, NON_FUNCTIONAL_REQUIREMENTS, TEST_REQUIREMENTS]
 
 
 class InvalidLiquidVariableName(Exception):

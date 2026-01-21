@@ -1,3 +1,5 @@
+import logging
+
 import tiktoken
 from rich.console import Console
 from rich.style import Style
@@ -17,21 +19,28 @@ class Plain2CodeConsole(Console):
         self.llm_encoding = tiktoken.get_encoding("cl100k_base")
 
     def info(self, *args, **kwargs):
+        logging.info(" ".join(map(str, args)))
         super().print(*args, **kwargs, style=self.INFO_STYLE)
 
     def warning(self, *args, **kwargs):
+        logging.warning(" ".join(map(str, args)))
         super().print(*args, **kwargs, style=self.WARNING_STYLE)
 
     def error(self, *args, **kwargs):
+        logging.error(" ".join(map(str, args)))
         super().print(*args, **kwargs, style=self.ERROR_STYLE)
 
     def input(self, *args, **kwargs):
+        # We also log input as info so it shows in the toggled view
+        logging.info(" ".join(map(str, args)))
         super().print(*args, **kwargs, style=self.INPUT_STYLE)
 
     def output(self, *args, **kwargs):
+        logging.info(" ".join(map(str, args)))
         super().print(*args, **kwargs, style=self.OUTPUT_STYLE)
 
     def debug(self, *args, **kwargs):
+        logging.debug(" ".join(map(str, args)))
         super().print(*args, **kwargs, style=self.DEBUG_STYLE)
 
     def print_list(self, items, style=None):
@@ -90,14 +99,14 @@ class Plain2CodeConsole(Console):
 
     def print_resources(self, resources_list, linked_resources):
         if len(resources_list) == 0:
-            console.input("\nNo linked resources found.")
+            self.input("No linked resources found.")
             return
 
-        self.input("\nLinked resources:")
+        self.input("Linked resources:")
         for resource_name in resources_list:
             if resource_name["target"] in linked_resources:
                 file_tokens = len(self.llm_encoding.encode(linked_resources[resource_name["target"]]))
-                console.input(
+                self.input(
                     f"- {resource_name['text']} [b][#4169E1]({resource_name['target']}, {file_tokens} tokens)[/#4169E1][/b]"
                 )
 

@@ -1,0 +1,213 @@
+Screen {
+    layout: vertical;
+}
+
+/*
+We might need those at some point, so just commenting them out for now.
+#status-widget {
+    height: auto;
+    padding: 1;
+    border: solid #888;
+}
+
+#error-widget {
+    height: auto;
+    padding: 1;
+    border: solid #888;
+} */
+
+#render-id-widget {
+    dock: top;
+    margin-left: 2;
+    margin-right: 2;
+    height: auto;
+    color: grey;
+}
+
+#render-status-widget {
+    margin-left: 2;
+    margin-right: 2;
+    height: auto;
+    color: #4D4D4D;
+}
+
+#render-status-widget.success {
+    color: #79FC96;
+}
+
+#render-status-widget.error {
+    color: #FF6B6B;
+}
+
+#frid-progress {
+    margin: 1 0;
+    height: auto;
+}
+
+ProgressItem {
+    height: auto;
+}
+
+.progress-main-row {
+    height: auto;
+}
+
+.substates-container {
+    height: auto;
+    margin-left: 1;
+    padding: 0;
+}
+
+.substate {
+    margin: 0;
+    padding: 0;
+}
+
+#frid-progress Vertical {
+    height: auto;
+}
+
+#frid-progress-header {
+    margin-bottom: 1;
+    margin-left: 2;
+    margin-right: 2;
+    color: #4D4D4D;
+}
+
+#render-module-name-widget {
+    margin-left: 2;
+    margin-right: 2;
+    color: #4D4D4D;
+}
+
+#unit-test-script-output-widget,
+#conformance-tests-script-output-widget,
+#testing-environment-script-output-widget {
+    margin: 0 2;
+    height: auto;
+    color: #888;
+}
+
+#acceptance-tests-container {
+    height: auto;
+}
+
+.status {
+    width: 15;
+    padding: 0 1;
+}
+
+.status.PENDING {
+    color: #000;
+    background: #C5DCD9;
+}
+
+.status.PROCESSING {
+    color: #000;
+    background: #E0FF6E;
+}
+
+.status.PROCESSING .spinner-text {
+    color: #000;
+}
+
+.status.COMPLETED {
+    color: #000;
+    background: #79FC96;
+}
+
+.status.STOPPED {
+    color: #FFF;
+    background: #C77777;
+}
+
+.description {
+    margin-left: 1;
+}
+
+.substate-separator {
+    height: 1;
+}
+
+/* Log Filter Styles */
+#log-filter {
+    dock: top;
+    height: auto;
+    padding: 0 1;
+    background: $surface-darken-1;
+    border-bottom: solid $accent;
+}
+
+.filter-label {
+    width: auto;
+    padding: 0 1 0 0;
+    content-align: center middle;
+}
+
+.filter-button {
+    margin: 0 1;
+    min-width: 10;
+    height: 3;
+}
+
+CollapsibleLogEntry {
+    height: auto;
+    padding: 0;
+    margin: 0;
+    border-left: solid transparent;
+}
+
+CollapsibleLogEntry:hover {
+    background: $surface-lighten-1;
+    border-left: solid $accent;
+}
+
+.log-arrow {
+    width: auto;
+    min-width: 3;
+    padding: 0 1;
+}
+
+.log-arrow:hover {
+    text-style: bold;
+    background: $surface-lighten-2;
+}
+
+.log-summary {
+    height: auto;
+    width: 1fr;
+    padding: 0 1;
+}
+
+.log-expanded {
+    height: auto;
+    width: 1fr;
+    padding: 0 1;
+}
+
+/* Log level specific colors with left border */
+.log-entry.log-debug {
+    color: #888;
+    border-left: thick #555;
+}
+
+.log-entry.log-info {
+    color: white;
+    border-left: thick #4A9FD8;
+}
+
+.log-entry.log-warning {
+    color: #FFD700;
+    border-left: thick #CCA700;
+}
+
+.log-entry.log-error {
+    color: #FF6B6B;
+    border-left: thick #CC4444;
+}
+
+.log-entry.log-critical {
+    color: #FF0000;
+    background: $surface-darken-1;
+    border-left: thick #FF0000;
+}

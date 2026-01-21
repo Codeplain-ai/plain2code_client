@@ -11,15 +11,15 @@ class CreateDist(BaseAction):
 
     def execute(self, render_context: RenderContext, _previous_action_payload: Any | None):
         # Copy build and conformance tests folders to output folders if specified
-        if render_context.args.copy_build:
+        if render_context.copy_build:
             file_utils.copy_folder_to_output(
-                render_context.args.build_folder,
-                render_context.args.build_dest,
+                render_context.build_folder,
+                render_context.build_dest,
             )
-        if render_context.args.copy_conformance_tests:
+        if render_context.copy_conformance_tests:
             file_utils.copy_folder_to_output(
-                render_context.args.conformance_tests_folder,
-                render_context.args.conformance_tests_dest,
+                render_context.conformance_tests.get_module_conformance_tests_folder(render_context.module_name),
+                render_context.conformance_tests_dest,
             )
         console.info(f"Render {render_context.run_state.render_id} completed successfully.")
 

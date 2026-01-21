@@ -1,22 +1,17 @@
-***Definitions:***
+***definitions***
 
 - :App: is a web application.
 
 
-***Non-Functional Requirements:***
+***technical specs***
 
 - :App: should be implemented in TypeScript, using React as a web framework.
 
 - :App: will run on Node.js as the runtime environment.
 
+- :App: should run on port 3000.
 
-***Test Requirements:***
+
+***test specs***
 
 - :ConformanceTests: of :App: should be written in TypeScript, using Cypress as the framework for :ConformanceTests:.
-
-
-# The React boilerplate
-
-***Functional Requirements:***
-
-- Implement the entry point for :App:.

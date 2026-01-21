@@ -1,46 +1,7 @@
 """Contains all state and context information we need for the rendering process."""
 
-import json
-import os
 import uuid
 from typing import Optional
-
-from plain2code_console import console
-
-CONFORMANCE_TESTS_DEFINITION_FILE_NAME = "conformance_tests.json"
-
-
-class ConformanceTestsUtils:
-    """Manages the state of conformance tests."""
-
-    def __init__(
-        self,
-        conformance_tests_folder: str,
-        conformance_tests_definition_file_name: str,
-        verbose: bool,
-    ):
-        self.conformance_tests_folder = conformance_tests_folder
-        self.full_conformance_tests_definition_file_name = os.path.join(
-            self.conformance_tests_folder, conformance_tests_definition_file_name
-        )
-        self.verbose = verbose
-
-    def get_conformance_tests_json(self):
-        try:
-            with open(self.full_conformance_tests_definition_file_name, "r") as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return {}
-
-    def dump_conformance_tests_json(self, conformance_tests_json: dict):
-        """Dump the conformance tests definition to the file."""
-        if os.path.exists(self.conformance_tests_folder):
-            if self.verbose:
-                console.info(
-                    f"Storing conformance tests definition to {self.full_conformance_tests_definition_file_name}"
-                )
-            with open(self.full_conformance_tests_definition_file_name, "w") as f:
-                json.dump(conformance_tests_json, f, indent=4)
 
 
 class RunState:
@@ -73,3 +34,6 @@ class RunState:
             "replay": self.replay,
             "spec_filename": self.spec_filename,
         }
+
+    def get_render_func_id(self, frid: str) -> str:
+        return f"{self.render_id}-{frid}"

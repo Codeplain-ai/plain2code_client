@@ -16,11 +16,12 @@ CONFORMANCE_TESTS_PASSED_COMMIT_MESSAGE = (
 # Following messages are used as checkpoints in the git history
 # Changing them will break backwards compatibility so change them with care
 FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE = "[Codeplain] Functional requirement ID (FRID):{} fully implemented"
-INITIAL_COMMIT_MESSAGE = "[Codeplain] Initial commit"
+INITIAL_COMMIT_MESSAGE = "[Codeplain] Initial module commit"
 BASE_FOLDER_COMMIT_MESSAGE = "[Codeplain] Initialize build with Base Folder content"
 
 
 RENDERED_FRID_MESSAGE = "Changes related to Functional requirement ID (FRID): {}"
+MODULE_NAME_MESSAGE = "Module name: {}"
 RENDER_ID_MESSAGE = "Render ID: {}"
 
 
@@ -30,7 +31,25 @@ class InvalidGitRepositoryError(Exception):
     pass
 
 
-def init_git_repo(path_to_repo: Union[str, os.PathLike]) -> Repo:
+def _get_full_commit_message(message, module_name, frid, render_id) -> str:
+    full_message = message
+
+    if module_name or frid or render_id:
+        full_message += "\n\n" + "-" * 80 + "\n"
+
+    if frid:
+        full_message += f"\n\n{RENDERED_FRID_MESSAGE.format(frid)}"
+    if module_name:
+        full_message += f"\n\n{MODULE_NAME_MESSAGE.format(module_name)}"
+    if render_id:
+        full_message += f"\n\n{RENDER_ID_MESSAGE.format(render_id)}"
+
+    return full_message
+
+
+def init_git_repo(
+    path_to_repo: Union[str, os.PathLike], module_name: Optional[str] = None, render_id: Optional[str] = None
+) -> Repo:
     """
     Initializes a new git repository in the given path.
     If folder does not exist, it creates it.
@@ -42,9 +61,20 @@ def init_git_repo(path_to_repo: Union[str, os.PathLike]) -> Repo:
         os.makedirs(path_to_repo)
 
     repo = Repo.init(path_to_repo)
-    repo.git.commit("--allow-empty", "-m", INITIAL_COMMIT_MESSAGE)
+    repo.git.commit(
+        "--allow-empty", "-m", _get_full_commit_message(INITIAL_COMMIT_MESSAGE, module_name, None, render_id)
+    )
 
     return repo
+
+
+def clone_repo(
+    source_repo_path: str, new_repo_path: str, module_name: Optional[str] = None, render_id: Optional[str] = None
+) -> Repo:
+    repo = Repo.clone_from(source_repo_path, new_repo_path)
+    repo.git.commit(
+        "--allow-empty", "-m", _get_full_commit_message(INITIAL_COMMIT_MESSAGE, module_name, None, render_id)
+    )
 
 
 def is_dirty(repo_path: Union[str, os.PathLike]) -> bool:
@@ -54,21 +84,17 @@ def is_dirty(repo_path: Union[str, os.PathLike]) -> bool:
 
 
 def add_all_files_and_commit(
-    repo_path: Union[str, os.PathLike], commit_message: str, frid: Optional[str] = None, render_id: Optional[str] = None
+    repo_path: Union[str, os.PathLike],
+    commit_message: str,
+    module_name: Optional[str] = None,
+    frid: Optional[str] = None,
+    render_id: Optional[str] = None,
 ) -> Repo:
     """Adds all files to the git repository and commits them."""
     repo = Repo(repo_path)
     repo.git.add(".")
 
-    message = f"{commit_message}"
-
-    if frid or render_id:
-        message += "\n\n" + "-" * 80
-
-    if frid:
-        message += f"\n\n{RENDERED_FRID_MESSAGE.format(frid)}"
-    if render_id:
-        message += f"\n\n{RENDER_ID_MESSAGE.format(render_id)}"
+    message = _get_full_commit_message(commit_message, module_name, frid, render_id)
 
     # Check if there are any changes to commit
     if not repo.is_dirty(untracked_files=True):
@@ -226,13 +252,13 @@ def diff(repo_path: Union[str, os.PathLike], previous_frid: str = None) -> dict:
 
 def _get_commit(repo: Repo, frid: Optional[str]) -> str:
     if frid:
-        commit = _get_commit_with_frid(repo, frid)
-    else:
-        commit = _get_base_folder_commit(repo)
-        if not commit:
-            commit = _get_initial_commit(repo)
+        return _get_commit_with_frid(repo, frid)
 
-    return commit
+    base_folder_commit = _get_base_folder_commit(repo)
+    initial_commit = _get_initial_commit(repo)
+    if base_folder_commit and repo.is_ancestor(repo.commit(initial_commit), repo.commit(base_folder_commit)):
+        return base_folder_commit
+    return initial_commit
 
 
 def _get_commit_with_frid(repo: Repo, frid: str) -> str:
@@ -302,3 +328,42 @@ def get_fixed_implementation_code_diff(repo_path: Union[str, os.PathLike], frid:
         return {}
 
     return _get_diff_dict(diff_output)
+
+
+def get_repo_info(repo_path: Union[str, os.PathLike]) -> dict:
+    """
+    Returns basic information about the git repository at repo_path.
+
+    Returned dict contains:
+      - path: absolute path to the repo
+      - active_branch: branch name or a descriptor when HEAD is detached
+      - is_dirty: boolean (includes untracked files)
+      - remotes: dict mapping remote name to list of URLs
+    """
+    repo = Repo(repo_path)
+
+    info = {"path": os.path.abspath(repo_path)}
+
+    # Active branch (handle detached HEAD safely)
+    try:
+        if getattr(repo.head, "is_detached", False):
+            # Provide short commit identifier for detached head if available
+            try:
+                commit_sha = repo.head.commit.hexsha[:7]
+                info["active_branch"] = f"DETACHED_{commit_sha}"
+            except Exception:
+                info["active_branch"] = "DETACHED"
+        else:
+            info["active_branch"] = repo.active_branch.name
+    except Exception:
+        info["active_branch"] = None
+
+    info["is_dirty"] = repo.is_dirty(untracked_files=True)
+
+    # Remotes
+    remotes = {}
+    for remote in repo.remotes:
+        remotes[remote.name] = list(remote.urls)
+    info["remotes"] = remotes
+
+    return info

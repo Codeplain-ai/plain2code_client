@@ -3,19 +3,32 @@ import logging
 import logging.config
 import os
 import traceback
+from typing import Optional
 
 import yaml
 from liquid2.exceptions import TemplateNotFoundError
 from requests.exceptions import RequestException
 
 import file_utils
+import plain_file
 import plain_spec
+from event_bus import EventBus
+from module_renderer import ModuleRenderer
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
+from plain2code_exceptions import PlainSyntaxError
+from plain2code_logger import (
+    CrashLogHandler,
+    IndentedFormatter,
+    RetryOnlyFilter,
+    TuiLoggingHandler,
+    dump_crash_logs,
+    get_log_file_path,
+)
 from plain2code_state import RunState
-from plain2code_utils import RetryOnlyFilter, print_dry_run_output
-from render_machine.code_renderer import CodeRenderer
+from plain2code_utils import print_dry_run_output
 from system_config import system_config
+from tui.plain2code_tui import Plain2CodeTUI
 
 TEST_SCRIPT_EXECUTION_TIMEOUT = 120  # 120 seconds
 LOGGING_CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging_config.yaml")
@@ -38,19 +51,19 @@ class InvalidFridArgument(Exception):
     pass
 
 
-def get_render_range(render_range, plain_source_tree):
+def get_render_range(render_range, plain_source):
     render_range = render_range.split(",")
     range_end = render_range[1] if len(render_range) == 2 else render_range[0]
 
-    return _get_frids_range(plain_source_tree, render_range[0], range_end)
+    return _get_frids_range(plain_source, render_range[0], range_end)
 
 
-def get_render_range_from(start, plain_source_tree):
-    return _get_frids_range(plain_source_tree, start)
+def get_render_range_from(start, plain_source):
+    return _get_frids_range(plain_source, start)
 
 
-def _get_frids_range(plain_source_tree, start, end=None):
-    frids = list(plain_spec.get_frids(plain_source_tree))
+def _get_frids_range(plain_source, start, end=None):
+    frids = list(plain_spec.get_frids(plain_source))
 
     start = str(start)
 
@@ -75,74 +88,104 @@ def _get_frids_range(plain_source_tree, start, end=None):
     return frids[start_idx:end_idx]
 
 
-class IndentedFormatter(logging.Formatter):
+def setup_logging(
+    event_bus: EventBus,
+    log_to_file: bool,
+    log_file_name: str,
+    plain_file_path: Optional[str],
+):
+    # Set default level to INFO for everything not explicitly configured
+    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("anthropic").setLevel(logging.WARNING)
+    logging.getLogger("langsmith").setLevel(logging.WARNING)
+    logging.getLogger("git").setLevel(logging.WARNING)
+    logging.getLogger("anthropic._base_client").setLevel(logging.WARNING)
+    logging.getLogger("services.langsmith.langsmith_service").setLevel(logging.WARNING)
+    logging.getLogger("transitions").setLevel(logging.WARNING)
+    logging.getLogger("repositories").setLevel(logging.WARNING)
 
-    def format(self, record):
-        original_message = record.getMessage()
+    log_file_path = get_log_file_path(plain_file_path, log_file_name)
 
-        modified_message = original_message.replace("\n", "\n                ")
+    # Try to load logging configuration from YAML file
+    if os.path.exists(LOGGING_CONFIG_PATH):
+        try:
+            with open(LOGGING_CONFIG_PATH, "r") as f:
+                config = yaml.safe_load(f)
+                logging.config.dictConfig(config)
+                console.info(f"Loaded logging configuration from {LOGGING_CONFIG_PATH}")
+        except Exception as e:
+            logging.basicConfig()
+            console.warning(f"Failed to load logging configuration from {LOGGING_CONFIG_PATH}: {str(e)}")
 
-        record.msg = modified_message
-        return super().format(record)
+    # Silence noisy third-party libraries
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("anthropic").setLevel(logging.WARNING)
+    logging.getLogger("langsmith").setLevel(logging.WARNING)
+    logging.getLogger("git").setLevel(logging.WARNING)
+    logging.getLogger("openai").setLevel(logging.WARNING)
+    logging.getLogger("transitions").setLevel(logging.WARNING)
+    logging.getLogger("google_genai").setLevel(logging.WARNING)
+
+    # Allow detailed retry logs for anthropic if needed
+    logging.getLogger("anthropic._base_client").setLevel(logging.DEBUG)
+    if logging.getLogger("anthropic._base_client").level == logging.DEBUG:
+        logging.getLogger("anthropic._base_client").addFilter(RetryOnlyFilter())
+
+    # The IndentedFormatter provides better multiline log readability.
+    # We add the TuiLoggingHandler to the root logger.
+    # CRITICAL: We must remove existing handlers (like StreamHandler) to prevent double-logging
+    # that spills into the TUI dashboard.
+    root_logger = logging.getLogger()
+    for h in root_logger.handlers[:]:
+        root_logger.removeHandler(h)
+
+    handler = TuiLoggingHandler(event_bus)
+    formatter = IndentedFormatter("%(levelname)s:%(name)s:%(message)s")
+    handler.setFormatter(formatter)
+    root_logger.addHandler(handler)
+
+    if log_to_file and log_file_path:
+        try:
+            file_handler = logging.FileHandler(log_file_path, mode="w")
+            file_handler.setFormatter(formatter)
+            root_logger.addHandler(file_handler)
+        except Exception as e:
+            console.warning(f"Failed to setup file logging to {log_file_path}: {str(e)}")
+    else:
+        # If file logging is disabled, use CrashLogHandler to buffer logs in memory
+        # in case we need to dump them on crash.
+        crash_handler = CrashLogHandler()
+        crash_handler.setFormatter(formatter)
+        root_logger.addHandler(crash_handler)
 
 
-def render(args, run_state: RunState):  # noqa: C901
-    if args.verbose:
-
-        logging.basicConfig(level=logging.DEBUG)
-        logging.getLogger("urllib3").setLevel(logging.WARNING)
-        logging.getLogger("httpx").setLevel(logging.WARNING)
-        logging.getLogger("httpcore").setLevel(logging.WARNING)
-        logging.getLogger("anthropic").setLevel(logging.WARNING)
-        logging.getLogger("langsmith").setLevel(logging.WARNING)
-        logging.getLogger("git").setLevel(logging.WARNING)
-        logging.getLogger("anthropic._base_client").setLevel(logging.DEBUG)
-        logging.getLogger("services.langsmith.langsmith_service").setLevel(logging.INFO)
-        logging.getLogger("transitions").setLevel(logging.WARNING)
-
-        # Try to load logging configuration from YAML file
-        if os.path.exists(LOGGING_CONFIG_PATH):
-            try:
-                with open(LOGGING_CONFIG_PATH, "r") as f:
-                    config = yaml.safe_load(f)
-                    logging.config.dictConfig(config)
-                    console.info(f"Loaded logging configuration from {LOGGING_CONFIG_PATH}")
-            except Exception as e:
-                console.warning(f"Failed to load logging configuration from {LOGGING_CONFIG_PATH}: {str(e)}")
-
-        # if we have debug level for anthropic._base_client to debug, catch only logs relevant to retrying (ones that are relevant for us)
-        if logging.getLogger("anthropic._base_client").level == logging.DEBUG:
-            logging.getLogger("anthropic._base_client").addFilter(RetryOnlyFilter())
-
-        formatter = IndentedFormatter("%(levelname)s:%(name)s:%(message)s")
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-
-        codeplain_logger = logging.getLogger("codeplain")
-        codeplain_logger.addHandler(console_handler)
-        codeplain_logger.propagate = False
-
-        llm_logger = logging.getLogger("llm")
-        llm_logger.addHandler(console_handler)
-        llm_logger.propagate = False
-
-        logging.getLogger("repositories").setLevel(logging.INFO)
-
+def render(args, run_state: RunState, codeplain_api, event_bus: EventBus):  # noqa: C901
     # Check system requirements before proceeding
     system_config.verify_requirements()
 
-    with open(args.filename, "r") as fin:
-        plain_source = fin.read()
-
     template_dirs = file_utils.get_template_directories(args.filename, args.template_dir, DEFAULT_TEMPLATE_DIRS)
 
-    [full_plain_source, loaded_templates] = file_utils.get_loaded_templates(template_dirs, plain_source)
+    _, plain_source, _ = plain_file.plain_file_parser(args.filename, template_dirs)
+
+    if args.render_range is not None:
+        args.render_range = get_render_range(args.render_range, plain_source)
+    elif args.render_from is not None:
+        args.render_range = get_render_range_from(args.render_from, plain_source)
+
+    # Handle dry run and full plain here (outside of state machine)
+    if args.dry_run:
+        console.info("Printing dry run output...")
+        print_dry_run_output(plain_source, args.render_range)
+        return
 
     if args.full_plain:
-        if args.verbose:
-            console.info("Full plain text:\n")
-
-        console.info(full_plain_source)
+        console.info("Printing full plain output...")
+        console.info(plain_source)
         return
 
     codeplainAPI = codeplain_api.CodeplainAPI(args.api_key, console)
@@ -151,41 +194,41 @@ def render(args, run_state: RunState):  # noqa: C901
     if args.api:
         codeplainAPI.api_url = args.api
 
-    console.info(f"Rendering {args.filename} to target code.")
+    module_renderer = ModuleRenderer(
+        codeplainAPI,
+        args.filename,
+        args.render_range,
+        template_dirs,
+        args,
+        run_state,
+        event_bus,
+    )
 
-    plain_source_tree = codeplainAPI.get_plain_source_tree(plain_source, loaded_templates, run_state)
+    app = Plain2CodeTUI(
+        event_bus=event_bus,
+        worker_fun=module_renderer.render_module,
+        render_id=run_state.render_id,
+        unittests_script=args.unittests_script,
+        conformance_tests_script=args.conformance_tests_script,
+        prepare_environment_script=args.prepare_environment_script,
+        css_path="styles.css",
+    )
+    result = app.run()
 
-    if args.render_range is not None:
-        args.render_range = get_render_range(args.render_range, plain_source_tree)
-    elif args.render_from is not None:
-        args.render_range = get_render_range_from(args.render_from, plain_source_tree)
+    # If the app exited due to a worker error, re-raise it here
+    # so it hits the exception handlers in main()
+    if isinstance(result, Exception):
+        raise result
 
-    resources_list = []
-    plain_spec.collect_linked_resources(plain_source_tree, resources_list, None, True)
-
-    # Handle dry run and full plain here (outside of state machine)
-    if args.dry_run:
-        console.info("Printing dry run output...")
-        print_dry_run_output(plain_source_tree, args.render_range)
-        return
-    if args.full_plain:
-        console.info("Printing full plain output...")
-        console.info(full_plain_source)
-        return
-
-    console.info("Using the state machine to render the functional requirement.")
-    code_renderer = CodeRenderer(codeplainAPI, plain_source_tree, args, run_state)
-
-    if args.render_machine_graph:
-        code_renderer.generate_render_machine_graph()
-        return
-
-    code_renderer.run()
     return
 
 
-if __name__ == "__main__":  # noqa: C901
+def main():  # noqa: C901
     args = parse_arguments()
+
+    event_bus = EventBus()
+
+    setup_logging(event_bus, args.log_to_file, args.log_file_name, args.filename)
 
     codeplain_api_module_name = "codeplain_local_api"
 
@@ -193,37 +236,48 @@ if __name__ == "__main__":  # noqa: C901
     if args.api or codeplain_api_spec is None:
         if not args.api:
             args.api = "https://api.codeplain.ai"
-        console.debug(f"Running plain2code using REST API at {args.api}.")
         import codeplain_REST_api as codeplain_api
     else:
-        if not args.full_plain:
-            console.debug("Running plain2code using local API.\n")
-
         codeplain_api = importlib.import_module(codeplain_api_module_name)
 
     run_state = RunState(spec_filename=args.filename, replay_with=args.replay_with)
-    console.debug(f"Render ID: {run_state.render_id}")
 
     try:
-        render(args, run_state)
+        render(args, run_state, codeplain_api, event_bus)
     except InvalidFridArgument as e:
         console.error(f"Error rendering plain code: {str(e)}.\n")
         # No need to print render ID since this error is going to be thrown at the very start so user will be able to
         # see the render ID that's printed at the very start of the rendering process.
+        dump_crash_logs(args)
     except FileNotFoundError as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
+    except plain_file.InvalidPlainFileExtension as e:
+        console.error(f"Error rendering plain code: {str(e)}\n")
+        dump_crash_logs(args)
     except TemplateNotFoundError as e:
         console.error(f"Error: Template not found: {str(e)}\n")
         console.error(system_config.get_error_message("template_not_found"))
+        dump_crash_logs(args)
+    except PlainSyntaxError as e:
+        console.error(f"Error rendering plain code: {str(e)}\n")
+        dump_crash_logs(args)
     except KeyboardInterrupt:
         console.error("Keyboard interrupt")
         # Don't print the traceback here because it's going to be from keyboard interrupt and we don't really care about that
         console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
     except RequestException as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
     except Exception as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
         traceback.print_exc()
+        dump_crash_logs(args)
+
+
+if __name__ == "__main__":  # noqa: C901
+    main()

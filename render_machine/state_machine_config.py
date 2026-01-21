@@ -15,6 +15,7 @@ from render_machine.actions.commit_conformance_tests_changes import CommitConfor
 from render_machine.actions.commit_implementation_code_changes import CommitImplementationCodeChanges
 from render_machine.actions.create_dist import CreateDist
 from render_machine.actions.exit_with_error import ExitWithError
+from render_machine.actions.finish_functional_requirement import FinishFunctionalRequirement
 from render_machine.actions.fix_conformance_test import FixConformanceTest
 from render_machine.actions.fix_unit_tests import FixUnitTests
 from render_machine.actions.prepare_repositories import PrepareRepositories
@@ -34,8 +35,8 @@ class UnitTestsStateConfig:
     """Dataclass for unit test state configuration."""
 
     unit_tests_failed_on_enter_function: Callable
-    add_unit_tests_passed_state: bool
     on_enter_action: str
+    on_exit_action: str
 
 
 class UnitTestsConfig:
@@ -46,8 +47,8 @@ class UnitTestsConfig:
         """Configuration for unit tests during refactoring."""
         return UnitTestsStateConfig(
             unit_tests_failed_on_enter_function=render_context.start_fixing_unit_tests_in_refactoring,
-            add_unit_tests_passed_state=True,
-            on_enter_action="start_unittests_processing",
+            on_enter_action="start_unittests_processing_in_refactoring",
+            on_exit_action="finish_unittests_processing",
         )
 
     @staticmethod
@@ -55,8 +56,8 @@ class UnitTestsConfig:
         """Configuration for unit tests during conformance tests."""
         return UnitTestsStateConfig(
             unit_tests_failed_on_enter_function=render_context.start_fixing_unit_tests_in_conformance_tests,
-            add_unit_tests_passed_state=False,
             on_enter_action="start_unittests_processing_in_conformance_tests",
+            on_exit_action="finish_unittests_processing",
         )
 
     @staticmethod
@@ -64,8 +65,8 @@ class UnitTestsConfig:
         """Configuration for unit tests during initial implementation."""
         return UnitTestsStateConfig(
             unit_tests_failed_on_enter_function=render_context.start_fixing_unit_tests,
-            add_unit_tests_passed_state=True,
-            on_enter_action="start_unittests_processing",
+            on_enter_action="start_unittests_processing_in_implementation",
+            on_exit_action="finish_unittests_processing_during_implementation",
         )
 
 
@@ -79,13 +80,13 @@ class StateMachineConfig:
             f"{States.IMPLEMENTING_FRID.value}_{States.READY_FOR_FRID_IMPLEMENTATION.value}": RenderFunctionalRequirement(),
             f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_READY.value}": RunUnitTests(),
             f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_FAILED.value}": FixUnitTests(),
-            f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_PASSED.value}": CommitImplementationCodeChanges(
+            f"{States.IMPLEMENTING_FRID.value}_{States.STEP_COMPLETED.value}": CommitImplementationCodeChanges(
                 git_utils.FUNCTIONAL_REQUIREMENT_IMPLEMENTED_COMMIT_MESSAGE
             ),
             f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.READY_FOR_REFACTORING.value}": RefactorCode(),
             f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_READY.value}": RunUnitTests(),
             f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_FAILED.value}": FixUnitTests(),
-            f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_PASSED.value}": CommitImplementationCodeChanges(
+            f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.STEP_COMPLETED.value}": CommitImplementationCodeChanges(
                 git_utils.REFACTORED_CODE_COMMIT_MESSAGE
             ),
             f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}_{States.CONFORMANCE_TESTING_INITIALISED.value}": RenderConformanceTests(),
@@ -98,7 +99,7 @@ class StateMachineConfig:
                 git_utils.FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE,
             ),
             f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}_{States.POSTPROCESSING_CONFORMANCE_TESTS.value}_{States.CONFORMANCE_TESTS_READY_FOR_AMBIGUITY_ANALYSIS.value}": AnalyzeSpecificationAmbiguity(),
-            f"{States.IMPLEMENTING_FRID.value}_{States.FRID_FULLY_IMPLEMENTED.value}": CommitImplementationCodeChanges(
+            f"{States.IMPLEMENTING_FRID.value}_{States.FRID_FULLY_IMPLEMENTED.value}": FinishFunctionalRequirement(
                 git_utils.FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE
             ),
             f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_READY.value}": RunUnitTests(),
@@ -120,6 +121,7 @@ class StateMachineConfig:
             RefactorCode.SUCCESSFUL_OUTCOME: triggers.REFACTOR_CODE,
             RefactorCode.NO_FILES_REFACTORED_OUTCOME: triggers.PROCEED_FRID_PROCESSING,
             CommitImplementationCodeChanges.SUCCESSFUL_OUTCOME: triggers.PROCEED_FRID_PROCESSING,
+            FinishFunctionalRequirement.SUCCESSFUL_OUTCOME: triggers.PROCEED_FRID_PROCESSING,
             CreateDist.SUCCESSFUL_OUTCOME: triggers.FINISH_RENDER,
             RenderConformanceTests.SUCCESSFUL_OUTCOME: triggers.MARK_CONFORMANCE_TESTS_READY,
             PrepareTestingEnvironment.SUCCESSFUL_OUTCOME: triggers.MARK_TESTING_ENVIRONMENT_PREPARED,
@@ -148,14 +150,12 @@ class StateMachineConfig:
             States.UNIT_TESTS_READY.value,
             {"name": States.UNIT_TESTS_FAILED.value, "on_enter": config.unit_tests_failed_on_enter_function},
         ]
-        if config.add_unit_tests_passed_state:
-            children.append(States.UNIT_TESTS_PASSED.value)
 
         return {
             "name": States.PROCESSING_UNIT_TESTS.value,
             "initial": States.UNIT_TESTS_READY.value,
             "on_enter": config.on_enter_action,
-            "on_exit": "finish_unittests_processing",
+            "on_exit": config.on_exit_action,
             "children": children,
         }
 
@@ -208,9 +208,12 @@ class StateMachineConfig:
         refactoring_code_states = {
             "name": States.REFACTORING_CODE.value,
             "initial": States.READY_FOR_REFACTORING.value,
+            "on_enter": "start_refactoring_code",
+            "on_exit": "finish_refactoring_code",
             "children": [
-                {"name": States.READY_FOR_REFACTORING.value, "on_enter": "start_refactoring_code"},
+                States.READY_FOR_REFACTORING.value,
                 self.get_processing_unit_tests_states(UnitTestsConfig.for_refactoring(render_context)),
+                States.STEP_COMPLETED.value,
             ],
         }
 
@@ -222,6 +225,7 @@ class StateMachineConfig:
                 "on_enter": "start_implementing_frid",
                 "on_exit": "finish_implementing_frid",
                 "children": [
+                    {"name": States.STEP_COMPLETED.value, "on_exit": "finish_frid_implementation_step"},
                     {"name": States.READY_FOR_FRID_IMPLEMENTATION.value, "on_enter": "check_frid_iteration_limit"},
                     self.get_processing_unit_tests_states(UnitTestsConfig.for_implementation(render_context)),
                     refactoring_code_states,
@@ -233,7 +237,7 @@ class StateMachineConfig:
             States.RENDER_FAILED.value,
         ]
 
-    def get_transitions(self) -> List[Dict[str, str]]:
+    def get_transitions(self) -> List[Dict[str, Any]]:
         """Get the complete state machine transition configuration.
 
         Returns:
@@ -249,6 +253,13 @@ class StateMachineConfig:
                 "source": f"{States.IMPLEMENTING_FRID.value}_{States.READY_FOR_FRID_IMPLEMENTATION.value}",
                 "trigger": triggers.RENDER_FUNCTIONAL_REQUIREMENT,
                 "dest": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_UNIT_TESTS.value}",
+                "conditions": "should_run_unit_tests",
+            },
+            {
+                "source": f"{States.IMPLEMENTING_FRID.value}_{States.READY_FOR_FRID_IMPLEMENTATION.value}",
+                "trigger": triggers.RENDER_FUNCTIONAL_REQUIREMENT,
+                "dest": f"{States.IMPLEMENTING_FRID.value}_{States.STEP_COMPLETED.value}",
+                "unless": "should_run_unit_tests",
             },
             {
                 "source": f"{States.IMPLEMENTING_FRID.value}",
@@ -268,10 +279,10 @@ class StateMachineConfig:
             {
                 "source": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_READY.value}",
                 "trigger": triggers.MARK_UNIT_TESTS_PASSED,
-                "dest": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_PASSED.value}",
+                "dest": f"{States.IMPLEMENTING_FRID.value}_{States.STEP_COMPLETED.value}",
             },
             {
-                "source": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_PASSED.value}",
+                "source": f"{States.IMPLEMENTING_FRID.value}_{States.STEP_COMPLETED.value}",
                 "trigger": triggers.PROCEED_FRID_PROCESSING,
                 "dest": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}",
             },
@@ -289,11 +300,25 @@ class StateMachineConfig:
                 "source": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.READY_FOR_REFACTORING.value}",
                 "trigger": triggers.REFACTOR_CODE,
                 "dest": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.PROCESSING_UNIT_TESTS.value}",
+                "conditions": "should_run_unit_tests",
+            },
+            {
+                "source": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.READY_FOR_REFACTORING.value}",
+                "trigger": triggers.REFACTOR_CODE,
+                "dest": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.STEP_COMPLETED.value}",
+                "unless": "should_run_unit_tests",
             },
             {
                 "source": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.READY_FOR_REFACTORING.value}",
                 "trigger": triggers.PROCEED_FRID_PROCESSING,
                 "dest": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}",
+                "conditions": "should_run_conformance_tests",
+            },
+            {
+                "source": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.READY_FOR_REFACTORING.value}",
+                "trigger": triggers.PROCEED_FRID_PROCESSING,
+                "dest": f"{States.IMPLEMENTING_FRID.value}_{States.FRID_FULLY_IMPLEMENTED.value}",
+                "unless": "should_run_conformance_tests",
             },
             {
                 "source": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}",
@@ -333,7 +358,7 @@ class StateMachineConfig:
             {
                 "source": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_READY.value}",
                 "trigger": triggers.MARK_UNIT_TESTS_PASSED,
-                "dest": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_PASSED.value}",
+                "dest": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.STEP_COMPLETED.value}",
             },
             {
                 "source": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_FAILED.value}",
@@ -346,7 +371,7 @@ class StateMachineConfig:
                 "dest": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.READY_FOR_REFACTORING.value}",
             },
             {
-                "source": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_PASSED.value}",
+                "source": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.STEP_COMPLETED.value}",
                 "trigger": triggers.PROCEED_FRID_PROCESSING,
                 "dest": f"{States.IMPLEMENTING_FRID.value}_{States.REFACTORING_CODE.value}_{States.READY_FOR_REFACTORING.value}",
             },
@@ -384,6 +409,13 @@ class StateMachineConfig:
                 "source": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}_{States.CONFORMANCE_TEST_FAILED.value}",
                 "trigger": triggers.MARK_UNIT_TESTS_READY,
                 "dest": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}_{States.PROCESSING_UNIT_TESTS.value}",
+                "conditions": "should_run_unit_tests",
+            },
+            {
+                "source": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}_{States.CONFORMANCE_TEST_FAILED.value}",
+                "trigger": triggers.MARK_UNIT_TESTS_READY,
+                "dest": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}_{States.CONFORMANCE_TEST_ENV_PREPARED.value}",
+                "unless": "should_run_unit_tests",
             },
             {
                 "source": f"{States.IMPLEMENTING_FRID.value}_{States.PROCESSING_CONFORMANCE_TESTS.value}_{States.PROCESSING_UNIT_TESTS.value}_{States.UNIT_TESTS_READY.value}",

@@ -93,53 +93,39 @@ class CodeplainAPI:
                         f"Connection error: Unable to reach the Codeplain API at {self.api_url}. Please try again or contact support."
                     )
 
-    def get_plain_source_tree(self, plain_source, loaded_templates, run_state: RunState):
-        """
-        Builds plain source tree from the given plain text source in Markdown format.
-
-        Args:
-            plain_source (str): A string containing the plain text source to be parsed.
-            loaded_templates (dict): A dictionary containing the loaded templates.
-
-        Returns:
-            dict: A plain source tree.
-
-        Raises:
-            Exception: If parsing of plain_source fails.
-        """
-        endpoint_url = f"{self.api_url}/plain_source_tree"
-        headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
-
-        payload = {"plain_source": plain_source, "loaded_templates": loaded_templates}
-
-        return self.post_request(endpoint_url, headers, payload, run_state)
-
     def render_functional_requirement(
         self,
-        frid,
-        plain_source_tree,
-        linked_resources,
-        existing_files_content,
+        frid: str,
+        plain_source_tree: dict,
+        linked_resources: dict,
+        existing_files_content: dict,
+        module_name: str,
+        required_modules: dict,
         run_state: RunState,
-    ):
+    ) -> dict[str, str]:
         """
         Renders the content of a functional requirement based on the provided ID,
-        plain source tree, and existing files' content.
+        corresponding sections from a Plain document, and existing files' content.
 
         Args:
             frid (str): The unique identifier for the functional requirement to be rendered.
             plain_source_tree (dict): A dictionary containing the plain source tree.
-            linked_resources (dict): A dictionary where the keys represent resource names
-                                    and the values are the content of those resources.
-            existing_files_content (dict): A dictionary where the keys represent code base
-                                        filenames and the values are the content of those files.
-
+            linked_resources (dict): A dictionary where the keys represent filenames of linked
+                                        resources and the values are dictionaries containing
+                                        the content of the linked resources and the sections
+                                        they are linked to.
+            existing_files_content (dict): A dictionary where the keys represent filenames
+                                        and the values are the content of those files.
+            module_name (str): The name of the module to render the functional requirement for.
+            required_modules (dict): A dictionary where the keys represent module names
+                                     and the values are lists of functionalities implemented in those modules.
+            run_state (RunState): The current state of the rendering process.
         Returns:
-            str: A string containing the rendered functional requirement, formatted
-                appropriately based on the inputs.
+            dict[str, str]: A dictionary where the keys are filenames and the values
+                            are the rendered code for those files.
 
         Raises:
-            ValueError: If the frid is invalid or the necessary plain source tree is not valid.
+            ValueError: If the frid is invalid or the necessary sections cannot be found.
         """
         endpoint_url = f"{self.api_url}/render_functional_requirement"
         headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
@@ -149,6 +135,8 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "module_name": module_name,
+            "required_modules": required_modules,
         }
 
         return self.post_request(endpoint_url, headers, payload, run_state)
@@ -159,6 +147,8 @@ class CodeplainAPI:
         plain_source_tree,
         linked_resources,
         existing_files_content,
+        module_name: str,
+        required_modules,
         unittests_issue,
         run_state: RunState,
     ):
@@ -170,6 +160,8 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "module_name": module_name,
+            "required_modules": required_modules,
             "unittests_issue": unittests_issue,
             "unittest_batch_id": run_state.unittest_batch_id,
         }
@@ -195,6 +187,8 @@ class CodeplainAPI:
         plain_source_tree,
         linked_resources,
         existing_files_content,
+        module_name: str,
+        required_modules,
         conformance_tests_folder_name,
         conformance_tests_json,
         all_acceptance_tests,
@@ -209,6 +203,8 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "module_name": module_name,
+            "required_modules": required_modules,
             "conformance_tests_folder_name": conformance_tests_folder_name,
             "conformance_tests_json": conformance_tests_json,
             "all_acceptance_tests": all_acceptance_tests,
@@ -242,6 +238,9 @@ class CodeplainAPI:
         plain_source_tree,
         linked_resources,
         existing_files_content,
+        module_name: str,
+        conformance_tests_module_name: str,
+        required_modules,
         code_diff,
         conformance_tests_files,
         acceptance_tests,
@@ -260,6 +259,9 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "module_name": module_name,
+            "conformance_tests_module_name": conformance_tests_module_name,
+            "required_modules": required_modules,
             "code_diff": code_diff,
             "conformance_tests_files": conformance_tests_files,
             "conformance_tests_issue": conformance_tests_issue,
@@ -280,6 +282,8 @@ class CodeplainAPI:
         linked_resources,
         existing_files_content,
         conformance_tests_files,
+        module_name: str,
+        required_modules,
         acceptance_test,
         run_state: RunState,
     ):
@@ -294,6 +298,8 @@ class CodeplainAPI:
             existing_files_content (dict): A dictionary where the keys represent code base
                                         filenames and the values are the content of those files.
             conformance_tests_files (dict): A dictionary containing conformance test files.
+            required_modules (dict): A dictionary where the keys represent module names
+                                     and the values are lists of functionalities implemented in those modules.
             acceptance_test (dict): A dictionary containing acceptance test information.
 
         Returns:
@@ -311,6 +317,8 @@ class CodeplainAPI:
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
             "conformance_tests_files": conformance_tests_files,
+            "module_name": module_name,
+            "required_modules": required_modules,
             "acceptance_test": acceptance_test,
         }
 
@@ -322,6 +330,8 @@ class CodeplainAPI:
         plain_source_tree,
         linked_resources,
         existing_files_content,
+        module_name: str,
+        required_modules,
         implementation_code_diff,
         fixed_implementation_code_diff,
         run_state: RunState,
@@ -334,6 +344,8 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "module_name": module_name,
+            "required_modules": required_modules,
             "implementation_code_diff": implementation_code_diff,
             "fixed_implementation_code_diff": fixed_implementation_code_diff,
         }
@@ -350,12 +362,24 @@ class CodeplainAPI:
 
         return self.post_request(endpoint_url, headers, payload, run_state)
 
+    def fail_functional_requirement(self, frid, run_state: RunState):
+        endpoint_url = f"{self.api_url}/fail_functional_requirement"
+        headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+
+        payload = {
+            "frid": frid,
+        }
+
+        return self.post_request(endpoint_url, headers, payload, run_state)
+
     def summarize_finished_conformance_tests(
         self,
         frid,
         plain_source_tree,
         linked_resources,
         conformance_test_files_content,
+        module_name: str,
+        required_modules,
         run_state: RunState,
     ):
         endpoint_url = f"{self.api_url}/summarize_finished_conformance_tests"
@@ -365,6 +389,8 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "conformance_test_files_content": conformance_test_files_content,
+            "module_name": module_name,
+            "required_modules": required_modules,
         }
 
         return self.post_request(endpoint_url, headers, payload, run_state)

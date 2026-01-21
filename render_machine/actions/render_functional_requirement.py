@@ -7,6 +7,7 @@ from plain2code_exceptions import FunctionalRequirementTooComplex
 from render_machine.actions.base_action import BaseAction
 from render_machine.implementation_code_helpers import ImplementationCodeHelpers
 from render_machine.render_context import RenderContext
+from render_machine.render_types import RenderError
 
 MAX_CODE_GENERATION_RETRIES = 2
 
@@ -16,20 +17,23 @@ class RenderFunctionalRequirement(BaseAction):
     FUNCTIONAL_REQUIREMENT_TOO_COMPLEX_OUTCOME = "functional_requirement_too_complex"
 
     def execute(self, render_context: RenderContext, _previous_action_payload: Any | None):
-        render_utils.revert_uncommitted_changes(render_context)
-        existing_files, existing_files_content = ImplementationCodeHelpers.fetch_existing_files(render_context)
+        render_utils.revert_changes_for_frid(render_context)
+        existing_files, existing_files_content = ImplementationCodeHelpers.fetch_existing_files(
+            render_context.build_folder
+        )
 
-        if render_context.args.verbose:
-            msg = f"Rendering functional requirement {render_context.frid_context.frid}"
+        if render_context.verbose:
+            msg = f"Module: {render_context.module_name}\n"
+            msg += f"Rendering functional requirement {render_context.frid_context.frid}"
             if render_context.frid_context.functional_requirement_render_attempts > 1:
                 msg += f", attempt number {render_context.frid_context.functional_requirement_render_attempts}/{MAX_CODE_GENERATION_RETRIES}."
             msg += f"\n[b]{render_context.frid_context.functional_requirement_text}[/b]"
-            console.info("\n-------------------------------------")
+            console.info("-------------------------------------")
             console.info(msg)
-            console.info("-------------------------------------\n")
+            console.info("-------------------------------------")
 
         try:
-            if render_context.args.verbose:
+            if render_context.verbose:
                 render_utils.print_inputs(
                     render_context, existing_files_content, "Files sent as input to code generation:"
                 )
@@ -42,6 +46,8 @@ class RenderFunctionalRequirement(BaseAction):
                     render_context.plain_source_tree,
                     render_context.frid_context.linked_resources,
                     existing_files_content,
+                    render_context.module_name,
+                    render_context.get_required_modules_functionalities(),
                     render_context.run_state,
                 )
         except FunctionalRequirementTooComplex as e:
@@ -51,17 +57,25 @@ class RenderFunctionalRequirement(BaseAction):
                 for _, part in e.proposed_breakdown.items():
                     error_message += f"\n  - {part}"
 
-            return self.FUNCTIONAL_REQUIREMENT_TOO_COMPLEX_OUTCOME, error_message
+            return (
+                self.FUNCTIONAL_REQUIREMENT_TOO_COMPLEX_OUTCOME,
+                RenderError.encode(
+                    message=error_message,
+                    error_type="COMPLEXITY_ERROR",
+                    frid=render_context.frid_context.frid,
+                    proposed_breakdown=e.proposed_breakdown,
+                ).to_payload(),
+            )
 
         _, changed_files = file_utils.update_build_folder_with_rendered_files(
-            render_context.args.build_folder, existing_files, response_files
+            render_context.build_folder, existing_files, response_files
         )
         render_context.frid_context.changed_files.update(changed_files)
 
-        if render_context.args.verbose:
+        if render_context.verbose:
             console.print_files(
                 "Files generated or updated:",
-                render_context.args.build_folder,
+                render_context.build_folder,
                 response_files,
                 style=console.OUTPUT_STYLE,
             )

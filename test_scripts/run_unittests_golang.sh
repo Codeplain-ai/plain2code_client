@@ -28,7 +28,7 @@ else
     printf "Subfolder does not exist. Creating it...\n"
   fi
 
-  mkdir $GO_BUILD_SUBFOLDER
+  mkdir -p $GO_BUILD_SUBFOLDER
 fi
 
 cp -R $1/* $GO_BUILD_SUBFOLDER

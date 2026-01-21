@@ -36,7 +36,7 @@ else
     printf "Subfolder does not exist. Creating it...\n"
   fi
 
-  mkdir $NODE_SUBFOLDER
+  mkdir -p $NODE_SUBFOLDER
 fi
 
 cp -R $1/* $NODE_SUBFOLDER

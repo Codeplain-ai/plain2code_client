@@ -1,0 +1,159 @@
+"""Widget update helper utilities for Plain2Code TUI."""
+
+from textual.widgets import Static
+
+from .components import FRIDProgress, ProgressItem, TUIComponents
+from .models import Substate
+
+
+async def _async_update_status(widget: ProgressItem, status: str) -> None:
+    """Async helper to update widget status."""
+    await widget.update_status(status)
+
+
+async def _async_set_substates(widget: ProgressItem, substates: list[Substate]) -> None:
+    """Async helper to set widget substates."""
+    await widget.set_substates(substates)
+
+
+async def _async_clear_substates(widget: ProgressItem) -> None:
+    """Async helper to clear widget substates."""
+    await widget.clear_substates()
+
+
+def update_progress_item_status(tui, widget_id: str, status: str) -> None:
+    """Helper function to safely update a ProgressItem's status.
+
+    Args:
+        tui: The Plain2CodeTUI instance
+        widget_id: The widget ID to update
+        status: The new status value
+    """
+    try:
+        widget = tui.query_one(f"#{widget_id}", ProgressItem)
+        if widget:
+            tui.call_later(_async_update_status, widget, status)
+        else:
+            raise ValueError(f"ProgressItem {widget_id} not found")
+    except Exception as e:
+        print(f"Error updating progress item {widget_id}: {e}")
+
+    if status == ProgressItem.COMPLETED:
+        clear_progress_item_substates(tui, widget_id)
+
+
+def update_widget_text(tui, widget_id: str, text: str) -> None:
+    """Helper function to safely update a widget's text.
+
+    Args:
+        tui: The Plain2CodeTUI instance
+        widget_id: The widget ID to update
+        text: The new text value
+    """
+    try:
+        widget = tui.query_one(f"#{widget_id}")
+        if widget and hasattr(widget, "update"):
+            widget.update(text)
+        else:
+            raise ValueError(f"Widget {widget_id} not found")
+    except Exception as e:
+        print(f"Error updating widget {widget_id}: {e}")
+
+
+def get_frid_progress(tui) -> FRIDProgress:
+    """Helper function to safely get the FRIDProgress widget.
+
+    Args:
+        tui: The Plain2CodeTUI instance
+
+    Returns:
+        The FRIDProgress widget instance
+    """
+    return tui.query_one(f"#{TUIComponents.FRID_PROGRESS.value}", FRIDProgress)
+
+
+def update_script_outputs(tui, history) -> None:
+    """Update script output widgets from execution history.
+
+    Args:
+        tui: The Plain2CodeTUI instance
+        history: The script execution history object
+    """
+    if not history:
+        return
+
+    if history.latest_unit_test_output_path:
+        update_widget_text(
+            tui, TUIComponents.UNIT_TEST_SCRIPT_OUTPUT_WIDGET.value, history.latest_unit_test_output_path
+        )
+    if history.latest_conformance_test_output_path:
+        update_widget_text(
+            tui,
+            TUIComponents.CONFORMANCE_TESTS_SCRIPT_OUTPUT_WIDGET.value,
+            history.latest_conformance_test_output_path,
+        )
+    if history.latest_testing_environment_output_path:
+        update_widget_text(
+            tui,
+            TUIComponents.TESTING_ENVIRONMENT_SCRIPT_OUTPUT_WIDGET.value,
+            history.latest_testing_environment_output_path,
+        )
+
+
+def display_success_message(tui):
+    widget: Static = tui.query_one(f"#{TUIComponents.RENDER_STATUS_WIDGET.value}", Static)
+    widget.add_class("success")
+    widget.update("✓ Rendering finished!")
+
+
+def set_frid_progress_to_stopped(tui):
+    progress_ids = [
+        TUIComponents.FRID_PROGRESS_RENDER_FR.value,
+        TUIComponents.FRID_PROGRESS_UNIT_TEST.value,
+        TUIComponents.FRID_PROGRESS_REFACTORING.value,
+        TUIComponents.FRID_PROGRESS_CONFORMANCE_TEST.value,
+    ]
+
+    for widget_id in progress_ids:
+        update_progress_item_status(tui, widget_id, ProgressItem.STOPPED)
+
+
+def display_error_message(tui, error_message: str):
+    widget: Static = tui.query_one(f"#{TUIComponents.RENDER_STATUS_WIDGET.value}", Static)
+    widget.add_class("error")
+    widget.update(error_message)
+
+
+def update_progress_item_substates(tui, widget_id: str, substates: list[Substate]) -> None:
+    """Helper function to safely set substates for a ProgressItem.
+
+    Args:
+        tui: The Plain2CodeTUI instance
+        widget_id: The widget ID to update
+        substates: List of Substate objects to display (supports nesting up to 4 levels)
+    """
+    try:
+        widget = tui.query_one(f"#{widget_id}", ProgressItem)
+        if widget:
+            tui.call_later(_async_set_substates, widget, substates)
+        else:
+            raise ValueError(f"ProgressItem {widget_id} not found")
+    except Exception as e:
+        print(f"Error updating substates for {widget_id}: {e}")
+
+
+def clear_progress_item_substates(tui, widget_id: str) -> None:
+    """Helper function to safely clear substates for a ProgressItem.
+
+    Args:
+        tui: The Plain2CodeTUI instance
+        widget_id: The widget ID to update
+    """
+    try:
+        widget = tui.query_one(f"#{widget_id}", ProgressItem)
+        if widget:
+            tui.call_later(_async_clear_substates, widget)
+        else:
+            raise ValueError(f"ProgressItem {widget_id} not found")
+    except Exception as e:
+        print(f"Error clearing substates for {widget_id}: {e}")

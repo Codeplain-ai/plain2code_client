@@ -2,7 +2,6 @@ from typing import Any
 
 from plain2code_console import console
 from render_machine.actions.base_action import BaseAction
-from render_machine.conformance_test_helpers import ConformanceTestHelpers
 from render_machine.render_context import RenderContext
 
 
@@ -12,8 +11,13 @@ class SummarizeConformanceTests(BaseAction):
     def execute(self, render_context: RenderContext, _previous_action_payload: Any | None):
         console.info(f"Summarizing conformance tests for functional requirement {render_context.frid_context.frid}.")
 
-        _, existing_conformance_test_files_content = ConformanceTestHelpers.fetch_existing_conformance_test_files(
-            render_context.conformance_tests_running_context  # type: ignore
+        _, existing_conformance_test_files_content = (
+            render_context.conformance_tests.fetch_existing_conformance_test_files(
+                render_context.module_name,
+                render_context.required_modules,
+                render_context.conformance_tests_running_context.current_testing_module_name,
+                render_context.conformance_tests_running_context.get_current_conformance_test_folder_name(),
+            )
         )
 
         with console.status(
@@ -24,11 +28,11 @@ class SummarizeConformanceTests(BaseAction):
                 plain_source_tree=render_context.plain_source_tree,
                 linked_resources=render_context.frid_context.linked_resources,
                 conformance_test_files_content=existing_conformance_test_files_content,
+                module_name=render_context.module_name,
+                required_modules=render_context.get_required_modules_functionalities(),
                 run_state=render_context.run_state,
             )
 
-        ConformanceTestHelpers.set_current_conformance_tests_summary(
-            render_context.conformance_tests_running_context, summary  # type: ignore
-        )
+        render_context.conformance_tests_running_context.set_conformance_tests_summary(summary)
 
         return self.SUCCESSFUL_OUTCOME, None

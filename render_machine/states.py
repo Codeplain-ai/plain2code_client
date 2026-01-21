@@ -20,6 +20,7 @@ class States(Enum):
     IMPLEMENTING_FRID = "implementingFrid"
     RENDER_COMPLETED = "renderCompleted"
     RENDER_FAILED = "renderFailed"
+    STEP_COMPLETED = "stepCompleted"
 
     # FRID implementation states
     READY_FOR_FRID_IMPLEMENTATION = "readyForFridImplementation"
@@ -29,7 +30,6 @@ class States(Enum):
     PROCESSING_UNIT_TESTS = "processingUnitTests"
     UNIT_TESTS_READY = "unittestsReady"
     UNIT_TESTS_FAILED = "unittestsFailed"
-    UNIT_TESTS_PASSED = "unittestsPassed"
 
     # Code refactoring states
     REFACTORING_CODE = "refactoringCode"

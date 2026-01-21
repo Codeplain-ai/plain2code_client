@@ -1,12 +1,18 @@
-{% include "python-console-app-template.plain", main_executable_file_name: "hello_world.py" %}
+---
+description: '"hello, world" in Plain (Python version)'
+import:
+  - python-console-app-template
+---
 
-# "hello, world" in Plain (Python version)
+***technical specs***
 
-***Functional Requirements:***
+- :MainExecutableFile: of :App: should be called "hello_world.py".
+
+***functional specs***
 
 - Display "hello, world"
 
-  ***Acceptance Tests:***
+  ***acceptance tests***
     
   - :App: should exit with status code 0 indicating successful execution.
 
