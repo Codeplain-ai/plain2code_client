@@ -89,6 +89,7 @@ def _get_frids_range(plain_source, start, end=None):
 
 
 def setup_logging(
+    args,
     event_bus: EventBus,
     log_to_file: bool,
     log_file_name: str,
@@ -109,15 +110,15 @@ def setup_logging(
 
     log_file_path = get_log_file_path(plain_file_path, log_file_name)
 
-        # Try to load logging configuration from YAML file
-        if args.logging_config_path and os.path.exists(args.logging_config_path):
-            try:
-                with open(args.logging_config_path, "r") as f:
-                    config = yaml.safe_load(f)
-                    logging.config.dictConfig(config)
-                    console.info(f"Loaded logging configuration from {args.logging_config_path}")
-            except Exception as e:
-                console.warning(f"Failed to load logging configuration from {args.logging_config_path}: {str(e)}")
+    # Try to load logging configuration from YAML file
+    if args.logging_config_path and os.path.exists(args.logging_config_path):
+        try:
+            with open(args.logging_config_path, "r") as f:
+                config = yaml.safe_load(f)
+                logging.config.dictConfig(config)
+                console.info(f"Loaded logging configuration from {args.logging_config_path}")
+        except Exception as e:
+            console.warning(f"Failed to load logging configuration from {args.logging_config_path}: {str(e)}")
 
     # Silence noisy third-party libraries
     logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -169,56 +170,14 @@ def render(args, run_state: RunState, codeplain_api, event_bus: EventBus):  # no
 
     template_dirs = file_utils.get_template_directories(args.filename, args.template_dir, DEFAULT_TEMPLATE_DIRS)
 
-        _, plain_source, _ = plain_file.plain_file_parser(args.filename, template_dirs)
-
-    if args.render_range is not None:
-        args.render_range = get_render_range(args.render_range, plain_source)
-    elif args.render_from is not None:
-        args.render_range = get_render_range_from(args.render_from, plain_source)
-
-    # Handle dry run and full plain here (outside of state machine)
-    if args.dry_run:
-        console.info("Printing dry run output...")
-        print_dry_run_output(plain_source, args.render_range)
-        return
-
-    if args.full_plain:
-        console.info("Printing full plain output...")
-        console.info(plain_source)
-        return
-
-    codeplainAPI = codeplain_api.CodeplainAPI(args.api_key, console)
-    codeplainAPI.verbose = args.verbose
-
-    if args.api:
-        codeplainAPI.api_url = args.api
-
     console.info(f"Rendering {args.filename} to target code.")
-
-    plain_source_tree = codeplainAPI.get_plain_source_tree(plain_source, loaded_templates, run_state)
-
-    if args.render_range is not None:
-        args.render_range = get_render_range(args.render_range, plain_source)
-    elif args.render_from is not None:
-        args.render_range = get_render_range_from(args.render_from, plain_source)
-
-    # Handle dry run and full plain here (outside of state machine)
-    if args.dry_run:
-        console.info("Printing dry run output...")
-        print_dry_run_output(plain_source, args.render_range)
-        return
-
-    if args.full_plain:
-        console.info("Printing full plain output...")
-        console.info(plain_source)
-        return
 
     codeplainAPI = codeplain_api.CodeplainAPI(args.api_key, console)
     codeplainAPI.verbose = args.verbose
     assert args.api is not None and args.api != "", "API URL is required"
     codeplainAPI.api_url = args.api
 
-     module_renderer = ModuleRenderer(
+    module_renderer = ModuleRenderer(
         codeplainAPI,
         args.filename,
         args.render_range,
@@ -252,7 +211,7 @@ def main():
 
     event_bus = EventBus()
 
-    setup_logging(event_bus, args.log_to_file, args.log_file_name, args.filename)
+    setup_logging(args, event_bus, args.log_to_file, args.log_file_name, args.filename)
 
     run_state = RunState(spec_filename=args.filename, replay_with=args.replay_with)
 
