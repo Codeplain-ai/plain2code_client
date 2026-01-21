@@ -24,9 +24,11 @@ class FixUnitTests(BaseAction):
                 f"Unit tests issue text is too long and will be smartly truncated to {MAX_ISSUE_LENGTH} characters."
             )
 
-        existing_files, existing_files_content = ImplementationCodeHelpers.fetch_existing_files(render_context)
+        existing_files, existing_files_content = ImplementationCodeHelpers.fetch_existing_files(
+            render_context.build_folder
+        )
 
-        if render_context.args.verbose:
+        if render_context.verbose:
             render_utils.print_inputs(
                 render_context, existing_files_content, "Files sent as input to unit tests fixing:"
             )
@@ -39,19 +41,19 @@ class FixUnitTests(BaseAction):
                 render_context.plain_source_tree,
                 render_context.frid_context.linked_resources,
                 existing_files_content,
+                render_context.module_name,
+                render_context.get_required_modules_functionalities(),
                 previous_unittests_issue,
-                render_context.run_state,
+                run_state=render_context.run_state,
             )
 
         _, changed_files = file_utils.update_build_folder_with_rendered_files(
-            render_context.args.build_folder, existing_files, response_files
+            render_context.build_folder, existing_files, response_files
         )
 
         render_context.unit_tests_running_context.changed_files.update(changed_files)
 
-        if render_context.args.verbose:
-            console.print_files(
-                "Files fixed:", render_context.args.build_folder, response_files, style=console.OUTPUT_STYLE
-            )
+        if render_context.verbose:
+            console.print_files("Files fixed:", render_context.build_folder, response_files, style=console.OUTPUT_STYLE)
 
         return self.SUCCESSFUL_OUTCOME, None

@@ -1,36 +1,29 @@
-***Definitions:***
+***definitions***
 
 - :App: is a console application.
 
+- :MainExecutableFile: is the main executable code file of :App:.
 
-***Non-Functional Requirements:***
+- :ConformanceTestsExecutableFile: is the main executable code file of :ConformanceTests:.
+
+
+***technical specs***
 
 - :Implementation: should be in Go lang.
 
 - :Implementation: should include unit tests using Go's built-in testing package.
 
-- The main executable code file of :App: should be called "{{ main_executable_file_name | code_variable }}". The main executable code file does not have any semantic meaning and it should be completely disregarded when generating the code (except for the file name).
 
+***test specs***
 
-***Test Requirements:***
+- :ConformanceTests: should be implemented in Go lang.
 
-- :ConformanceTests: of :App: should be implemented in Go lang.
+- :ConformanceTestsExecutableFile: should be called "conformance_tests.go".
 
-- The main executable code file of :ConformanceTests: should be called "conformance_tests.go".
+- :ConformanceTests: will be executed using the command "go run <conformance tests folder>/conformance_tests.go" from a folder that contains :MainExecutableFile:.
 
-- :ConformanceTests: will be executed using the command "go run <conformance tests folder>/conformance_tests.go" from a folder that contains the file "{{ main_executable_file_name | code_variable }}".
-
-- "{{ main_executable_file_name | code_variable }}" is the main executable code file of :App:.
-
-- Before :ConformanceTests: are executed, "go get" will be executed in the folder containing the file "{{ main_executable_file_name | code_variable }}".
+- Before :ConformanceTests: are executed, "go get" will be executed in the folder containing :MainExecutableFile:.
 
 - Before :ConformanceTests: are executed, "go get" will be executed in <conformance tests folder>.
 
 - :App: can be executed using the command "go run".
-
-
-# The Go lang console application boilerplate
-
-***Functional Requirements:***
-
-- Implement the entry point for :App:.

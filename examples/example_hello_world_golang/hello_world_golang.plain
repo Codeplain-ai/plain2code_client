@@ -1,7 +1,13 @@
-{% include "golang-console-app-template.plain", main_executable_file_name: "hello_world.go" %}
+---
+description: '"hello, world" in Plain (Go lang version)'
+import:
+  - golang-console-app-template
+---
 
-# "hello, world" in Plain (Go lang version)
+***technical specs***
 
-***Functional Requirements:***
+- :MainExecutableFile: of :App: should be called "hello_world.go".
+
+***functional specs***
 
 - Display "hello, world"

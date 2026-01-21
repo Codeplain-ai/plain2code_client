@@ -1,7 +1,11 @@
-{% include "typescript-react-app-template.plain" %}
+---
+description: '"hello, world" in Plain (React version)'
+import:
+  - typescript-react-app-template
+requires:
+  - typescript-react-app-boilerplate
+---
 
-# "hello, world" in Plain (React version)
-
-***Functional Requirements:***
+***functional specs***
 
 - Display "hello, world"

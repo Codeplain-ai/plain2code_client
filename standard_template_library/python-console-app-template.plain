@@ -1,32 +1,24 @@
-***Definitions:***
+***definitions***
 
 - :App: is a console application.
 
+- :Unittests: are the unit tests of :App: and are part of :Implementation:.
 
-***Non-Functional Requirements:***
+- :MainExecutableFile: is the main executable code file of :App:.
+
+
+***technical specs***
 
 - :Implementation: should be in Python.
 
-- :Implementation: should include :UnitTests: using Unittest framework! If :UnitTests: are put in the subfolder, make sure to include __init__.py to make them discoverable.
+- :Implementation: should include :Unittests: using Unittest framework! If :Unittests: are put in the subfolder, make sure to include __init__.py to make them discoverable.
 
-- The main executable code file of :App: should be called "{{ main_executable_file_name | code_variable }}". The main executable code file does not have any semantic meaning and it should be completely disregarded when generating the code (except for the file name).
-
-
-***Test Requirements:***
+***test specs***
 
 - :ConformanceTests: of :App: should be implemented in Python using Unittest framework. :ConformanceTests: will be run using "python -m unittest discover" command. Therefore, if :ConformanceTests: are put in the subfolder, make sure to include __init__.py to make them discoverable. 
 
 - :ConformanceTests: must be implemented and executed - do not use unittest.skip() or “any other test skipping functionality.
 
-- The main executable code file of :App: is "{{ main_executable_file_name | code_variable }}".
+- The current working directory contains :MainExecutableFile:.
 
-- The current working directory contains the file "{{ main_executable_file_name | code_variable }}".
-
-- :App: can be executed using the command "python {{ main_executable_file_name | code_variable }}".
-
-
-# The Python console application boilerplate
-
-***Functional Requirements:***
-
-- Implement the entry point for :App:.
+- :App: can be executed using the command "python :MainExecutableFile:".

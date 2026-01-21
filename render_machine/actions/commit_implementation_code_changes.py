@@ -13,8 +13,9 @@ class CommitImplementationCodeChanges(BaseAction):
 
     def execute(self, render_context: RenderContext, _previous_action_payload: Any | None):
         git_utils.add_all_files_and_commit(
-            render_context.args.build_folder,
+            render_context.build_folder,
             self.base_commit_message.format(render_context.frid_context.frid),
+            render_context.module_name,
             render_context.frid_context.frid,
             render_context.run_state.render_id,
         )

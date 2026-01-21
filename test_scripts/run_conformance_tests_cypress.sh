@@ -95,11 +95,11 @@ current_dir=$(pwd)
 # will return a non-zero status, allowing the if condition to properly catch failures.
 set -o pipefail
 
-# Running React application
-printf "### Step 1: Starting the React application in folder $1...\n"
-
 # Define the path to the subfolder
 NODE_SUBFOLDER=node_$1
+
+# Running React application
+printf "### Step 1: Starting the React application in folder $NODE_SUBFOLDER...\n"
 
 if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
   printf "Preparing Node subfolder: $NODE_SUBFOLDER\n"
@@ -107,8 +107,8 @@ fi
 
 # Check if the node subfolder exists
 if [ -d "$NODE_SUBFOLDER" ]; then
-  # Find and delete all files and folders except "node_modules", "build", and "package-lock.json"
-  find "$NODE_SUBFOLDER" -mindepth 1 ! -path "$NODE_SUBFOLDER/node_modules*" ! -path "$NODE_SUBFOLDER/build*" ! -name "package-lock.json" -exec rm -rf {} +
+  # Find and delete all files and folders except "node_modules", "plain_modules", and "package-lock.json"
+  find "$NODE_SUBFOLDER" -mindepth 1 ! -path "$NODE_SUBFOLDER/node_modules*" ! -path "$NODE_SUBFOLDER/plain_modules*" ! -name "package-lock.json" -exec rm -rf {} +
 
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
     printf "Cleanup completed, keeping 'node_modules' and 'package-lock.json'.\n"
@@ -118,7 +118,7 @@ else
     printf "Subfolder does not exist. Creating it...\n"
   fi
 
-  mkdir $NODE_SUBFOLDER
+  mkdir -p $NODE_SUBFOLDER
 fi
 
 cp -R $1/* $NODE_SUBFOLDER
@@ -162,6 +162,10 @@ fi
 # Start the React app in the background and redirect output to a log file
 BROWSER=none npm start -- --no-open > app.log 2>&1 &
 
+if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
+  printf "Application is starting...\n"
+fi
+
 # Capture the process ID of the npm start command
 REACT_APP_PID=$!
 NPM_PID=$(pgrep -P $REACT_APP_PID npm)
@@ -169,6 +173,10 @@ NPM_PID=$(pgrep -P $REACT_APP_PID npm)
 # Wait for the "compiled successfully!" message in the log file
 while true; do
   if grep -iq -E "compiled successfully|compiled with warnings" app.log; then
+    break
+  fi
+
+  if grep -iq -E "VITE v[0-9]+\.[0-9]+\.[0-9]+[[:space:]]+ready in" app.log; then
     break
   fi
 
@@ -206,8 +214,8 @@ fi
 
 # Check if the conformance tests node subfolder exists
 if [ -d "$NODE_CONFORMANCE_TESTS_SUBFOLDER" ]; then
-  # Find and delete all files and folders except "node_modules", "build", and "package-lock.json"
-  find "$NODE_CONFORMANCE_TESTS_SUBFOLDER" -mindepth 1 ! -path "$NODE_CONFORMANCE_TESTS_SUBFOLDER/node_modules*" ! -path "$NODE_CONFORMANCE_TESTS_SUBFOLDER/build*" ! -name "package-lock.json" -exec rm -rf {} +
+  # Find and delete all files and folders except "node_modules", "plain_modules", and "package-lock.json"
+  find "$NODE_CONFORMANCE_TESTS_SUBFOLDER" -mindepth 1 ! -path "$NODE_CONFORMANCE_TESTS_SUBFOLDER/node_modules*" ! -path "$NODE_CONFORMANCE_TESTS_SUBFOLDER/plain_modules*" ! -name "package-lock.json" -exec rm -rf {} +
 
   if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
     printf "Cleanup completed, keeping 'node_modules' and 'package-lock.json'.\n"

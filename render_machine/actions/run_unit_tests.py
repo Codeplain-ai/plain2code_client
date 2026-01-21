@@ -4,6 +4,7 @@ import render_machine.render_utils as render_utils
 from plain2code_console import console
 from render_machine.actions.base_action import BaseAction
 from render_machine.render_context import RenderContext
+from render_machine.render_types import RenderError
 
 UNRECOVERABLE_ERROR_EXIT_CODES = [69]
 
@@ -14,17 +15,19 @@ class RunUnitTests(BaseAction):
     UNRECOVERABLE_ERROR_OUTCOME = "unrecoverable_error_occurred"
 
     def execute(self, render_context: RenderContext, _previous_action_payload: Any | None):
-        if render_context.args.verbose:
+        if render_context.verbose:
             console.info(
-                f"[b]Running unit tests script {render_context.args.unittests_script}.[/b] (attempt: {render_context.unit_tests_running_context.fix_attempts + 1})"
+                f"[b]Running unit tests script {render_context.unittests_script}.[/b] (attempt: {render_context.unit_tests_running_context.fix_attempts + 1})"
             )
-        exit_code, unittests_issue = render_utils.execute_script(
-            render_context.args.unittests_script,
-            [render_context.args.build_folder],
-            render_context.args.verbose,
+        exit_code, unittests_issue, unittests_temp_file_path = render_utils.execute_script(
+            render_context.unittests_script,
+            [render_context.build_folder],
+            render_context.verbose,
             "Unit Tests",
         )
 
+        render_context.script_execution_history.latest_unit_test_output_path = unittests_temp_file_path
+        render_context.script_execution_history.should_update_script_outputs = True
         if exit_code == 0:
             return self.SUCCESSFUL_OUTCOME, None
 
@@ -32,7 +35,12 @@ class RunUnitTests(BaseAction):
             console.error(unittests_issue)
             return (
                 self.UNRECOVERABLE_ERROR_OUTCOME,
-                "Unit tests script failed due to problems in the environment setup. Please check the your environment or update the script for running unittests.",
+                RenderError.encode(
+                    message="Unit tests script failed due to problems in the environment setup. Please check your environment or update the script for running unittests.",
+                    error_type="ENVIRONMENT_ERROR",
+                    exit_code=exit_code,
+                    script=render_context.unittests_script,
+                ).to_payload(),
             )
         else:
             return self.FAILED_OUTCOME, {"previous_unittests_issue": unittests_issue}

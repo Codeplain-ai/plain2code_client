@@ -28,7 +28,7 @@ else
     printf "Subfolder does not exist. Creating it...\n"
   fi
 
-  mkdir $PYTHON_BUILD_SUBFOLDER
+  mkdir -p $PYTHON_BUILD_SUBFOLDER
 fi
 
 cp -R $1/* $PYTHON_BUILD_SUBFOLDER

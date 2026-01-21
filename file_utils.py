@@ -180,33 +180,37 @@ def store_response_files(target_folder, response_files, existing_files):
     return existing_files
 
 
+def open_from(dirs, file_name):
+    for dir in dirs:
+        full_file_name = os.path.join(dir, file_name)
+        if not os.path.isfile(full_file_name):
+            continue
+
+        with open(full_file_name, "rb") as f:
+            content = f.read()
+            try:
+                content_text = content.decode("utf-8")
+            except UnicodeDecodeError:
+                print(f"WARNING! Error loading {file_name} ({file_name}). File is not a text file. Skipping it.")
+            return content_text
+
+    return None
+
+
 def load_linked_resources(template_dirs: list[str], resources_list):
     linked_resources = {}
 
     for resource in resources_list:
-        resource_found = False
-        for template_dir in template_dirs:
-            file_name = resource["target"]
-            if file_name in linked_resources:
-                continue
+        file_name = resource["target"]
+        if file_name in linked_resources:
+            continue
 
-            full_file_name = os.path.join(template_dir, file_name)
-            if not os.path.isfile(full_file_name):
-                continue
+        content = open_from(template_dirs, file_name)
 
-            with open(full_file_name, "rb") as f:
-                content = f.read()
-                try:
-                    linked_resources[file_name] = content.decode("utf-8")
-                except UnicodeDecodeError:
-                    print(
-                        f"WARNING! Error loading {resource['text']} ({resource['target']}). File is not a text file. Skipping it."
-                    )
-                resource_found = True
-        if not resource_found:
+        if content is None:
             raise FileNotFoundError(
                 f"""
-                Resource file {resource['target']} not found. Resource files are searched in the following order (highest to lowest precedence):
+                Resource file {file_name} not found. Resource files are searched in the following order (highest to lowest precedence):
 
                 1. The directory containing your .plain file
                 2. The directory specified by --template-dir (if provided)
@@ -215,6 +219,8 @@ def load_linked_resources(template_dirs: list[str], resources_list):
                 Please ensure that the resource exists in one of these locations, or specify the correct --template-dir if using custom templates.
                 """
             )
+
+        linked_resources[file_name] = content
 
     return linked_resources
 

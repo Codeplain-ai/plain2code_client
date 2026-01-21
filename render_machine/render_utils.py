@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 import time
+from typing import Optional
 
 import file_utils
 import git_utils
@@ -11,10 +12,10 @@ SCRIPT_EXECUTION_TIMEOUT = 120
 TIMEOUT_ERROR_EXIT_CODE = 124
 
 
-def revert_uncommitted_changes(render_context):
+def revert_changes_for_frid(render_context):
     if render_context.frid_context.frid is not None:
         previous_frid = plain_spec.get_previous_frid(render_context.plain_source_tree, render_context.frid_context.frid)
-        git_utils.revert_to_commit_with_frid(render_context.args.build_folder, previous_frid)
+        git_utils.revert_to_commit_with_frid(render_context.build_folder, previous_frid)
 
 
 def print_inputs(render_context, existing_files_content, message):
@@ -34,13 +35,16 @@ def print_inputs(render_context, existing_files_content, message):
 
     console.print_files(
         message,
-        render_context.args.build_folder,
+        render_context.build_folder,
         existing_files_content,
         style=console.INPUT_STYLE,
     )
 
 
-def execute_script(script, scripts_args, verbose, script_type):
+def execute_script(
+    script: str, scripts_args: list[str], verbose: bool, script_type: str
+) -> tuple[int, str, Optional[str]]:
+    temp_file_path = None
     try:
         start_time = time.time()
         result = subprocess.run(
@@ -68,12 +72,12 @@ def execute_script(script, scripts_args, verbose, script_type):
 
             if result.returncode != 0:
                 console.info(
-                    f"[b]The {script_type} script has failed. Initiating the patching mode to automatically correct the discrepancies.[/b]\n"
+                    f"[b]The {script_type} script has failed. Initiating the patching mode to automatically correct the discrepancies.[/b]"
                 )
             else:
-                console.info(f"[b]All {script_type} script passed successfully.[/b]\n")
+                console.info(f"[b]All {script_type} script passed successfully.[/b]")
 
-        return result.returncode, result.stdout
+        return result.returncode, result.stdout, temp_file_path
     except subprocess.TimeoutExpired as e:
         # Store timeout output in a temporary file
         if verbose:
@@ -86,7 +90,11 @@ def execute_script(script, scripts_args, verbose, script_type):
                     temp_file.write(f"{script_type} script did not produce any output before the timeout.")
                 temp_file_path = temp_file.name
             console.warning(
-                f"The {script_type} script timed out after {SCRIPT_EXECUTION_TIMEOUT} seconds. {script_type} script output stored in: {temp_file_path}\n"
+                f"The {script_type} script timed out after {SCRIPT_EXECUTION_TIMEOUT} seconds. {script_type} script output stored in: {temp_file_path}"
             )
 
-        return TIMEOUT_ERROR_EXIT_CODE, f"{script_type} script did not finish in {SCRIPT_EXECUTION_TIMEOUT} seconds."
+        return (
+            TIMEOUT_ERROR_EXIT_CODE,
+            f"{script_type} script did not finish in {SCRIPT_EXECUTION_TIMEOUT} seconds.",
+            temp_file_path,
+        )

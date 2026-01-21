@@ -11,13 +11,14 @@ if not CODEPLAIN_API_KEY:
         raise ValueError("CODEPLAIN_API_KEY or CLAUDE_API_KEY environment variable is not set")
 
 
-DEFAULT_BUILD_FOLDER = "build"
+DEFAULT_BUILD_FOLDER = "plain_modules"
 DEFAULT_CONFORMANCE_TESTS_FOLDER = "conformance_tests"
 DEFAULT_BUILD_DEST = "dist"
 DEFAULT_CONFORMANCE_TESTS_DEST = "dist_conformance_tests"
 
 UNIT_TESTS_SCRIPT_NAME = "unittests_script"
 CONFORMANCE_TESTS_SCRIPT_NAME = "conformance_tests_script"
+DEFAULT_LOG_FILE_NAME = "codeplain.log"
 
 
 def process_test_script_path(script_arg_name, config):
@@ -133,6 +134,21 @@ def create_parser():
         "--build-folder", type=non_empty_string, default=DEFAULT_BUILD_FOLDER, help="Folder for build files"
     )
 
+    parser.add_argument(
+        "--log-to-file",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable logging to a file. Defaults to True. Use --no-log-to-file to disable.",
+    )
+    parser.add_argument(
+        "--log-file-name",
+        type=str,
+        default=DEFAULT_LOG_FILE_NAME,
+        help=f"Name of the log file. Defaults to '{DEFAULT_LOG_FILE_NAME}'."
+        "Always resolved relative to the plain file directory."
+        "If file on this path already exists, it will be overwritten by the current logs.",
+    )
+
     # Add config file arguments
     config_group = parser.add_argument_group("configuration")
     config_group.add_argument(
@@ -158,9 +174,16 @@ def create_parser():
     )
 
     parser.add_argument(
+        "--force-render",
+        action="store_true",
+        default=False,
+        help="Force re-render of all the required modules.",
+    )
+
+    parser.add_argument(
         "--unittests-script",
         type=str,
-        help="Shell script to run unit tests on generated code. Receives the build folder path as its first argument (default: 'build').",
+        help="Shell script to run unit tests on generated code. Receives the build folder path as its first argument (default: 'plain_modules').",
     )
     parser.add_argument(
         "--conformance-tests-folder",
@@ -172,14 +195,14 @@ def create_parser():
         "--conformance-tests-script",
         type=str,
         help="Path to conformance tests shell script. The script should accept two arguments: "
-        "1) First argument: path to a folder (e.g. 'build') containing generated source code, "
+        "1) First argument: path to a folder (e.g. 'plain_modules/module_name') containing generated source code, "
         "2) Second argument: path to a subfolder of the conformance tests folder (e.g. 'conformance_tests/subfoldername') containing test files.",
     )
 
     parser.add_argument(
         "--prepare-environment-script",
         type=str,
-        help="Path to a shell script that prepares the testing environment. The script should accept the build folder path as its first argument (default: 'build').",
+        help="Path to a shell script that prepares the testing environment. The script should accept the build folder path as its first argument (default: 'plain_modules').",
     )
 
     parser.add_argument(
@@ -271,6 +294,9 @@ def parse_arguments():
 
     if not args.render_conformance_tests and args.copy_conformance_tests:
         parser.error("--copy-conformance-tests requires --conformance-tests-script to be set")
+
+    if not args.log_to_file and args.log_file_name != DEFAULT_LOG_FILE_NAME:
+        parser.error("--log-file-name cannot be used when --log-to-file is False.")
 
     script_arg_names = [UNIT_TESTS_SCRIPT_NAME, CONFORMANCE_TESTS_SCRIPT_NAME]
     for script_name in script_arg_names:
