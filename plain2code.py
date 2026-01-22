@@ -213,6 +213,9 @@ def main():
 
     setup_logging(args, event_bus, args.log_to_file, args.log_file_name, args.filename)
 
+    if not args.api:
+        args.api = "https://api.codeplain.ai"
+
     run_state = RunState(spec_filename=args.filename, replay_with=args.replay_with)
 
     try:
