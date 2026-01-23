@@ -120,7 +120,11 @@ class ConformanceTests:
                 console.info(
                     f"Creating folder {new_conformance_test_folder_name} for a copy of conformance tests {source_conformance_test_folder_name}"
                 )
-                file_utils.copy_folder_content(source_conformance_test_folder_name, new_conformance_test_folder_name)
+                
+                if source_conformance_test_folder_name != new_conformance_test_folder_name:
+                    file_utils.copy_folder_content(source_conformance_test_folder_name, new_conformance_test_folder_name)
+                else:
+                    console.info(f"Source conformance test folder name {source_conformance_test_folder_name} is the same as the new conformance test folder name {new_conformance_test_folder_name}! Skipping copy!")
 
             current_conformance_test_folder_name = new_conformance_test_folder_name
 
