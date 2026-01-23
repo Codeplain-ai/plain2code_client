@@ -27,7 +27,6 @@ from plain2code_logger import (
     get_log_file_path,
 )
 from plain2code_state import RunState
-from plain2code_utils import print_dry_run_output
 from system_config import system_config
 from tui.plain2code_tui import Plain2CodeTUI
 
@@ -107,6 +106,8 @@ def setup_logging(
     logging.getLogger("services.langsmith.langsmith_service").setLevel(logging.WARNING)
     logging.getLogger("transitions").setLevel(logging.WARNING)
     logging.getLogger("repositories").setLevel(logging.WARNING)
+    logging.getLogger("google_genai").setLevel(logging.WARNING)
+    logging.getLogger("openai").setLevel(logging.WARNING)
 
     log_file_path = get_log_file_path(plain_file_path, log_file_name)
 
@@ -119,17 +120,6 @@ def setup_logging(
                 console.info(f"Loaded logging configuration from {args.logging_config_path}")
         except Exception as e:
             console.warning(f"Failed to load logging configuration from {args.logging_config_path}: {str(e)}")
-
-    # Silence noisy third-party libraries
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("httpcore").setLevel(logging.WARNING)
-    logging.getLogger("anthropic").setLevel(logging.WARNING)
-    logging.getLogger("langsmith").setLevel(logging.WARNING)
-    logging.getLogger("git").setLevel(logging.WARNING)
-    logging.getLogger("openai").setLevel(logging.WARNING)
-    logging.getLogger("transitions").setLevel(logging.WARNING)
-    logging.getLogger("google_genai").setLevel(logging.WARNING)
 
     # Allow detailed retry logs for anthropic if needed
     logging.getLogger("anthropic._base_client").setLevel(logging.DEBUG)
