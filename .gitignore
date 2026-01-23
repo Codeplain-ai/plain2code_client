@@ -14,11 +14,13 @@ examples/**/node_harness_tests/
 examples/**/go_build/
 examples/**/python_build/
 
-test_harness/**/go_plain_modules/
-test_harness/**/python_plain_modules/
-test_harness/**/node_plain_modules/
+examples/**/go_plain_modules/
+examples/**/python_plain_modules/
+examples/**/node_plain_modules/
 
 
 *.log
 
 .venv
+
+.env

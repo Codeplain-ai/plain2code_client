@@ -1,9 +1,7 @@
 from difflib import unified_diff
 
 
-def get_unified_diff(
-    filename: str, existing_file_content: str, response_file_content: str
-) -> str:
+def get_unified_diff(filename: str, existing_file_content: str, response_file_content: str) -> str:
     diff = unified_diff(
         existing_file_content.splitlines(keepends=True),
         response_file_content.splitlines(keepends=True),
@@ -14,9 +12,7 @@ def get_unified_diff(
     return "".join(diff)
 
 
-def get_code_diff(
-    response_files: dict[str, str], existing_files_content: dict[str, str]
-) -> dict[str, str]:
+def get_code_diff(response_files: dict[str, str], existing_files_content: dict[str, str]) -> dict[str, str]:
     code_diff: dict[str, str] = {}
     for file_name in response_files:
         if file_name in existing_files_content and existing_files_content[file_name]:

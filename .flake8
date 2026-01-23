@@ -1,0 +1,28 @@
+[flake8]
+max-line-length = 120
+# E203 is ignored because it conflicts with Black's formatting of slice notation
+# Black formats slices like `a[1 : 2]` but flake8 expects `a[1:2]`
+# E501 is ignored because we handle line length with Black's formatter
+# B001 is ignored because we also check it with check E722
+# N... is ignored because it's just naming conventions
+# U101 is ignored because leading underscores signal that the argument is not used
+extend-ignore = E203, E501, B001, N803, N806, N813, U101, U101
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    .env,
+    .conda,
+    build,
+    dist,
+    tests,
+    examples
+per-file-ignores =
+    __init__.py: F401
+    tests/*: U100
+max-complexity = 15
+enable-extensions = U100
+# Plugin-specific configuration
+unused-arguments-ignore-args = self,cls,_
+# don't show warnings for unused *args and **kwargs.
+unused-arguments-ignore-variadic-names = True
