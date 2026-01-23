@@ -24,7 +24,7 @@ class RenderConformanceTests(BaseAction):
 
     def _render_conformance_tests(self, render_context: RenderContext):
         if render_context.verbose:
-            console.info("[b]Implementing test requirements:[/b]")
+            console.info("Implementing test requirements:")
             console.print_list(
                 render_context.conformance_tests_running_context.current_testing_frid_specifications[
                     plain_spec.TEST_REQUIREMENTS
@@ -149,8 +149,8 @@ class RenderConformanceTests(BaseAction):
         ]
 
         if render_context.verbose:
-            console.info("\n[b]Generating acceptance test:[/b]")
-            console.info(f"[b]{acceptance_test}[/b]")
+            console.info("\nGenerating acceptance test:")
+            console.info(f"{acceptance_test}")
             console.info()
 
         with console.status(

@@ -24,15 +24,17 @@ def print_dry_run_output(plain_source_tree: dict, render_range: Optional[list[st
             console.info(
                 "-------------------------------------"
                 f"Rendering functional requirement {frid}"
-                f"[b]{functional_requirement_text}[/b]"
+                f"{functional_requirement_text}"
                 "-------------------------------------"
             )
             if plain_spec.ACCEPTANCE_TESTS in specifications:
                 for i, acceptance_test in enumerate(specifications[plain_spec.ACCEPTANCE_TESTS], 1):
                     console.info(f"\nGenerating acceptance test #{i}:\n\n{acceptance_test}")
         else:
-            console.info("-------------------------------------")
-            console.info(f"Skipping rendering iteration: {frid}")
-            console.info("-------------------------------------")
+            console.info(
+                "-------------------------------------\n"
+                f"Skipping rendering iteration: {frid}\n"
+                "-------------------------------------"
+            )
 
         frid = plain_spec.get_next_frid(plain_source_tree, frid)
