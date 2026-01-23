@@ -7,6 +7,7 @@ from liquid2.exceptions import UndefinedError
 
 import plain_spec
 from plain2code_nodes import Plain2CodeIncludeTag, Plain2CodeLoaderMixin
+from plain_modules import CODEPLAIN_MEMORY_SUBFOLDER, CODEPLAIN_METADATA_FOLDER
 
 BINARY_FILE_EXTENSIONS = [".pyc"]
 
@@ -34,6 +35,7 @@ FILE_EXTENSION_MAPPING = {
     ".kt": "Kotlin",
     ".sql": "SQL",
     ".json": "JSON",
+    ".jsonl": "JSONL",
     ".xml": "XML",
     ".yaml": "YAML",
     ".yml": "YAML",  # YAML has two common extensions
@@ -53,10 +55,12 @@ def get_file_type(file_name):
 
 def list_all_text_files(directory):
     all_files = []
+    skip_dirs = [".git", CODEPLAIN_METADATA_FOLDER, CODEPLAIN_MEMORY_SUBFOLDER]
     for root, dirs, files in os.walk(directory, topdown=True):
-        # Skip .git directory
-        if ".git" in dirs:
-            dirs.remove(".git")
+        # Skip directories that should not be traversed
+        for skip_dir in skip_dirs:
+            if skip_dir in dirs:
+                dirs.remove(skip_dir)
 
         modified_root = os.path.relpath(root, directory)
         if modified_root == ".":

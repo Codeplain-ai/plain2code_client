@@ -3,6 +3,7 @@ from typing import Any
 
 import file_utils
 import plain_spec
+from memory_management import MemoryManager
 from plain2code_console import console
 from render_machine.actions.base_action import BaseAction
 from render_machine.implementation_code_helpers import ImplementationCodeHelpers
@@ -70,6 +71,7 @@ class RenderConformanceTests(BaseAction):
             )
 
         _, existing_files_content = ImplementationCodeHelpers.fetch_existing_files(render_context.build_folder)
+        _, memory_files_content = MemoryManager.fetch_memory_files(render_context.memory_manager.memory_folder)
         if render_context.verbose:
             tmp_resources_list = []
             plain_spec.collect_linked_resources(
@@ -102,6 +104,7 @@ class RenderConformanceTests(BaseAction):
                 render_context.plain_source_tree,
                 render_context.frid_context.linked_resources,
                 existing_files_content,
+                memory_files_content,
                 render_context.module_name,
                 render_context.get_required_modules_functionalities(),
                 conformance_tests_folder_name,
@@ -130,6 +133,7 @@ class RenderConformanceTests(BaseAction):
 
     def _render_acceptance_test(self, render_context: RenderContext):
         _, existing_files_content = ImplementationCodeHelpers.fetch_existing_files(render_context.build_folder)
+        _, memory_files_content = MemoryManager.fetch_memory_files(render_context.memory_manager.memory_folder)
         (
             conformance_tests_files,
             conformance_tests_files_content,
@@ -157,6 +161,7 @@ class RenderConformanceTests(BaseAction):
                 render_context.plain_source_tree,
                 render_context.frid_context.linked_resources,
                 existing_files_content,
+                memory_files_content,
                 conformance_tests_files_content,
                 render_context.module_name,
                 render_context.get_required_modules_functionalities(),

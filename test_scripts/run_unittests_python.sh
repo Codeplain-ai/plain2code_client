@@ -9,6 +9,16 @@ if [ -z "$1" ]; then
   exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
+# Try to find Python interpreter (python3 first, then python)
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    printf "Error: Python interpreter not found. Please install Python.\n"
+    exit $UNRECOVERABLE_ERROR_EXIT_CODE
+fi
+
 PYTHON_BUILD_SUBFOLDER=python_$1
 
 if [ "${VERBOSE:-}" -eq 1 ] 2>/dev/null; then
@@ -44,7 +54,7 @@ fi
 # Execute all Python unittests in the subfolder
 echo "Running Python unittests in $PYTHON_BUILD_SUBFOLDER..."
 
-output=$(timeout 60s python -m unittest discover -b 2>&1)
+output=$(timeout 60s $PYTHON_CMD -m unittest discover -b 2>&1)
 exit_code=$?
 
 # Check if the command timed out
