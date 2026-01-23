@@ -104,10 +104,9 @@ def setup_logging(
     logging.getLogger("git").setLevel(logging.WARNING)
     logging.getLogger("anthropic._base_client").setLevel(logging.WARNING)
     logging.getLogger("services.langsmith.langsmith_service").setLevel(logging.WARNING)
-    logging.getLogger("transitions").setLevel(logging.WARNING)
     logging.getLogger("repositories").setLevel(logging.WARNING)
-    logging.getLogger("google_genai").setLevel(logging.WARNING)
-    logging.getLogger("openai").setLevel(logging.WARNING)
+    logging.getLogger("transitions").setLevel(logging.ERROR)
+    logging.getLogger("transitions.extensions.diagrams").setLevel(logging.ERROR)
 
     log_file_path = get_log_file_path(plain_file_path, log_file_name)
 
@@ -242,6 +241,7 @@ def main():
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
         traceback.print_exc()
+        dump_crash_logs(args)
 
 
 if __name__ == "__main__":  # noqa: C901
