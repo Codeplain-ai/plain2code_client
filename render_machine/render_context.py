@@ -212,11 +212,18 @@ class RenderContext:
         else:
             conformance_tests_running_context.current_testing_module_name = module.name
 
+        conformance_tests_json = conformance_tests_running_context.get_conformance_tests_json(self.module_name)
+        conformance_tests_json_from_file = self.conformance_tests.get_conformance_tests_json(self.module_name)
+
+        # Merge conformance tests from file into the existing conformance tests
+        if conformance_tests_json_from_file:
+            for frid, test_data in conformance_tests_json_from_file.items():
+                if frid not in conformance_tests_json:
+                    conformance_tests_json[frid] = test_data
+
         conformance_tests_running_context.set_conformance_tests_json(
             conformance_tests_running_context.current_testing_module_name,
-            self.conformance_tests.get_conformance_tests_json(
-                conformance_tests_running_context.current_testing_module_name
-            ),
+            conformance_tests_json,
         )
 
         if module is None:
