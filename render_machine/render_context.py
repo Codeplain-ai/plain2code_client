@@ -327,7 +327,7 @@ class RenderContext:
     def start_refactoring_code(self):
 
         if self.frid_context.refactoring_iteration == 0:
-            console.info("[b]Refactoring the generated code...[/b]")
+            console.info("Refactoring the generated code...")
 
         self.frid_context.refactoring_iteration += 1
 
@@ -349,7 +349,7 @@ class RenderContext:
             self.machine.dispatch(triggers.MARK_TESTING_ENVIRONMENT_PREPARED)
 
     def start_conformance_tests_processing(self):
-        console.info("[b]Implementing conformance tests...[/b]")
+        console.info("Implementing conformance tests...")
         self.conformance_tests_running_context = ConformanceTestsRunningContext(
             current_testing_module_name=self.module_name,
             current_testing_frid=None,
@@ -444,5 +444,5 @@ class RenderContext:
     def finish_fixing_conformance_tests(self):
         if self.verbose:
             console.info(
-                f"[b]Running conformance tests attempt {self.conformance_tests_running_context.fix_attempts + 1}.[/b]"
+                f"Running conformance tests attempt {self.conformance_tests_running_context.fix_attempts + 1}."
             )
