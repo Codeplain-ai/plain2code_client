@@ -52,7 +52,7 @@ class Plain2CodeConsole(Console):
             return
 
         tree = self._create_tree_from_files(root_folder, files)
-        super().print(f"\n[b]{header}[/b]", style=style)
+        super().print(f"\n{header}", style=style)
 
         super().print(tree, style=style)
 
@@ -88,7 +88,7 @@ class Plain2CodeConsole(Console):
                             file_lines = len(content.splitlines())
                             file_tokens = len(self.llm_encoding.encode(content))
                             current_level = current_level.add(
-                                f"{part} [b]({file_lines} lines, {file_tokens} tokens)[/b]"
+                                f"{part} ({file_lines} lines, {file_tokens} tokens)"
                             )
                     else:
                         current_level = current_level.add(part)
@@ -107,7 +107,7 @@ class Plain2CodeConsole(Console):
             if resource_name["target"] in linked_resources:
                 file_tokens = len(self.llm_encoding.encode(linked_resources[resource_name["target"]]))
                 self.input(
-                    f"- {resource_name['text']} [b][#4169E1]({resource_name['target']}, {file_tokens} tokens)[/#4169E1][/b]"
+                    f"- {resource_name['text']} [#4169E1]({resource_name['target']}, {file_tokens} tokens)[/#4169E1]"
                 )
 
         self.input()

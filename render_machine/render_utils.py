@@ -68,14 +68,14 @@ def execute_script(
                     temp_file.write(f"{script_type} script {script} successfully passed.\n")
                 temp_file.write(f"{script_type} script execution time: {elapsed_time:.2f} seconds.\n")
 
-            console.info(f"[b]{script_type} script output stored in: {temp_file_path}[/b]")
+            console.info(f"[#888888]{script_type} script output stored in: {temp_file_path}[/#888888]")
 
             if result.returncode != 0:
                 console.info(
-                    f"[b]The {script_type} script has failed. Initiating the patching mode to automatically correct the discrepancies.[/b]"
+                    f"[#DD5353]The {script_type} script has failed. Initiating the patching mode to automatically correct the discrepancies.[/#DD5353]\n"
                 )
             else:
-                console.info(f"[b]All {script_type} script passed successfully.[/b]")
+                console.info(f"[#79FC96]All {script_type} script passed successfully.[/#79FC96]\n")
 
         return result.returncode, result.stdout, temp_file_path
     except subprocess.TimeoutExpired as e:

@@ -17,7 +17,7 @@ class RunUnitTests(BaseAction):
     def execute(self, render_context: RenderContext, _previous_action_payload: Any | None):
         if render_context.verbose:
             console.info(
-                f"[b]Running unit tests script {render_context.unittests_script}.[/b] (attempt: {render_context.unit_tests_running_context.fix_attempts + 1})"
+                f"Running unit tests script {render_context.unittests_script}. (attempt: {render_context.unit_tests_running_context.fix_attempts + 1})"
             )
         exit_code, unittests_issue, unittests_temp_file_path = render_utils.execute_script(
             render_context.unittests_script,

@@ -14,7 +14,7 @@ class PrepareTestingEnvironment(BaseAction):
     def execute(self, render_context: RenderContext, _previous_action_payload: Any | None):
         if render_context.verbose:
             console.info(
-                f"[b]Running testing environment preparation script {render_context.prepare_environment_script} for build folder {render_context.build_folder}.[/b]"
+                f"Running testing environment preparation script {render_context.prepare_environment_script} for build folder {render_context.build_folder}."
             )
         exit_code, _, preparation_temp_file_path = render_utils.execute_script(
             render_context.prepare_environment_script,

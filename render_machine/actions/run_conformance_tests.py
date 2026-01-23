@@ -32,11 +32,11 @@ class RunConformanceTests(BaseAction):
 
         if render_context.verbose:
             console.info(
-                f"\n[b]Running conformance tests script {render_context.conformance_tests_script} "
+                f"\nRunning conformance tests script {render_context.conformance_tests_script} "
                 + f"for {conformance_tests_folder_name} ("
                 + f"functional requirement {render_context.conformance_tests_running_context.current_testing_frid} "
                 + f"in module {render_context.conformance_tests_running_context.current_testing_module_name}"
-                + ").[/b]"
+                + ")."
             )
         exit_code, conformance_tests_issue, conformance_tests_temp_file_path = render_utils.execute_script(
             render_context.conformance_tests_script,
