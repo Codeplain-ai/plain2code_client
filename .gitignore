@@ -10,6 +10,7 @@ examples/**/node_conformance_tests/
 examples/**/package-lock.json
 examples/**/node_modules/
 examples/**/node_harness_tests/
+examples/**/plain_modules/
 
 examples/**/go_build/
 examples/**/python_build/
