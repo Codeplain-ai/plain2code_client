@@ -54,6 +54,9 @@ class ConformanceTestsRunningContext:
     def get_conformance_tests_json(self, module_name: str) -> dict:
         return self._conformance_tests_json[module_name]
 
+    def conformance_tests_json_has_module_populated(self, module_name: str) -> bool:
+        return module_name in self._conformance_tests_json and len(self._conformance_tests_json[module_name]) > 0
+
     def set_conformance_tests_json(self, module_name: str, conformance_tests_json: dict):
         self._conformance_tests_json[module_name] = conformance_tests_json
 
@@ -76,7 +79,7 @@ class ConformanceTestsRunningContext:
                 plain_spec.ACCEPTANCE_TESTS
             ]
 
-        return None
+        return []
 
     def get_current_acceptance_test(self) -> Optional[str]:
         """Get the current acceptance test text (raw, unformatted)."""
