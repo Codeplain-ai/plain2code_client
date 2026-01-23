@@ -247,7 +247,10 @@ def diff(repo_path: Union[str, os.PathLike], previous_frid: str = None) -> dict:
 
 def _get_commit(repo: Repo, frid: Optional[str]) -> str:
     if frid:
-        return _get_commit_with_frid(repo, frid)
+        commit_with_frid = _get_commit_with_frid(repo, frid)
+        if not commit_with_frid:
+            raise InvalidGitRepositoryError(f"No commit with frid {frid} found.")
+        return commit_with_frid
 
     base_folder_commit = _get_base_folder_commit(repo)
     initial_commit = _get_initial_commit(repo)
@@ -258,10 +261,25 @@ def _get_commit(repo: Repo, frid: Optional[str]) -> str:
 
 def _get_commit_with_frid(repo: Repo, frid: str) -> str:
     """Finds commit with given frid mentioned in the commit message."""
-    commit = _get_commit_with_message(repo, FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid))
-    if not commit:
-        raise InvalidGitRepositoryError(f"No commit with frid {frid} found.")
-    return commit
+    return _get_commit_with_message(repo, FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid))
+
+
+def has_commit_for_frid(repo_path: Union[str, os.PathLike], frid: str) -> bool:
+    """
+    Check if a commit exists for the given FRID in the repository.
+
+    Args:
+        repo_path (str | os.PathLike): Path to the git repository
+        frid (str): Functional requirement ID to check
+
+    Returns:
+        bool: True if the commit exists, False otherwise
+    """
+    repo = Repo(repo_path)
+    commit_with_frid = _get_commit_with_frid(repo, frid)
+    if not commit_with_frid:
+        return False
+    return True
 
 
 def _get_base_folder_commit(repo: Repo) -> str:

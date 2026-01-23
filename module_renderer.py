@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import git_utils
 import plain_file
 import plain_modules
 import plain_spec
@@ -14,6 +15,12 @@ from render_machine.code_renderer import CodeRenderer
 from render_machine.render_context import RenderContext
 from render_machine.render_types import RenderError
 from render_machine.states import States
+
+
+class MissingPreviousFridCommitsError(Exception):
+    """Raised when trying to render from a FRID but previous FRID commits are missing."""
+
+    pass
 
 
 class ModuleRenderer:
@@ -34,6 +41,57 @@ class ModuleRenderer:
         self.args = args
         self.run_state = run_state
         self.event_bus = event_bus
+
+    def _validate_previous_frid_commits_exist(
+        self, module_name: str, plain_source: dict, render_range: list[str]
+    ) -> None:
+        """
+        Validate that all FRID commits before the render_range exist.
+
+        Args:
+            module_name: Name of the module being rendered
+            plain_source: The plain source tree
+            render_range: List of FRIDs to render
+
+        Raises:
+            MissingPreviousFridCommitsError: If any previous FRID commits are missing
+        """
+        # Get all FRIDs from the plain source
+        all_frids = list(plain_spec.get_frids(plain_source))
+        first_render_frid = render_range[0]
+
+        # Find all FRIDs before the first FRID in render_range
+        previous_frids = []
+        for frid in all_frids:
+            if frid == first_render_frid:
+                break
+            previous_frids.append(frid)
+
+        # If there are no previous FRIDs, nothing to validate
+        if not previous_frids:
+            return
+
+        # Check if commits exist for all previous FRIDs
+        build_folder_path = os.path.join(self.args.build_folder, module_name)
+        conformance_tests_path = os.path.join(self.args.conformance_tests_folder, module_name)
+
+        for prev_frid in previous_frids:
+            # Check in build folder
+            if not git_utils.has_commit_for_frid(build_folder_path, prev_frid):
+                raise MissingPreviousFridCommitsError(
+                    f"Cannot render from FRID {first_render_frid}: "
+                    f"Missing commit for previous FRID {prev_frid} in {build_folder_path}. "
+                    f"Please render all previous FRIDs first."
+                )
+
+            # Check in conformance tests folder (only if conformance tests are enabled)
+            if self.args.render_conformance_tests:
+                if not git_utils.has_commit_for_frid(conformance_tests_path, prev_frid):
+                    raise MissingPreviousFridCommitsError(
+                        f"Cannot render from FRID {first_render_frid}: "
+                        f"Missing commit for previous FRID {prev_frid} in {conformance_tests_path}. "
+                        f"Please render all previous FRIDs first."
+                    )
 
     def _build_render_context_for_module(
         self,
@@ -80,6 +138,10 @@ class ModuleRenderer:
 
         resources_list = []
         plain_spec.collect_linked_resources(plain_source, resources_list, None, True)
+
+        # Validate that all previous FRID commits exist before proceeding with render_range
+        if render_range is not None:
+            self._validate_previous_frid_commits_exist(module_name, plain_source, render_range)
 
         required_modules = []
         has_any_required_module_changed = False
