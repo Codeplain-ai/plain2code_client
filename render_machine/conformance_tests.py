@@ -26,7 +26,8 @@ class ConformanceTests:
 
     def _get_full_conformance_tests_definition_file_name(self, module_name: str) -> str:
         return os.path.join(
-            self.get_module_conformance_tests_folder(module_name), self.conformance_tests_definition_file_name
+            self.get_module_conformance_tests_folder(module_name),
+            self.conformance_tests_definition_file_name,
         )
 
     def get_conformance_tests_json(self, module_name: str) -> dict:
@@ -112,7 +113,10 @@ class ConformanceTests:
 
             [source_conformance_test_folder_name, new_conformance_test_folder_name] = (
                 self.get_source_conformance_test_folder_name(
-                    module_name, required_modules, current_testing_module_name, current_conformance_test_folder_name
+                    module_name,
+                    required_modules,
+                    current_testing_module_name,
+                    current_conformance_test_folder_name,
                 )
             )
 
@@ -120,11 +124,12 @@ class ConformanceTests:
                 console.info(
                     f"Creating folder {new_conformance_test_folder_name} for a copy of conformance tests {source_conformance_test_folder_name}"
                 )
-                
-                if source_conformance_test_folder_name != new_conformance_test_folder_name:
-                    file_utils.copy_folder_content(source_conformance_test_folder_name, new_conformance_test_folder_name)
-                else:
-                    console.info(f"Source conformance test folder name {source_conformance_test_folder_name} is the same as the new conformance test folder name {new_conformance_test_folder_name}! Skipping copy!")
+
+                if not os.path.exists(new_conformance_test_folder_name):
+                    file_utils.copy_folder_content(
+                        source_conformance_test_folder_name,
+                        new_conformance_test_folder_name,
+                    )
 
             current_conformance_test_folder_name = new_conformance_test_folder_name
 
@@ -151,7 +156,10 @@ class ConformanceTests:
     ) -> tuple[list[str], dict[str, str]]:
         if module_name != current_testing_module_name:
             [current_conformance_test_folder_name, _] = self.get_source_conformance_test_folder_name(
-                module_name, required_modules, current_testing_module_name, current_conformance_test_folder_name
+                module_name,
+                required_modules,
+                current_testing_module_name,
+                current_conformance_test_folder_name,
             )
 
         existing_conformance_test_files = file_utils.list_all_text_files(current_conformance_test_folder_name)
