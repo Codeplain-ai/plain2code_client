@@ -46,6 +46,14 @@ class RunConformanceTests(BaseAction):
         )
         render_context.script_execution_history.latest_conformance_test_output_path = conformance_tests_temp_file_path
         render_context.script_execution_history.should_update_script_outputs = True
+
+        render_context.memory_manager.create_conformance_tests_memory(
+            render_context, exit_code, conformance_tests_issue
+        )
+
+        if exit_code == 0:
+            conformance_tests_issue = "All conformance tests passed successfully!"
+
         if exit_code == 0:
             return self.SUCCESSFUL_OUTCOME, None
 

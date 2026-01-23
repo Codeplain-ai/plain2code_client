@@ -31,6 +31,7 @@ class RenderContext:
     def __init__(
         self,
         codeplain_api,
+        memory_manager,
         module_name: str,
         plain_source_tree: dict,
         required_modules: list[PlainModule],
@@ -52,6 +53,7 @@ class RenderContext:
         event_bus: EventBus,
     ):
         self.codeplain_api: CodeplainAPI = codeplain_api
+        self.memory_manager = memory_manager
         self.plain_source_tree = plain_source_tree
         self.module_name = module_name
         self.template_dirs = template_dirs

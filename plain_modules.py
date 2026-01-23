@@ -9,6 +9,7 @@ import git_utils
 import plain_spec
 from render_machine.implementation_code_helpers import ImplementationCodeHelpers
 
+CODEPLAIN_MEMORY_SUBFOLDER = ".memory"
 CODEPLAIN_METADATA_FOLDER = ".codeplain"
 MODULE_METADATA_FILENAME = "module_metadata.json"
 MODULE_FUNCTIONALITIES = "functionalities"

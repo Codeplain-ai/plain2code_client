@@ -2,6 +2,7 @@ from typing import Any
 
 import file_utils
 import render_machine.render_utils as render_utils
+from memory_management import MemoryManager
 from plain2code_console import console
 from plain2code_exceptions import FunctionalRequirementTooComplex
 from render_machine.actions.base_action import BaseAction
@@ -21,6 +22,7 @@ class RenderFunctionalRequirement(BaseAction):
         existing_files, existing_files_content = ImplementationCodeHelpers.fetch_existing_files(
             render_context.build_folder
         )
+        _, memory_files_content = MemoryManager.fetch_memory_files(render_context.memory_manager.memory_folder)
 
         if render_context.verbose:
             msg = f"Module: {render_context.module_name}\n"
@@ -46,6 +48,7 @@ class RenderFunctionalRequirement(BaseAction):
                     render_context.plain_source_tree,
                     render_context.frid_context.linked_resources,
                     existing_files_content,
+                    memory_files_content,
                     render_context.module_name,
                     render_context.get_required_modules_functionalities(),
                     render_context.run_state,
@@ -54,7 +57,7 @@ class RenderFunctionalRequirement(BaseAction):
             error_message = f"The functional requirement:\n[b]{render_context.frid_context.functional_requirement_text}[/b]\n is too complex to be implemented. Please break down the functional requirement into smaller parts ({str(e)})."
             if e.proposed_breakdown:
                 error_message += "\nProposed breakdown:"
-                for _, part in e.proposed_breakdown.items():
+                for _, part in e.proposed_breakdown["functional_requirements"].items():
                     error_message += f"\n  - {part}"
 
             return (

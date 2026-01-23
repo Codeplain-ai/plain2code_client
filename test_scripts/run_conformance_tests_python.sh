@@ -16,6 +16,16 @@ if [ -z "$2" ]; then
   exit $UNRECOVERABLE_ERROR_EXIT_CODE
 fi
 
+# Try to find Python interpreter (python3 first, then python)
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    printf "Error: Python interpreter not found. Please install Python.\n"
+    exit $UNRECOVERABLE_ERROR_EXIT_CODE
+fi
+
 current_dir=$(pwd)
 
 PYTHON_BUILD_SUBFOLDER=python_$1
@@ -53,7 +63,7 @@ fi
 # Execute all Python conformance tests in the build folder
 printf "Running Python conformance tests...\n\n"
 
-output=$(python -m unittest discover -b -s "$current_dir/$2" 2>&1)
+output=$($PYTHON_CMD -m unittest discover -b -s "$current_dir/$2" 2>&1)
 exit_code=$?
 
 # Echo the original output

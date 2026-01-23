@@ -99,6 +99,7 @@ class CodeplainAPI:
         plain_source_tree: dict,
         linked_resources: dict,
         existing_files_content: dict,
+        memory_files_content: dict,
         module_name: str,
         required_modules: dict,
         run_state: RunState,
@@ -115,6 +116,8 @@ class CodeplainAPI:
                                         the content of the linked resources and the sections
                                         they are linked to.
             existing_files_content (dict): A dictionary where the keys represent filenames
+                                        and the values are the content of those files.
+            memory_files_content (dict): A dictionary where the keys represent memory filenames
                                         and the values are the content of those files.
             module_name (str): The name of the module to render the functional requirement for.
             required_modules (dict): A dictionary where the keys represent module names
@@ -135,6 +138,7 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "memory_files_content": memory_files_content,
             "module_name": module_name,
             "required_modules": required_modules,
         }
@@ -168,6 +172,44 @@ class CodeplainAPI:
 
         return self.post_request(endpoint_url, headers, payload, run_state)
 
+    def create_conformance_test_memory(
+        self,
+        frid,
+        plain_source_tree,
+        linked_resources,
+        existing_files_content,
+        memory_files_content,
+        module_name,
+        required_modules,
+        code_diff,
+        conformance_tests_files,
+        acceptance_tests,
+        conformance_tests_issue,
+        conformance_tests_folder_name,
+        previous_conformance_tests_issue_old,
+        run_state: RunState,
+    ):
+        endpoint_url = f"{self.api_url}/create_conformance_test_memory"
+        headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
+
+        payload = {
+            "frid": frid,
+            "plain_source_tree": plain_source_tree,
+            "linked_resources": linked_resources,
+            "existing_files_content": existing_files_content,
+            "memory_files_content": memory_files_content,
+            "module_name": module_name,
+            "required_modules": required_modules,
+            "code_diff": code_diff,
+            "conformance_tests_files": conformance_tests_files,
+            "acceptance_tests": acceptance_tests,
+            "conformance_tests_issue": conformance_tests_issue,
+            "conformance_tests_folder_name": conformance_tests_folder_name,
+            "previous_conformance_tests_issue": previous_conformance_tests_issue_old,
+        }
+
+        return self.post_request(endpoint_url, headers, payload, run_state)
+
     def refactor_source_files_if_needed(self, frid, files_to_check, existing_files_content, run_state: RunState):
         endpoint_url = f"{self.api_url}/refactor_source_files_if_needed"
         headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
@@ -187,6 +229,7 @@ class CodeplainAPI:
         plain_source_tree,
         linked_resources,
         existing_files_content,
+        memory_files_content,
         module_name: str,
         required_modules,
         conformance_tests_folder_name,
@@ -203,6 +246,7 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "memory_files_content": memory_files_content,
             "module_name": module_name,
             "required_modules": required_modules,
             "conformance_tests_folder_name": conformance_tests_folder_name,
@@ -238,6 +282,7 @@ class CodeplainAPI:
         plain_source_tree,
         linked_resources,
         existing_files_content,
+        memory_files_content,
         module_name: str,
         conformance_tests_module_name: str,
         required_modules,
@@ -259,6 +304,7 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "memory_files_content": memory_files_content,
             "module_name": module_name,
             "conformance_tests_module_name": conformance_tests_module_name,
             "required_modules": required_modules,
@@ -281,6 +327,7 @@ class CodeplainAPI:
         plain_source_tree,
         linked_resources,
         existing_files_content,
+        memory_files_content,
         conformance_tests_files,
         module_name: str,
         required_modules,
@@ -297,6 +344,8 @@ class CodeplainAPI:
                                     and the values are the content of those resources.
             existing_files_content (dict): A dictionary where the keys represent code base
                                         filenames and the values are the content of those files.
+            memory_files_content (dict): A dictionary where the keys represent memory filenames
+                                        and the values are the content of those files.
             conformance_tests_files (dict): A dictionary containing conformance test files.
             required_modules (dict): A dictionary where the keys represent module names
                                      and the values are lists of functionalities implemented in those modules.
@@ -316,6 +365,7 @@ class CodeplainAPI:
             "plain_source_tree": plain_source_tree,
             "linked_resources": linked_resources,
             "existing_files_content": existing_files_content,
+            "memory_files_content": memory_files_content,
             "conformance_tests_files": conformance_tests_files,
             "module_name": module_name,
             "required_modules": required_modules,

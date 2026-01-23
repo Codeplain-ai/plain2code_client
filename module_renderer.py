@@ -5,6 +5,7 @@ import plain_file
 import plain_modules
 import plain_spec
 from event_bus import EventBus
+from memory_management import MemoryManager
 from plain2code_console import console
 from plain2code_events import RenderCompleted, RenderFailed
 from plain2code_state import RunState
@@ -37,6 +38,7 @@ class ModuleRenderer:
     def _build_render_context_for_module(
         self,
         module_name: str,
+        memory_manager: MemoryManager,
         plain_source: dict,
         required_modules: list[PlainModule],
         template_dirs: list[str],
@@ -44,6 +46,7 @@ class ModuleRenderer:
     ) -> RenderContext:
         return RenderContext(
             self.codeplainAPI,
+            memory_manager,
             module_name,
             plain_source,
             required_modules,
@@ -114,9 +117,11 @@ class ModuleRenderer:
         ):
             return False, required_modules, False
 
+        memory_manager = MemoryManager(self.codeplainAPI, os.path.join(self.args.build_folder, module_name))
         render_context = self._build_render_context_for_module(
-            module_name, plain_source, required_modules, self.template_dirs, render_range
+            module_name, memory_manager, plain_source, required_modules, self.template_dirs, render_range
         )
+
         code_renderer = CodeRenderer(render_context)
         if self.args.render_machine_graph:
             code_renderer.generate_render_machine_graph()

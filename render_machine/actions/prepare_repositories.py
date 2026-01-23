@@ -31,6 +31,7 @@ class PrepareRepositories(BaseAction):
                     render_context.conformance_tests.get_module_conformance_tests_folder(render_context.module_name),
                     previous_frid,
                 )
+
         else:
             if render_context.required_modules:
                 previous_module = render_context.required_modules[-1]
