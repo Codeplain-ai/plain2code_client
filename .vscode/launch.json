@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug plain2code.py for file hello_world_python.plain",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/plain2code.py",
+            "args": [
+                "${workspaceFolder}/examples/example_hello_world_python/hello_world_python.plain",
+            ],
+            "subProcess": false,
+            "cwd": "${workspaceFolder}/examples/example_hello_world_python",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ]
+}

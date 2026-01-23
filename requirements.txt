@@ -8,3 +8,9 @@ transitions==0.9.3
 textual==1.0.0
 rich==14.2.0
 python-frontmatter==1.1.0
+
+# Development dependencies
+flake8==7.0.0
+black==24.2.0
+isort==5.13.2
+mypy==1.11.2
