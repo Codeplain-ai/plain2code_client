@@ -2,6 +2,16 @@ Screen {
     layout: vertical;
 }
 
+/* Codeplain Header Box */
+#codeplain-header {
+    dock: top;
+    margin: 1 2;
+    padding: 1 2;
+    width: auto;
+    height: auto;
+    color: #fff;
+}
+
 /*
 We might need those at some point, so just commenting them out for now.
 #status-widget {
@@ -129,85 +139,176 @@ ProgressItem {
     height: 1;
 }
 
-/* Log Filter Styles */
+/* Log Filter Styles - Segmented Control Design */
 #log-filter {
     dock: top;
     height: auto;
-    padding: 0 1;
-    background: $surface-darken-1;
-    border-bottom: solid $accent;
+    padding: 1;
 }
 
+/* Spacer after filter */
+.filter-spacer {
+    height: 1;
+    width: 100%;
+}
+
+/* Label style */
 .filter-label {
     width: auto;
+    text-style: bold;
+    color: #E0FF6E;
     padding: 0 1 0 0;
+}
+
+/* Container for the buttons */
+.filter-buttons-container {
+    width: auto;
+    height: auto;
+}
+
+/* Base button - flat style with minimal decoration */
+Button.filter-button {
+    width: auto;
+    height: 1;
+    min-width: 0;
+    padding: 0 2;
+    margin: 0 1;
+    background: transparent;
+    border: none;
+    color: #FFF;
     content-align: center middle;
 }
 
-.filter-button {
-    margin: 0 1;
-    min-width: 10;
-    height: 3;
+/* Hover state for inactive buttons */
+Button.filter-button:hover {
+    background: #2A2A2A;
+    color: #DDD;
 }
 
-CollapsibleLogEntry {
-    height: auto;
-    padding: 0;
-    margin: 0;
-    border-left: solid transparent;
+/* Focus state for inactive buttons - no visual change */
+Button.filter-button:focus {
+    background: transparent;
+    color: #FFF;
 }
 
-CollapsibleLogEntry:hover {
-    background: $surface-lighten-1;
-    border-left: solid $accent;
+/* Focus-within state for inactive buttons */
+Button.filter-button:focus-within {
+    background: transparent;
+    color: #FFF;
 }
 
-.log-arrow {
-    width: auto;
-    min-width: 3;
-    padding: 0 1;
-}
-
-.log-arrow:hover {
+/* Primary variant - active/selected button */
+Button.filter-button.-primary {
+    background: #E0FF6E;
+    color: #000;
     text-style: bold;
-    background: $surface-lighten-2;
 }
 
-.log-summary {
+/* Primary focus - maintain appearance */
+Button.filter-button.-primary:focus {
+    background: #E0FF6E;
+    color: #000;
+    text-style: bold;
+}
+
+/* Primary focus-within - maintain appearance */
+Button.filter-button.-primary:focus-within {
+    background: #E0FF6E;
+    color: #000;
+    text-style: bold;
+}
+
+/* Disabled state - should be dim and non-interactive */
+Button.filter-button:disabled,
+Button.filter-button.-disabled {
+    opacity: 0.4;
+    color: #555;
+    background: transparent;
+}
+
+/* Disabled buttons should not show hover effects */
+Button.filter-button:disabled:hover,
+Button.filter-button.-disabled:hover {
+    background: transparent;
+    color: #555;
+}
+
+/* Log Entry Rows */
+.log-entry {
     height: auto;
-    width: 1fr;
+    width: 100%;
     padding: 0 1;
+    margin: 0;
 }
 
-.log-expanded {
-    height: auto;
-    width: 1fr;
-    padding: 0 1;
-}
-
-/* Log level specific colors with left border */
-.log-entry.log-debug {
+/* Log Table Columns */
+.log-col-time {
+    width: 14;
     color: #888;
-    border-left: thick #555;
 }
 
-.log-entry.log-info {
-    color: white;
-    border-left: thick #4A9FD8;
+.log-col-level {
+    width: 10;
 }
 
-.log-entry.log-warning {
-    color: #FFD700;
-    border-left: thick #CCA700;
+.log-col-location {
+    width: 12;
+    color: #888;
 }
 
-.log-entry.log-error {
-    color: #FF6B6B;
-    border-left: thick #CC4444;
+.log-col-message {
+    width: 1fr;
+    color: #FFF;
 }
 
-.log-entry.log-critical {
-    color: #FF0000;
-    background: $surface-darken-1;
-    border-left: thick #FF0000;
+/* Log spacer for visual separation */
+.log-spacer {
+    height: 1;
+    width: 100%;
+}
+
+/* Level-specific styling for the level column */
+.log-debug .log-col-level {
+    color: #fff;
+}
+
+.log-info .log-col-level {
+    color: #888;
+}
+
+.log-warning .log-col-level {
+    color: #C5DCD9;
+}
+
+.log-error .log-col-level {
+    color: #DD5353;
+}
+
+/* Footer Styling */
+Footer {
+    background: transparent;
+    height: 2;
+    padding: 0 1;
+    color: #888;
+    align: left bottom;
+}
+
+/* Custom Footer */
+CustomFooter {
+    dock: bottom;
+    height: 2;
+    background: transparent;
+    padding: 0 1;
+    align: left bottom;
+}
+
+.custom-footer-text {
+    width: 1fr;
+    color: #888;
+}
+
+.custom-footer-render-id {
+    width: auto;
+    color: #888;
+    text-align: right;
 }
