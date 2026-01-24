@@ -9,6 +9,19 @@ from .models import Substate
 from .spinner import Spinner
 
 
+class CustomFooter(Horizontal):
+    """A custom footer with keyboard shortcuts and render ID."""
+    
+    def __init__(self, render_id: str = "", **kwargs):
+        super().__init__(**kwargs)
+        self.render_id = render_id
+    
+    def compose(self):
+        yield Static("ctrl+c: quit  *  ctrl+l: toggle logs", classes="custom-footer-text")
+        if self.render_id:
+            yield Static(f"render id: {self.render_id}", classes="custom-footer-render-id")
+
+
 class ScriptOutputType(str, Enum):
     UNIT_TEST_OUTPUT_TEXT = "Latest unit test script execution output: "
     CONFORMANCE_TEST_OUTPUT_TEXT = "Latest conformance tests script execution output: "
@@ -238,25 +251,8 @@ class FRIDProgress(Vertical):
             )
 
 
-class ClickableArrow(Static):
-    """A clickable arrow widget for expanding/collapsing logs."""
-
-    def __init__(self, is_expanded: bool = False, **kwargs):
-        arrow = "▼" if is_expanded else "▶"
-        super().__init__(arrow, **kwargs)
-        self.classes = "log-arrow"
-
-    def on_click(self, event):
-        """Notify parent to toggle expansion."""
-        # Bubble up to parent CollapsibleLogEntry
-        event.stop()
-        parent = self.parent
-        if isinstance(parent, CollapsibleLogEntry):
-            parent.toggle_expansion()
-
-
-class CollapsibleLogEntry(Horizontal):
-    """A single collapsible log entry that can be clicked to expand/collapse."""
+class LogEntry(Horizontal):
+    """A single log entry displayed as a table row with 4 columns."""
 
     def __init__(self, logger_name: str, level: str, message: str, timestamp: str = "", **kwargs):
         super().__init__(**kwargs)
@@ -264,40 +260,34 @@ class CollapsibleLogEntry(Horizontal):
         self.level = level
         self.message = message
         self.timestamp = timestamp
-        self.is_expanded = False
         self.classes = f"log-entry log-{level.lower()}"
 
     def compose(self):
-        # Start with collapsed view - arrow and full message text side by side
-        yield ClickableArrow(id="arrow")
-        yield Static(self.message, classes="log-summary")
-
-    def toggle_expansion(self):
-        """Toggle the expansion state of this log entry."""
-        self.is_expanded = not self.is_expanded
-        self.call_later(self.refresh_display)
-
-    async def refresh_display(self):
-        """Update the display based on expanded state."""
-        # Remove all children
-        await self.remove_children()
-
-        if self.is_expanded:
-            # Expanded view: shows arrow, full message, and structured metadata
-            await self.mount(ClickableArrow(is_expanded=True))
-            expanded_text = f"{self.message}\n"
-            expanded_text += f"   Level: {self.level}\n"
-            expanded_text += f"   Location: {self.logger_name}\n"
-            expanded_text += f"   Time: {self.timestamp}"
-            await self.mount(Static(expanded_text, classes="log-expanded"))
-        else:
-            # Collapsed view: shows arrow and full message only
-            await self.mount(ClickableArrow(is_expanded=False))
-            await self.mount(Static(self.message, classes="log-summary"))
+        # Column 1: Offset time with brackets (just the time portion, not full timestamp)
+        time_part = self.timestamp.split()[-1] if self.timestamp else ""
+        yield Static(f"[{time_part}]", classes="log-col-time")
+        
+        # Column 2: Level
+        yield Static(self.level, classes="log-col-level")
+        
+        # Column 3: Location (logger name) - truncate if longer than 20 characters
+        location = self.logger_name
+        if len(location) > 9:
+            location = location[:9] + "..."
+        yield Static(location, classes="log-col-location")
+        
+        # Column 4: Message with green checkmark for successful outcomes
+        message_text = self.message
+        # Add green checkmark for messages indicating success
+        if any(keyword in message_text.lower() for keyword in [
+            "completed", "success", "successfully", "passed", "done", "✓"
+        ]):
+            message_text = f"[green]✓[/green] {message_text}"
+        yield Static(message_text, classes="log-col-message")
 
 
 class StructuredLogView(VerticalScroll):
-    """A scrollable container for collapsible log entries."""
+    """A scrollable container for log entries displayed as a table."""
 
     # Log level hierarchy (lower number = lower priority)
     LOG_LEVELS = {
@@ -305,7 +295,6 @@ class StructuredLogView(VerticalScroll):
         "INFO": 1,
         "WARNING": 2,
         "ERROR": 3,
-        "CRITICAL": 4,
     }
 
     def __init__(self, **kwargs):
@@ -320,7 +309,17 @@ class StructuredLogView(VerticalScroll):
 
     async def add_log(self, logger_name: str, level: str, message: str, timestamp: str = ""):
         """Add a new log entry."""
-        entry = CollapsibleLogEntry(logger_name, level, message, timestamp)
+        # Check if this is a success message that should have spacing before it
+        is_success_message = any(keyword in message.lower() for keyword in [
+            "completed", "success", "successfully", "passed", "done", "✓"
+        ])
+        
+        # Add empty line before success messages
+        if is_success_message:
+            spacer = Static("", classes="log-spacer")
+            await self.mount(spacer)
+        
+        entry = LogEntry(logger_name, level, message, timestamp)
 
         # Only show if level is >= minimum level
         if not self._should_show_log(level):
@@ -335,7 +334,7 @@ class StructuredLogView(VerticalScroll):
         self.min_level = min_level
 
         # Update visibility of all existing log entries
-        for entry in self.query(CollapsibleLogEntry):
+        for entry in self.query(LogEntry):
             entry.display = self._should_show_log(entry.level)
 
 
@@ -350,17 +349,34 @@ class LogFilterChanged(Message):
 class LogLevelFilter(Horizontal):
     """Filter logs by minimum level with buttons."""
 
-    LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    LEVELS = ["debug", "info", "warning", "error"]
+    
+    # Make the widget focusable to receive keyboard events
+    can_focus = True
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.current_level = "DEBUG"
+        self.current_level = "INFO"
+        self.current_index = self.LEVELS.index(self.current_level.lower())
 
     def compose(self):
-        yield Static("Level: ", classes="filter-label")
-        for level in self.LEVELS:
-            variant = "primary" if level == self.current_level else "default"
-            yield Button(level, id=f"filter-{level.lower()}", variant=variant, classes="filter-button")  # type: ignore[arg-type]
+        yield Static("level: ", classes="filter-label")
+        with Horizontal(classes="filter-buttons-container"):
+            for level in self.LEVELS:
+                variant = "primary" if level.upper() == self.current_level else "default"
+                btn = Button(level.upper(), id=f"filter-{level.lower()}", variant=variant, classes="filter-button")  # type: ignore[arg-type]
+                btn.can_focus = False  # Prevent buttons from receiving focus
+                yield btn
+
+    def on_key(self, event):
+        """Handle tab key to cycle through levels."""
+        if event.key == "tab":
+            # Move to next level
+            self.current_index = (self.current_index + 1) % len(self.LEVELS)
+            new_level = self.LEVELS[self.current_index].upper()
+            self._update_level(new_level)
+            event.prevent_default()
+            event.stop()
 
     def on_button_pressed(self, event):
         """Handle level button press."""
@@ -368,14 +384,20 @@ class LogLevelFilter(Horizontal):
         button_id = event.button.id
         if button_id and button_id.startswith("filter-"):
             level = button_id.replace("filter-", "").upper()
-            self.current_level = level
+            self.current_index = self.LEVELS.index(level.lower())
+            self._update_level(level)
 
-            # Update button variants
-            for btn in self.query(Button):
-                if btn.id == f"filter-{level.lower()}":
-                    btn.variant = "primary"
-                else:
-                    btn.variant = "default"
+    def _update_level(self, level: str):
+        """Update the current level and button states."""
+        self.current_level = level
 
-            # Notify parent to refresh log visibility
-            self.post_message(LogFilterChanged(level))
+        # Update button variants
+        for btn in self.query(Button):
+            if btn.id == f"filter-{level.lower()}":
+                btn.variant = "primary"
+            else:
+                btn.variant = "default"
+            btn.refresh()  # Force immediate visual update
+
+        # Notify parent to refresh log visibility
+        self.post_message(LogFilterChanged(level))

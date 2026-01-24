@@ -42,6 +42,7 @@ class TuiLoggingHandler(logging.Handler):
         super().__init__()
         self.event_bus = event_bus
         self._buffer = []
+        self.start_time = time.time()  # Record start time for offset calculation
 
         # Register to be notified when event bus is ready
         self.event_bus.on_ready(self._flush_buffer)
@@ -50,7 +51,15 @@ class TuiLoggingHandler(logging.Handler):
         try:
             # Extract structured data from the log record
 
-            timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
+            # Original timestamp format (absolute time):
+            # timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
+
+            # Calculate offset time from start of generation
+            offset_seconds = record.created - self.start_time
+            minutes = int(offset_seconds // 60)
+            seconds = int(offset_seconds % 60)
+            milliseconds = int((offset_seconds % 1) * 100)
+            timestamp = f"{minutes:02d}:{seconds:02d}:{milliseconds:02d}"
             event = LogMessageEmitted(
                 logger_name=record.name,
                 level=record.levelname,
