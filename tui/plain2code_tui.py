@@ -5,7 +5,7 @@ from typing import Callable, Optional
 
 from textual.app import App, ComposeResult
 from textual.containers import Vertical, VerticalScroll
-from textual.widgets import ContentSwitcher, Footer, Header, Static
+from textual.widgets import ContentSwitcher, Header, Static
 from textual.worker import Worker, WorkerState
 
 from event_bus import EventBus
@@ -28,6 +28,7 @@ from .components import (
     ScriptOutputType,
     StructuredLogView,
     TUIComponents,
+    CustomFooter,
 )
 from .state_handlers import (
     ConformanceTestsHandler,
@@ -133,13 +134,17 @@ class Plain2CodeTUI(App):
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
-        yield Header()
         with ContentSwitcher(id=TUIComponents.CONTENT_SWITCHER.value, initial=TUIComponents.DASHBOARD_VIEW.value):
             with Vertical(id=TUIComponents.DASHBOARD_VIEW.value):
                 with VerticalScroll():
                     yield Static(
-                        f"Render ID: {self.render_id}",
-                        id=TUIComponents.RENDER_ID_WIDGET.value,
+                        f"  ___ ___   __| | ___ _ __ | | __ _(_)_ __\n"
+                        f" / __/ _ \\ / _` |/ _ \\ '_ \\| |/ _` | | '_ \\\n"
+                        f"| (_| (_) | (_| |  __/ |_) | | (_| | | | | |\n"
+                        f" \\___\\___/ \\__,_|\\___| .__/|_|\\__,_|_|_| |_|\n"
+                        f"                     |_|",
+                        id="codeplain-header",
+                        classes="codeplain-header"
                     )
                     yield Static(
                         "Rendering in progress...",
@@ -176,8 +181,9 @@ class Plain2CodeTUI(App):
                         )
             with Vertical(id=TUIComponents.LOG_VIEW.value):
                 yield LogLevelFilter(id=TUIComponents.LOG_FILTER.value)
+                yield Static("", classes="filter-spacer")
                 yield StructuredLogView(id=TUIComponents.LOG_WIDGET.value)
-        yield Footer()
+        yield CustomFooter(render_id=self.render_id)
 
     def action_toggle_logs(self) -> None:
         """Toggle between dashboard and log view."""
