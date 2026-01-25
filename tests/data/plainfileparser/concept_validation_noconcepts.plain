@@ -1,0 +1,18 @@
+# "hello, world" in Plain (Python version)
+
+***definitions***
+
+- This is a definition
+
+***test specs***
+
+- You can test the hardest problem.
+
+***technical specs***
+
+- You cannot solve the hardest problem.
+- If you do, let me know.
+
+***functional specs***
+
+- Display "hello, world"

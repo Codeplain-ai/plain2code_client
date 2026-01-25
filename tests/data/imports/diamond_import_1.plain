@@ -1,0 +1,16 @@
+---
+import:
+  - diamond_import_common
+---
+
+***definitions***
+
+- :Import1Def: is a definition in diamond_import_1.
+
+***technical specs***
+
+- :Import1Def: is used in diamond_import_1.
+
+***test specs***
+
+- :Import1Def: is tested in diamond_import_1.

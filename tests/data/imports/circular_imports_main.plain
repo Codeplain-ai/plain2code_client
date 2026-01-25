@@ -1,0 +1,12 @@
+---
+import:
+  - circular_imports_1
+---
+
+***technical specs***
+
+- :MainExecutableFile: of :App: should be called "hello_world.py".
+
+***functional specs***
+
+- Display "hello, world"

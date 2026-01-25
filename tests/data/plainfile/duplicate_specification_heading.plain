@@ -1,0 +1,7 @@
+> Example of a Plain file with duplicate specification heading.
+
+***definitions***
+- Test definition 1
+
+***definitions***
+- Test definition 2

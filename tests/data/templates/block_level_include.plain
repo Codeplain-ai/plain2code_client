@@ -1,0 +1,12 @@
+***technical specs***
+
+- You cannot solve the hardest problem.
+- If you do, let me know.
+
+***functional specs***
+
+- Display "hello, world"
+
+  ***acceptance tests***
+  - Test {% include "test_hardest_problem.plain" %}
+>  - Test the function "cannot_solve_hardest_problem".

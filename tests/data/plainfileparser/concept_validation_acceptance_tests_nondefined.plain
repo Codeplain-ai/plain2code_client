@@ -1,0 +1,20 @@
+***definitions***
+
+- :concept: is a concept.
+
+***test specs***
+
+- You can test the :concept:.
+
+***technical specs***
+
+- You cannot solve the hardest problem.
+- If you do, let me know.
+
+***functional specs***
+
+- Display "hello, world"
+
+    ***acceptance tests***
+
+    - Test the :nonDefinedConcept:.
