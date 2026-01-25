@@ -202,11 +202,13 @@ class CodeplainAPI:
             "required_modules": required_modules,
             "code_diff": code_diff,
             "conformance_tests_files": conformance_tests_files,
-            "acceptance_tests": acceptance_tests,
             "conformance_tests_issue": conformance_tests_issue,
             "conformance_tests_folder_name": conformance_tests_folder_name,
             "previous_conformance_tests_issue": previous_conformance_tests_issue_old,
         }
+
+        if acceptance_tests is not None:
+            payload["acceptance_tests"] = acceptance_tests
 
         return self.post_request(endpoint_url, headers, payload, run_state)
 
