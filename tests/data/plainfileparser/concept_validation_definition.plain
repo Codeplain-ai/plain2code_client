@@ -1,0 +1,16 @@
+***definitions***
+
+- :concept: is a concept.
+
+***test specs***
+
+- You can test the hardest problem.
+
+***technical specs***
+
+- You cannot solve the hardest problem.
+- If you do, let me know.
+
+***functional specs***
+
+- Display "hello, world"

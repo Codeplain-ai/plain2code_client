@@ -1,0 +1,11 @@
+---
+import:
+    - required_concepts
+    - required_concepts_defs
+---
+
+***technical specs***
+- The :Concept: concept must be implemented.
+
+***functional specs***
+- Implement the :Concept: concept.

@@ -1,0 +1,14 @@
+---
+import:
+    - required_concepts_l1
+---
+
+***definitions***
+- :Concept1: is a concept.
+- :Concept2: is also a concept.
+
+***technical specs***
+- These are nested required concepts.
+
+***functional specs***
+- Implement the concepts.

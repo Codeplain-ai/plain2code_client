@@ -1,0 +1,18 @@
+---
+requires:
+  - circular_requires_sub
+---
+
+***definitions***
+
+- :App: is a console application.
+
+- :MainExecutableFile: is the main executable code file of :App:.
+
+***technical specs***
+
+- :MainExecutableFile: of :App: should be called "hello_world.py".
+
+***functional specs***
+
+- Display "hello, world"

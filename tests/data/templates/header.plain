@@ -1,0 +1,7 @@
+***definitions***
+
+- :concept: is a concept.
+
+***technical specs***
+- First non-functional requirement {{variable_name_1 | code_variable}}.
+- Second non-functional requirement {{variable_name_2 | code_variable}}.

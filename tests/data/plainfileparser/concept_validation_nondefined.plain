@@ -1,0 +1,18 @@
+# "hello, world" in Plain (Python version)
+
+***definitions***
+
+- :concept: is a concept.
+
+***test specs***
+
+- You cant test a :nonDefinedConcept:.
+
+***technical specs***
+
+- You cannot solve the hardest problem.
+- If you do, let me know.
+
+***functional specs***
+
+- Display "hello, world"

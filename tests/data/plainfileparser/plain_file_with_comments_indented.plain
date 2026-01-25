@@ -1,0 +1,10 @@
+***definitions***
+
+***technical specs***
+- First non-functional requirement.
+- Second non-functional requirement.
+
+    > This is a comment
+
+***functional specs***
+- Display "hello, world"
