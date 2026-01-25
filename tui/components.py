@@ -11,11 +11,11 @@ from .spinner import Spinner
 
 class CustomFooter(Horizontal):
     """A custom footer with keyboard shortcuts and render ID."""
-    
+
     def __init__(self, render_id: str = "", **kwargs):
         super().__init__(**kwargs)
         self.render_id = render_id
-    
+
     def compose(self):
         yield Static("ctrl+c: quit  *  ctrl+l: toggle logs", classes="custom-footer-text")
         if self.render_id:
@@ -23,9 +23,9 @@ class CustomFooter(Horizontal):
 
 
 class ScriptOutputType(str, Enum):
-    UNIT_TEST_OUTPUT_TEXT = "Latest unit test script execution output: "
-    CONFORMANCE_TEST_OUTPUT_TEXT = "Latest conformance tests script execution output: "
-    TESTING_ENVIRONMENT_OUTPUT_TEXT = "Latest testing environment preparation script execution output: "
+    UNIT_TEST_OUTPUT_TEXT = "Unit tests: "
+    CONFORMANCE_TEST_OUTPUT_TEXT = "Conformance tests: "
+    TESTING_ENVIRONMENT_OUTPUT_TEXT = "Testing environment preparation execution output: "
 
     @staticmethod
     def get_max_label_width(active_types: list["ScriptOutputType"]) -> int:
@@ -42,16 +42,16 @@ class ScriptOutputType(str, Enum):
         return max(len(script_type.value) for script_type in active_types)
 
     def get_padded_label(self, active_types: list["ScriptOutputType"]) -> str:
-        """Get the label right-padded to align with other active labels.
+        """Get the label left-aligned (no padding).
 
         Args:
             active_types: List of ScriptOutputType enum members that are currently active
 
         Returns:
-            Right-aligned label padded to match the longest active label
+            Label without padding (left-aligned)
         """
-        max_width = ScriptOutputType.get_max_label_width(active_types)
-        return self.value.rjust(max_width)
+        # Return label as-is without padding for left alignment
+        return self.value
 
 
 class TUIComponents(str, Enum):
@@ -189,6 +189,155 @@ class ProgressItem(Vertical):
             pass
 
 
+class RenderingInfoBox(Vertical):
+    """Container with ASCII border for module and functionality information."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.module_text = ""
+        self.functionality_text = ""
+
+    def update_module(self, text: str) -> None:
+        """Update the module name and refresh the display."""
+        self.module_text = text
+        self._refresh_content()
+
+    def update_functionality(self, text: str) -> None:
+        """Update the functionality text and refresh the display."""
+        self.functionality_text = text
+        self._refresh_content()
+
+    def _refresh_content(self) -> None:
+        """Refresh the content of the box."""
+        try:
+            widget = self.query_one("#rendering-info-content", Static)
+            # Calculate the width needed for the border
+            lines = []
+            if self.module_text:
+                lines.append(f"  {self.module_text}")
+            if self.functionality_text:
+                lines.append(f"  {self.functionality_text}")
+
+            if not lines:
+                widget.update("")
+                return
+
+            # Find the longest line to determine border width
+            max_width = max(len(line) for line in lines) if lines else 40
+            border_width = max(max_width + 2, 42)  # At least 42 chars wide
+
+            # Build the bordered box with title
+            title = " Currently rendering "
+            top_border = "┌[#FFFFFF]" + title + "[/#FFFFFF]" + "─" * (border_width - len(title)) + "┐"
+            bottom_border = "└" + "─" * border_width + "┘"
+
+            content_lines = [top_border]
+            # Add top padding (empty line)
+            content_lines.append(f"│{' ' * border_width}│")
+            for line in lines:
+                padding = border_width - len(line)
+                content_lines.append(f"│{line}{' ' * padding}│")
+            # Add bottom padding (empty line)
+            content_lines.append(f"│{' ' * border_width}│")
+            content_lines.append(bottom_border)
+
+            widget.update("\n".join(content_lines))
+        except Exception:
+            pass
+
+    def on_mount(self) -> None:
+        """Initialize the box with empty state on mount."""
+        # Set default empty labels
+        self.module_text = "Module: "
+        self.functionality_text = "Functionality:"
+        self._refresh_content()
+
+    def compose(self):
+        yield Static("", id="rendering-info-content", classes="rendering-info-box")
+
+
+class TestScriptsContainer(Vertical):
+    """Container with ASCII border for test script outputs."""
+
+    def __init__(
+        self,
+        show_unit_test: bool = True,
+        show_conformance_test: bool = True,
+        show_testing_env: bool = True,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.show_unit_test = show_unit_test
+        self.show_conformance_test = show_conformance_test
+        self.show_testing_env = show_testing_env
+        self.unit_test_text = ScriptOutputType.UNIT_TEST_OUTPUT_TEXT.value
+        self.conformance_test_text = ScriptOutputType.CONFORMANCE_TEST_OUTPUT_TEXT.value
+        self.testing_env_text = ScriptOutputType.TESTING_ENVIRONMENT_OUTPUT_TEXT.value
+
+    def update_unit_test(self, text: str) -> None:
+        """Update unit test output and refresh."""
+        self.unit_test_text = text
+        self._refresh_content()
+
+    def update_conformance_test(self, text: str) -> None:
+        """Update conformance test output and refresh."""
+        self.conformance_test_text = text
+        self._refresh_content()
+
+    def update_testing_env(self, text: str) -> None:
+        """Update testing env output and refresh."""
+        self.testing_env_text = text
+        self._refresh_content()
+
+    def _refresh_content(self) -> None:
+        """Refresh the bordered box content."""
+        try:
+            widget = self.query_one("#test-scripts-content", Static)
+
+            # Collect lines to display
+            lines = []
+            if self.show_unit_test:
+                lines.append(f"  {self.unit_test_text}")
+            if self.show_conformance_test:
+                lines.append(f"  {self.conformance_test_text}")
+            if self.show_testing_env:
+                lines.append(f"  {self.testing_env_text}")
+
+            if not lines:
+                widget.update("")
+                return
+
+            # Find the longest line to determine border width
+            max_width = max(len(line) for line in lines)
+            border_width = max(max_width + 2, 80)  # Minimum width of 80 chars
+
+            # Build the bordered box with title
+            title = " Latest test scripts "
+            top_border = "┌[#FFFFFF]" + title + "[/#FFFFFF]" + "─" * (border_width - len(title)) + "┐"
+            bottom_border = "└" + "─" * border_width + "┘"
+
+            content_lines = [top_border]
+            # Add top padding (empty line)
+            content_lines.append(f"│{' ' * border_width}│")
+            for line in lines:
+                padding = border_width - len(line)
+                content_lines.append(f"│{line}{' ' * padding}│")
+            # Add bottom padding (empty line)
+            content_lines.append(f"│{' ' * border_width}│")
+            content_lines.append(bottom_border)
+
+            widget.update("\n".join(content_lines))
+        except Exception:
+            pass
+
+    def on_mount(self) -> None:
+        """Initialize the box on mount."""
+        self._refresh_content()
+
+    def compose(self):
+        yield Static("", id="test-scripts-content", classes="test-scripts-box")
+
+
 class FRIDProgress(Vertical):
     """A widget to display the status of subcomponent tasks."""
 
@@ -198,8 +347,8 @@ class FRIDProgress(Vertical):
     REFACTORING_TEXT = "Refactoring"
     CONFORMANCE_TEST_VALIDATION_TEXT = "Conformance tests"
 
-    RENDERING_MODULE_TEXT = "Rendering module: "
-    RENDERING_FUNCTIONALITY_TEXT = "Rendering functionality:"
+    RENDERING_MODULE_TEXT = "Module: "
+    RENDERING_FUNCTIONALITY_TEXT = "Functionality:"
 
     def __init__(
         self,
@@ -213,8 +362,9 @@ class FRIDProgress(Vertical):
 
     def update_fr_text(self, text: str) -> None:
         try:
-            widget = self.query_one(f"#{TUIComponents.FRID_PROGRESS_HEADER.value}", Static)
-            widget.update(text)
+            # Update the rendering info box instead
+            info_box = self.query_one(RenderingInfoBox)
+            info_box.update_functionality(text)
         except Exception:
             pass
 
@@ -229,8 +379,7 @@ class FRIDProgress(Vertical):
         self.border_title = "FRID Progress"
 
     def compose(self):
-        yield Static(self.RENDERING_MODULE_TEXT, id=TUIComponents.RENDER_MODULE_NAME_WIDGET.value)
-        yield Static(self.RENDERING_FUNCTIONALITY_TEXT, id=TUIComponents.FRID_PROGRESS_HEADER.value)
+        yield RenderingInfoBox()
         yield ProgressItem(
             self.IMPLEMENTING_FUNCTIONALITY_TEXT,
             id=TUIComponents.FRID_PROGRESS_RENDER_FR.value,
@@ -266,22 +415,23 @@ class LogEntry(Horizontal):
         # Column 1: Offset time with brackets (just the time portion, not full timestamp)
         time_part = self.timestamp.split()[-1] if self.timestamp else ""
         yield Static(f"[{time_part}]", classes="log-col-time")
-        
+
         # Column 2: Level
         yield Static(self.level, classes="log-col-level")
-        
+
         # Column 3: Location (logger name) - truncate if longer than 20 characters
         location = self.logger_name
         if len(location) > 9:
             location = location[:9] + "..."
         yield Static(location, classes="log-col-location")
-        
+
         # Column 4: Message with green checkmark for successful outcomes
         message_text = self.message
         # Add green checkmark for messages indicating success
-        if any(keyword in message_text.lower() for keyword in [
-            "completed", "success", "successfully", "passed", "done", "✓"
-        ]):
+        if any(
+            keyword in message_text.lower()
+            for keyword in ["completed", "success", "successfully", "passed", "done", "✓"]
+        ):
             message_text = f"[green]✓[/green] {message_text}"
         yield Static(message_text, classes="log-col-message")
 
@@ -310,15 +460,15 @@ class StructuredLogView(VerticalScroll):
     async def add_log(self, logger_name: str, level: str, message: str, timestamp: str = ""):
         """Add a new log entry."""
         # Check if this is a success message that should have spacing before it
-        is_success_message = any(keyword in message.lower() for keyword in [
-            "completed", "success", "successfully", "passed", "done", "✓"
-        ])
-        
+        is_success_message = any(
+            keyword in message.lower() for keyword in ["completed", "success", "successfully", "passed", "done", "✓"]
+        )
+
         # Add empty line before success messages
         if is_success_message:
             spacer = Static("", classes="log-spacer")
             await self.mount(spacer)
-        
+
         entry = LogEntry(logger_name, level, message, timestamp)
 
         # Only show if level is >= minimum level
@@ -350,7 +500,7 @@ class LogLevelFilter(Horizontal):
     """Filter logs by minimum level with buttons."""
 
     LEVELS = ["debug", "info", "warning", "error"]
-    
+
     # Make the widget focusable to receive keyboard events
     can_focus = True
 

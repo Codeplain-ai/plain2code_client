@@ -87,9 +87,7 @@ class Plain2CodeConsole(Console):
                         else:
                             file_lines = len(content.splitlines())
                             file_tokens = len(self.llm_encoding.encode(content))
-                            current_level = current_level.add(
-                                f"{part} ({file_lines} lines, {file_tokens} tokens)"
-                            )
+                            current_level = current_level.add(f"{part} ({file_lines} lines, {file_tokens} tokens)")
                     else:
                         current_level = current_level.add(part)
                 else:

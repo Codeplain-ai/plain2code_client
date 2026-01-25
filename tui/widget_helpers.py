@@ -5,7 +5,7 @@ from datetime import datetime
 from textual.css.query import NoMatches
 from textual.widgets import Static
 
-from .components import FRIDProgress, ProgressItem, StructuredLogView, TUIComponents
+from .components import FRIDProgress, ProgressItem, ScriptOutputType, StructuredLogView, TUIComponents
 from .models import Substate
 
 
@@ -107,22 +107,25 @@ def update_script_outputs(tui, history) -> None:
     if not history:
         return
 
-    if history.latest_unit_test_output_path:
-        update_widget_text(
-            tui, TUIComponents.UNIT_TEST_SCRIPT_OUTPUT_WIDGET.value, history.latest_unit_test_output_path
-        )
-    if history.latest_conformance_test_output_path:
-        update_widget_text(
-            tui,
-            TUIComponents.CONFORMANCE_TESTS_SCRIPT_OUTPUT_WIDGET.value,
-            history.latest_conformance_test_output_path,
-        )
-    if history.latest_testing_environment_output_path:
-        update_widget_text(
-            tui,
-            TUIComponents.TESTING_ENVIRONMENT_SCRIPT_OUTPUT_WIDGET.value,
-            history.latest_testing_environment_output_path,
-        )
+    try:
+        from .components import TestScriptsContainer
+
+        container = tui.query_one("#test-scripts-container", TestScriptsContainer)
+
+        if history.latest_unit_test_output_path:
+            container.update_unit_test(
+                f"{ScriptOutputType.UNIT_TEST_OUTPUT_TEXT.value}{history.latest_unit_test_output_path}"
+            )
+        if history.latest_conformance_test_output_path:
+            container.update_conformance_test(
+                f"{ScriptOutputType.CONFORMANCE_TEST_OUTPUT_TEXT.value}{history.latest_conformance_test_output_path}"
+            )
+        if history.latest_testing_environment_output_path:
+            container.update_testing_env(
+                f"{ScriptOutputType.TESTING_ENVIRONMENT_OUTPUT_TEXT.value}{history.latest_testing_environment_output_path}"
+            )
+    except Exception:
+        pass
 
 
 def display_success_message(tui):
