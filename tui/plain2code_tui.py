@@ -25,8 +25,10 @@ from .components import (
     FRIDProgress,
     LogFilterChanged,
     LogLevelFilter,
+    RenderingInfoBox,
     ScriptOutputType,
     StructuredLogView,
+    TestScriptsContainer,
     TUIComponents,
     CustomFooter,
 )
@@ -133,34 +135,18 @@ class Plain2CodeTUI(App):
                         classes="codeplain-header"
                     )
                     yield Static(
-                        "Rendering in progress...",
+                        "[#FFFFFF]Rendering in progress...[/#FFFFFF]",
                         id=TUIComponents.RENDER_STATUS_WIDGET.value,
                     )
                     yield FRIDProgress(id=TUIComponents.FRID_PROGRESS.value)
 
-                    # Get active script types for proper label alignment
-                    active_script_types = self.get_active_script_types()
-
-                    # Conditionally display unit test output widget
-                    if self.unittests_script is not None:
-                        yield Static(
-                            ScriptOutputType.UNIT_TEST_OUTPUT_TEXT.get_padded_label(active_script_types),
-                            id=TUIComponents.UNIT_TEST_SCRIPT_OUTPUT_WIDGET.value,
-                        )
-
-                    # Conditionally display conformance test output widget
-                    if self.conformance_tests_script is not None:
-                        yield Static(
-                            ScriptOutputType.CONFORMANCE_TEST_OUTPUT_TEXT.get_padded_label(active_script_types),
-                            id=TUIComponents.CONFORMANCE_TESTS_SCRIPT_OUTPUT_WIDGET.value,
-                        )
-
-                    # Conditionally display testing environment preparation output widget
-                    if self.prepare_environment_script is not None:
-                        yield Static(
-                            ScriptOutputType.TESTING_ENVIRONMENT_OUTPUT_TEXT.get_padded_label(active_script_types),
-                            id=TUIComponents.TESTING_ENVIRONMENT_SCRIPT_OUTPUT_WIDGET.value,
-                        )
+                    # Test scripts container with border
+                    yield TestScriptsContainer(
+                        id="test-scripts-container",
+                        show_unit_test=self.unittests_script is not None,
+                        show_conformance_test=self.conformance_tests_script is not None,
+                        show_testing_env=self.prepare_environment_script is not None,
+                    )
             with Vertical(id=TUIComponents.LOG_VIEW.value):
                 yield LogLevelFilter(id=TUIComponents.LOG_FILTER.value)
                 yield Static("", classes="filter-spacer")
@@ -178,16 +164,18 @@ class Plain2CodeTUI(App):
     def on_render_module_started(self, event: RenderModuleStarted):
         """Update TUI based on the current state machine state."""
         try:
-            widget = self.query_one(f"#{TUIComponents.RENDER_MODULE_NAME_WIDGET.value}", Static)
-            widget.update(f"{FRIDProgress.RENDERING_MODULE_TEXT}{event.module_name}")
+            frid_progress = self.query_one(f"#{TUIComponents.FRID_PROGRESS.value}", FRIDProgress)
+            info_box = frid_progress.query_one(RenderingInfoBox)
+            info_box.update_module(f"{FRIDProgress.RENDERING_MODULE_TEXT}{event.module_name}")
         except Exception as e:
             console.debug(f"Error updating render module name: {type(e).__name__}: {e}")
 
     def on_render_module_completed(self, _event: RenderModuleCompleted):
         """Update TUI based on the current state machine state."""
         try:
-            widget = self.query_one(f"#{TUIComponents.RENDER_MODULE_NAME_WIDGET.value}", Static)
-            widget.update(FRIDProgress.RENDERING_MODULE_TEXT)
+            frid_progress = self.query_one(f"#{TUIComponents.FRID_PROGRESS.value}", FRIDProgress)
+            info_box = frid_progress.query_one(RenderingInfoBox)
+            info_box.update_module(FRIDProgress.RENDERING_MODULE_TEXT)
         except Exception as e:
             console.debug(f"Error resetting render module name: {type(e).__name__}: {e}")
 

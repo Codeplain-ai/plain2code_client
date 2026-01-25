@@ -232,29 +232,33 @@ class ScriptOutputsHandler(StateHandler):
         # Get active script types for proper label alignment
         active_script_types = self.tui.get_active_script_types()
 
-        if any(segment == States.UNIT_TESTS_READY.value for segment in previous_state_segments):
-            update_widget_text(
-                self.tui,
-                TUIComponents.UNIT_TEST_SCRIPT_OUTPUT_WIDGET.value,
-                f"{ScriptOutputType.UNIT_TEST_OUTPUT_TEXT.get_padded_label(active_script_types)}{snapshot.script_execution_history.latest_unit_test_output_path}",  # type: ignore
-            )
+        # Update test scripts container
+        try:
+            from .components import TestScriptsContainer
+            container = self.tui.query_one("#test-scripts-container", TestScriptsContainer)
+            
+            if any(segment == States.UNIT_TESTS_READY.value for segment in previous_state_segments):
+                if snapshot.script_execution_history.latest_unit_test_output_path:
+                    container.update_unit_test(
+                        f"{ScriptOutputType.UNIT_TEST_OUTPUT_TEXT.value}{snapshot.script_execution_history.latest_unit_test_output_path}"
+                    )
 
-        if len(previous_state_segments) > 2 and previous_state_segments[2] == States.CONFORMANCE_TEST_GENERATED.value:
-            update_widget_text(
-                self.tui,
-                TUIComponents.TESTING_ENVIRONMENT_SCRIPT_OUTPUT_WIDGET.value,
-                f"{ScriptOutputType.TESTING_ENVIRONMENT_OUTPUT_TEXT.get_padded_label(active_script_types)}{snapshot.script_execution_history.latest_testing_environment_output_path}",  # type: ignore
-            )
+            if len(previous_state_segments) > 2 and previous_state_segments[2] == States.CONFORMANCE_TEST_GENERATED.value:
+                if snapshot.script_execution_history.latest_testing_environment_output_path:
+                    container.update_testing_env(
+                        f"{ScriptOutputType.TESTING_ENVIRONMENT_OUTPUT_TEXT.value}{snapshot.script_execution_history.latest_testing_environment_output_path}"
+                    )
 
-        if (
-            len(previous_state_segments) > 2
-            and previous_state_segments[2] == States.CONFORMANCE_TEST_ENV_PREPARED.value
-        ):
-            update_widget_text(
-                self.tui,
-                TUIComponents.CONFORMANCE_TESTS_SCRIPT_OUTPUT_WIDGET.value,
-                f"{ScriptOutputType.CONFORMANCE_TEST_OUTPUT_TEXT.get_padded_label(active_script_types)}{snapshot.script_execution_history.latest_conformance_test_output_path}",  # type: ignore
-            )
+            if (
+                len(previous_state_segments) > 2
+                and previous_state_segments[2] == States.CONFORMANCE_TEST_ENV_PREPARED.value
+            ):
+                if snapshot.script_execution_history.latest_conformance_test_output_path:
+                    container.update_conformance_test(
+                        f"{ScriptOutputType.CONFORMANCE_TEST_OUTPUT_TEXT.value}{snapshot.script_execution_history.latest_conformance_test_output_path}"
+                    )
+        except Exception:
+            pass
 
 
 class FridFullyImplementedHandler(StateHandler):
