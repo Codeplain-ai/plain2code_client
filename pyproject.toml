@@ -1,0 +1,63 @@
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+# A regex preceded with ^/ will apply only to files and directories
+# in the root of the project.
+^/(.git|.venv|dist|venv|.conda|tests/data)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 120
+skip = [".git", ".venv", "dist", "venv", ".conda", "tests/data"]
+skip_gitignore = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+norecursedirs = ["tests/data"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+show_error_codes = true
+disable_error_code = [
+    "var-annotated",
+    "import-untyped",
+    "assignment",
+    "return-value",
+    "attr-defined",
+    "no-redef",
+    "func-returns-value",
+    "override",
+    "index",
+    "union-attr",
+    "valid-type",
+    "misc",
+    "operator",
+    "unreachable",
+    "has-type",
+    "return",
+    "type-arg",
+]
+exclude = [
+    "^\\.git/",
+    "^__pycache__/",
+    "^\\.venv/",
+    "^\\.env/",
+    "^\\.conda/",
+    "^build/",
+    "^dist/",
+    "^tests/",
+    "^examples/",
+    "^render_cache/",
+    "^src/services/langsmith/",
+    "^deploy/",
+]
