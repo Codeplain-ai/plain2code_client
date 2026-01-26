@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "codeplain"
-version = "0.1.6"
+version = "0.2.1"
 description = "Transform plain language specifications into working code"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -40,53 +40,14 @@ dev = [
 [project.scripts]
 codeplain = "plain2code:main"
 
-[tool.setuptools]
-py-modules = [
-    "plain2code",
-    "plain2code_arguments",
-    "plain2code_console",
-    "plain2code_events",
-    "plain2code_exceptions",
-    "plain2code_nodes",
-    "plain2code_read_config",
-    "plain2code_state",
-    "plain2code_tui",
-    "plain2code_utils",
-    "plain_file",
-    "plain_spec",
-    "codeplain_constants",
-    "codeplain_local_api",
-    "codeplain_models",
-    "codeplain_REST_api",
-    "codeplain_types",
-    "codeplain_utils",
-    "codeplain",
-    "code_complexity",
-    "config",
-    "content_extractor",
-    "event_bus",
-    "file_utils",
-    "git_utils",
-    "hash_key",
-    "llm_exceptions",
-    "llm_handler",
-    "llm_selector",
-    "llm",
-    "render_cache",
-    "spinner",
-    "system_config",
-    "tui_components",
-    "concept_utils",
-    "module_renderer",
-    "plain_modules",
-    "plain2code_logger",
+[tool.hatch.build.targets.wheel]
+include = [
+    "*.py",
+    "config/**/*",
+    "render_machine/**/*", 
+    "standard_template_library/**/*",
+    "tui/**/*"
 ]
-
-[tool.setuptools.packages.find]
-include = ["config*", "patch*", "prompt_templates*", "render_machine*", "repositories*", "services*", "standard_template_library*", "tui*"]
-
-[tool.setuptools.package-data]
-"*" = ["*.yaml", "*.css", "*.plain"]
 
 [tool.black]
 line-length = 120
