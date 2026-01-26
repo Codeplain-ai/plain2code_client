@@ -14,7 +14,7 @@ import file_utils
 import plain_file
 import plain_spec
 from event_bus import EventBus
-from module_renderer import ModuleRenderer
+from module_renderer import MissingPreviousFridCommitsError, ModuleRenderer
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
 from plain2code_exceptions import InvalidFridArgument, MissingAPIKey, PlainSyntaxError
@@ -244,6 +244,10 @@ def main():
         console.debug(f"Render ID: {run_state.render_id}")
         dump_crash_logs(args)
     except RequestException as e:
+        console.error(f"Error rendering plain code: {str(e)}\n")
+        console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
+    except MissingPreviousFridCommitsError as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
         dump_crash_logs(args)
