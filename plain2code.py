@@ -161,6 +161,17 @@ def render(args, run_state: RunState, codeplain_api, event_bus: EventBus):  # no
 
     console.info(f"Rendering {args.filename} to target code.")
 
+    # Compute render range from either --render-range or --render-from
+    render_range = None
+    if args.render_range or args.render_from:
+        # Parse the plain file to get the plain_source for FRID extraction
+        _, plain_source, _ = plain_file.plain_file_parser(args.filename, template_dirs)
+
+        if args.render_range:
+            render_range = get_render_range(args.render_range, plain_source)
+        elif args.render_from:
+            render_range = get_render_range_from(args.render_from, plain_source)
+
     codeplainAPI = codeplain_api.CodeplainAPI(args.api_key, console)
     codeplainAPI.verbose = args.verbose
     assert args.api is not None and args.api != "", "API URL is required"
@@ -169,7 +180,7 @@ def render(args, run_state: RunState, codeplain_api, event_bus: EventBus):  # no
     module_renderer = ModuleRenderer(
         codeplainAPI,
         args.filename,
-        args.render_range,
+        render_range,
         template_dirs,
         args,
         run_state,
