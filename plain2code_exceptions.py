@@ -43,3 +43,7 @@ class MultipleRendersFound(Exception):
 
 class UnexpectedState(Exception):
     pass
+
+
+class MissingAPIKey(Exception):
+    pass
