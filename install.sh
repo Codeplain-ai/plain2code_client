@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 # Brand Colors (True Color / 24-bit)
 YELLOW='\033[38;2;224;255;110m'    # #E0FF6E
@@ -70,7 +70,7 @@ if [ -z "$API_KEY" ]; then
 else
     # Export for current session
     export CODEPLAIN_API_KEY="$API_KEY"
-    
+
     # Detect user's default shell from $SHELL (works even when script runs in different shell)
     case "$SHELL" in
         */zsh)
@@ -88,10 +88,10 @@ else
             SHELL_RC="$HOME/.profile"
             ;;
     esac
-    
+
     # Create the file if it doesn't exist
     touch "$SHELL_RC"
-    
+
     # Add to shell config if not already present
     if ! grep -q "CODEPLAIN_API_KEY" "$SHELL_RC" 2>/dev/null; then
         echo "" >> "$SHELL_RC"
@@ -107,7 +107,7 @@ else
         fi
         echo -e "${GREEN}✓${NC} API key added to ${SHELL_RC}"
     fi
-    
+
 fi
 
 # ASCII Art Welcome
@@ -116,12 +116,12 @@ echo -e "${NC}"
 echo -e "${GRAY}────────────────────────────────────────────${NC}"
 echo -e ""
 cat << 'EOF'
-               _            _       _       
-   ___ ___   __| | ___ _ __ | | __ _(_)_ __  
-  / __/ _ \ / _` |/ _ \ '_ \| |/ _` | | '_ \ 
+               _            _       _
+   ___ ___   __| | ___ _ __ | | __ _(_)_ __
+  / __/ _ \ / _` |/ _ \ '_ \| |/ _` | | '_ \
  | (_| (_) | (_| |  __/ |_) | | (_| | | | | |
   \___\___/ \__,_|\___| .__/|_|\__,_|_|_| |_|
-                      |_|                    
+                      |_|
 EOF
 echo ""
 echo -e "  ${YELLOW}welcome to *codeplain!${NC}"
