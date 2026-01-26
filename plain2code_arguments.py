@@ -5,10 +5,6 @@ import re
 from plain2code_read_config import get_args_from_config
 
 CODEPLAIN_API_KEY = os.getenv("CODEPLAIN_API_KEY")
-if not CODEPLAIN_API_KEY:
-    CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-    if not CLAUDE_API_KEY:
-        raise ValueError("CODEPLAIN_API_KEY or CLAUDE_API_KEY environment variable is not set")
 
 
 DEFAULT_BUILD_FOLDER = "plain_modules"

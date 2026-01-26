@@ -17,7 +17,7 @@ from event_bus import EventBus
 from module_renderer import ModuleRenderer
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
-from plain2code_exceptions import PlainSyntaxError
+from plain2code_exceptions import MissingAPIKey, PlainSyntaxError
 from plain2code_logger import (
     CrashLogHandler,
     IndentedFormatter,
@@ -208,6 +208,12 @@ def main():
     run_state = RunState(spec_filename=args.filename, replay_with=args.replay_with)
 
     try:
+        # Validate API key is present
+        if not args.api_key:
+            raise MissingAPIKey(
+                "API key is required. Please set the CODEPLAIN_API_KEY environment variable or provide it with the --api-key argument."
+            )
+
         render(args, run_state, codeplain_api, event_bus)
     except InvalidFridArgument as e:
         console.error(f"Error rendering plain code: {str(e)}.\n")
@@ -237,6 +243,8 @@ def main():
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
         dump_crash_logs(args)
+    except MissingAPIKey as e:
+        console.error(f"Missing API key: {str(e)}\n")
     except Exception as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
