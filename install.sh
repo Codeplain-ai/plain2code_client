@@ -16,116 +16,35 @@ GRAY_LIGHT='\033[38;2;211;211;211m' # #D3D3D3
 BOLD='\033[1m'
 NC='\033[0m' # No Color / Reset
 
-# Required Python version
-REQUIRED_MAJOR=3
-REQUIRED_MINOR=11
-
-# Detect OS
-detect_os() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "macos"
-    elif [[ -f /etc/debian_version ]]; then
-        echo "debian"
-    elif [[ -f /etc/redhat-release ]]; then
-        echo "redhat"
-    else
-        echo "unknown"
-    fi
-}
-
 echo -e "started ${YELLOW}${BOLD}*codeplain CLI${NC} installation..."
 
-# Install Python based on OS
-install_python() {
-    local os=$(detect_os)
-    
-    case $os in
-        macos)
-            if command -v brew &> /dev/null; then
-                echo -e "installing Python ${REQUIRED_MAJOR}.${REQUIRED_MINOR} via Homebrew..."
-                brew install python@${REQUIRED_MAJOR}.${REQUIRED_MINOR}
-            else
-                echo -e "${RED}Error: Homebrew is not installed.${NC}"
-                echo "please install Homebrew first: https://brew.sh"
-                echo "or install Python manually from: https://www.python.org/downloads/"
-                exit 1
-            fi
-            ;;
-        debian)
-            echo -e "installing Python ${REQUIRED_MAJOR}.${REQUIRED_MINOR} via apt..."
-            sudo apt update
-            sudo apt install -y python${REQUIRED_MAJOR}.${REQUIRED_MINOR} python${REQUIRED_MAJOR}.${REQUIRED_MINOR}-venv python3-pip
-            ;;
-        redhat)
-            echo -e "installing Python ${REQUIRED_MAJOR}.${REQUIRED_MINOR} via dnf..."
-            sudo dnf install -y python${REQUIRED_MAJOR}.${REQUIRED_MINOR}
-            ;;
-        *)
-            echo -e "${RED}Error: Automatic installation not supported for your OS.${NC}"
-            echo "please install Python ${REQUIRED_MAJOR}.${REQUIRED_MINOR} manually from:"
-            echo "  https://www.python.org/downloads/"
-            exit 1
-            ;;
-    esac
+# Install uv if not present
+install_uv() {
+    echo -e "installing uv package manager..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    # Add uv to PATH for this session
+    export PATH="$HOME/.local/bin:$PATH"
 }
 
-# Prompt user to install Python
-prompt_install_python() {
-    echo ""
-    read -p "$(echo -e ${YELLOW}would you like to install Python ${REQUIRED_MAJOR}.${REQUIRED_MINOR}? \(Y/n\): ${NC})" response
-    case "$response" in
-        [yY][eE][sS]|[yY]|"")
-            install_python
-            echo ""
-            echo -e "${GREEN}✓ python installed.${NC} please restart your terminal and run this script again."
-            exit 0
-            ;;
-        *)
-            echo -e "${YELLOW}installation cancelled.${NC}"
-            exit 1
-            ;;
-    esac
-}
-
-# Check if python3 or python is installed
-if command -v python3.11 &> /dev/null; then
-    PYTHON_CMD="python3.11"
-elif command -v python3 &> /dev/null; then
-    PYTHON_CMD="python3"
-elif command -v python &> /dev/null; then
-    PYTHON_CMD="python"
-else
-    echo -e "${RED}error: Python 3 is not installed.${NC}"
-    prompt_install_python
+# Check if uv is installed
+if ! command -v uv &> /dev/null; then
+    echo -e "${GRAY}uv is not installed.${NC}"
+    install_uv
+    echo -e "${GREEN}✓${NC} uv installed successfully"
+    echo -e ""
 fi
 
-# Get Python version
-PYTHON_VERSION=$($PYTHON_CMD -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-PYTHON_MAJOR=$(echo "$PYTHON_VERSION" | cut -d. -f1)
-PYTHON_MINOR=$(echo "$PYTHON_VERSION" | cut -d. -f2)
-
-# Check version
-if [ "$PYTHON_MAJOR" -lt "$REQUIRED_MAJOR" ] || \
-   ([ "$PYTHON_MAJOR" -eq "$REQUIRED_MAJOR" ] && [ "$PYTHON_MINOR" -lt "$REQUIRED_MINOR" ]); then
-    echo -e "${RED}error: Python ${REQUIRED_MAJOR}.${REQUIRED_MINOR} or greater is required.${NC}"
-    echo -e "found: python ${YELLOW}${PYTHON_VERSION}${NC}"
-    prompt_install_python
-fi
-
+echo -e "${GREEN}✓${NC} uv detected"
 echo -e ""
-echo -e "${GREEN}✓${NC} python ${BOLD}${PYTHON_VERSION}${NC} detected"
-echo -e ""
-# Use python -m pip for reliability
-PIP_CMD="$PYTHON_CMD -m pip"
 
-# Install or upgrade codeplain
-if $PIP_CMD show codeplain &> /dev/null; then
-    CURRENT_VERSION=$($PIP_CMD show codeplain | grep "^Version:" | cut -d' ' -f2)
+# Install or upgrade codeplain using uv tool
+if uv tool list 2>/dev/null | grep -q "^codeplain"; then
+    CURRENT_VERSION=$(uv tool list 2>/dev/null | grep "^codeplain" | sed 's/codeplain v//')
     echo -e "${GRAY}codeplain ${CURRENT_VERSION} is already installed.${NC}"
     echo -e "upgrading to latest version..."
     echo -e ""
-    $PIP_CMD install --upgrade codeplain &> /dev/null
-    NEW_VERSION=$($PIP_CMD show codeplain | grep "^Version:" | cut -d' ' -f2)
+    uv tool upgrade codeplain &> /dev/null
+    NEW_VERSION=$(uv tool list 2>/dev/null | grep "^codeplain" | sed 's/codeplain v//')
     if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
         echo -e "${GREEN}✓${NC} codeplain is already up to date (${NEW_VERSION})"
     else
@@ -134,7 +53,7 @@ if $PIP_CMD show codeplain &> /dev/null; then
 else
     echo -e "installing codeplain...${NC}"
     echo -e ""
-    $PIP_CMD install codeplain &> /dev/null
+    uv tool install codeplain
     echo -e "${GREEN}✓ codeplain installed successfully!${NC}"
 fi
 
