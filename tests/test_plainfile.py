@@ -135,9 +135,7 @@ def test_psart_no_acceptance_tests_present():
     assert not hasattr(
         functional_requirement_mock, plain_spec.ACCEPTANCE_TESTS
     ), "acceptance_tests attribute should not be added if no ATs are found."
-    assert (
-        list(functional_requirement_mock.children) == original_children
-    ), "FR children should remain unchanged."
+    assert list(functional_requirement_mock.children) == original_children, "FR children should remain unchanged."
 
 
 def test_psart_empty_children_list_in_fr():
@@ -174,9 +172,7 @@ def test_psart_heading_not_followed_by_list():
     assert not hasattr(
         functional_requirement_mock, plain_spec.ACCEPTANCE_TESTS
     ), "acceptance_tests attribute should not be added."
-    assert (
-        len(functional_requirement_mock.children) == 2
-    ), "Children count should remain the same as original."
+    assert len(functional_requirement_mock.children) == 2, "Children count should remain the same as original."
     assert (
         list(functional_requirement_mock.children) == original_children
     ), "Children should be unchanged as AT block was malformed."

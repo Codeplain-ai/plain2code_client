@@ -300,9 +300,7 @@ def test_code_variables(load_test_data, get_test_data_path):
 
     assert rendered_plain_source == expected_rendered_plain_source
 
-    _, plain_source, _ = plain_file.plain_file_parser(
-        "code_variables.plain", [get_test_data_path("data/templates")]
-    )
+    _, plain_source, _ = plain_file.plain_file_parser("code_variables.plain", [get_test_data_path("data/templates")])
     expected_plain_source = {
         "definitions": [{"markdown": "- :concept: is a concept."}],
         "technical specs": [
@@ -344,9 +342,7 @@ def test_code_variables(load_test_data, get_test_data_path):
 
     assert rendered_plain_source == expected_rendered_plain_source
 
-    _, plain_source, _ = plain_file.plain_file_parser(
-        "template_include.plain", [get_test_data_path("data/templates")]
-    )
+    _, plain_source, _ = plain_file.plain_file_parser("template_include.plain", [get_test_data_path("data/templates")])
     expected_plain_source = {
         "definitions": [{"markdown": "- :concept: is a concept."}],
         "technical specs": [
