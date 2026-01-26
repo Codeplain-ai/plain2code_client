@@ -211,7 +211,7 @@ def main():
         # Validate API key is present
         if not args.api_key:
             raise MissingAPIKey(
-                "API key is required. Please set the CODEPLAIN_API_KEY environment variable or provide --api-key argument."
+                "API key is required. Please set the CODEPLAIN_API_KEY environment variable or provide it with the --api-key argument."
             )
 
         render(args, run_state, codeplain_api, event_bus)
