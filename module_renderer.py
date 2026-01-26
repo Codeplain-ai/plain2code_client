@@ -73,11 +73,29 @@ class ModuleRenderer:
 
         # Check if commits exist for all previous FRIDs
         build_folder_path = os.path.join(self.args.build_folder, module_name)
-        conformance_tests_path = os.path.join(self.args.conformance_tests_folder, module_name)
+        conformance_tests_path = os.path.join(
+            self.args.conformance_tests_folder, module_name
+        )
+
+        if not os.path.exists(build_folder_path):
+            raise MissingPreviousFridCommitsError(
+                f"Cannot render from FRID {first_render_frid}: "
+                f"Folder {build_folder_path} for module {module_name} does not exist. "
+                f"Please render all previous FRIDs for module {module_name} first."
+            )
+
+        if not os.path.exists(conformance_tests_path):
+            raise MissingPreviousFridCommitsError(
+                f"Cannot render from FRID {first_render_frid}: "
+                f"Folder {conformance_tests_path} for module {module_name} does not exist. "
+                f"Please render all previous FRIDs for module {module_name} first."
+            )
 
         for prev_frid in previous_frids:
             # Check in build folder
-            if not git_utils.has_commit_for_frid(build_folder_path, prev_frid):
+            if not git_utils.has_commit_for_frid(
+                build_folder_path, prev_frid, module_name
+            ):
                 raise MissingPreviousFridCommitsError(
                     f"Cannot render from FRID {first_render_frid}: "
                     f"Missing commit for previous FRID {prev_frid} in {build_folder_path}. "
@@ -86,7 +104,9 @@ class ModuleRenderer:
 
             # Check in conformance tests folder (only if conformance tests are enabled)
             if self.args.render_conformance_tests:
-                if not git_utils.has_commit_for_frid(conformance_tests_path, prev_frid):
+                if not git_utils.has_commit_for_frid(
+                    conformance_tests_path, prev_frid, module_name
+                ):
                     raise MissingPreviousFridCommitsError(
                         f"Cannot render from FRID {first_render_frid}: "
                         f"Missing commit for previous FRID {prev_frid} in {conformance_tests_path}. "

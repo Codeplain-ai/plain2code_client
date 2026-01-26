@@ -259,12 +259,49 @@ def _get_commit(repo: Repo, frid: Optional[str]) -> str:
     return initial_commit
 
 
-def _get_commit_with_frid(repo: Repo, frid: str) -> str:
-    """Finds commit with given frid mentioned in the commit message."""
-    return _get_commit_with_message(repo, FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid))
+def _get_commit_with_frid(
+    repo: Repo, frid: str, module_name: Optional[str] = None
+) -> str:
+    """
+    Finds commit with given frid mentioned in the commit message.
+
+    Args:
+        repo (Repo): Git repository object
+        frid (str): Functional requirement ID
+        module_name (Optional[str]): Module name to filter by. If provided, only returns
+                                      commits that have both the FRID and module name.
+
+    Returns:
+        str: Commit SHA if found, empty string otherwise
+    """
+    commit_message_pattern = FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid)
+
+    # If no module name filtering is needed, use the original logic
+    if not module_name:
+        return _get_commit_with_message(repo, commit_message_pattern)
+
+    # Use multiple grep patterns with --all-match for AND condition
+    escaped_frid_message = commit_message_pattern.replace("[", "\\[").replace(
+        "]", "\\]"
+    )
+    module_name_pattern = MODULE_NAME_MESSAGE.format(module_name)
+    escaped_module_message = module_name_pattern.replace("[", "\\[").replace("]", "\\]")
+
+    return repo.git.rev_list(
+        repo.active_branch.name,
+        "--grep",
+        escaped_frid_message,
+        "--grep",
+        escaped_module_message,
+        "--all-match",
+        "-n",
+        "1",
+    )
 
 
-def has_commit_for_frid(repo_path: Union[str, os.PathLike], frid: str) -> bool:
+def has_commit_for_frid(
+    repo_path: Union[str, os.PathLike], frid: str, module_name: Optional[str] = None
+) -> bool:
     """
     Check if a commit exists for the given FRID in the repository.
 
@@ -276,7 +313,7 @@ def has_commit_for_frid(repo_path: Union[str, os.PathLike], frid: str) -> bool:
         bool: True if the commit exists, False otherwise
     """
     repo = Repo(repo_path)
-    commit_with_frid = _get_commit_with_frid(repo, frid)
+    commit_with_frid = _get_commit_with_frid(repo, frid, module_name)
     if not commit_with_frid:
         return False
     return True
