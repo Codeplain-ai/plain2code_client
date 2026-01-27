@@ -1,11 +1,11 @@
-name: Publish Install Script to R2
+name: Publish Install Scripts to R2
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'install.sh'
+      - 'install/*.sh'
   workflow_dispatch:
 
 jobs:
@@ -16,15 +16,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Upload install.sh to R2
+      - name: Upload install scripts to R2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
-          aws s3 cp install.sh s3://${R2_BUCKET}/install/install.sh \
+          aws s3 cp install/install.sh s3://${R2_BUCKET}/install.sh \
             --endpoint-url "${R2_ENDPOINT}" \
             --content-type "text/plain"
-
           echo "✓ install.sh uploaded to R2"
+
+          aws s3 cp install/walkthrough.sh s3://${R2_BUCKET}/walkthrough.sh \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --content-type "text/plain"
+          echo "✓ walkthrough.sh uploaded to R2"
+
+          aws s3 cp install/examples.sh s3://${R2_BUCKET}/examples.sh \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --content-type "text/plain"
+          echo "✓ examples.sh uploaded to R2"
