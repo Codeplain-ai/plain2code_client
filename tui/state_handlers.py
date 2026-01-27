@@ -1,6 +1,7 @@
 """State handlers for Plain2Code TUI state machine transitions."""
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from plain2code_events import RenderContextSnapshot
 from render_machine.states import States
@@ -53,13 +54,15 @@ class StateHandler(ABC):
 class FridReadyHandler(StateHandler):
     """Handler for READY_FOR_FRID_IMPLEMENTATION state."""
 
-    def __init__(self, tui):
+    def __init__(self, tui, unittests_script: Optional[str], conformance_tests_script: Optional[str]):
         """Initialize handler with TUI instance.
 
         Args:
             tui: The Plain2CodeTUI instance
         """
         self.tui = tui
+        self.unittests_script = unittests_script
+        self.conformance_tests_script = conformance_tests_script
 
     def handle(self, _: list[str], snapshot: RenderContextSnapshot, _previous_state_segments: list[str]) -> None:
         """Handle READY_FOR_FRID_IMPLEMENTATION state."""
@@ -69,9 +72,13 @@ class FridReadyHandler(StateHandler):
 
         # Set progress states
         update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_RENDER_FR.value, ProgressItem.PROCESSING)
-        update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_CONFORMANCE_TEST.value, ProgressItem.PENDING)
+        if self.conformance_tests_script is not None:
+            update_progress_item_status(
+                self.tui, TUIComponents.FRID_PROGRESS_CONFORMANCE_TEST.value, ProgressItem.PENDING
+            )
         # Reset others to PENDING if this is a restart/loop
-        update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_UNIT_TEST.value, ProgressItem.PENDING)
+        if self.unittests_script is not None:
+            update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_UNIT_TEST.value, ProgressItem.PENDING)
         update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_REFACTORING.value, ProgressItem.PENDING)
 
         # Set substate for initial implementation
@@ -85,51 +92,59 @@ class FridReadyHandler(StateHandler):
 class UnitTestsHandler(StateHandler):
     """Handler for PROCESSING_UNIT_TESTS state."""
 
-    def __init__(self, tui):
+    def __init__(self, tui, unittests_script: Optional[str], conformance_tests_script: Optional[str]):
         """Initialize handler with TUI instance.
 
         Args:
             tui: The Plain2CodeTUI instance
         """
         self.tui = tui
+        self.unittests_script = unittests_script
+        self.conformance_tests_script = conformance_tests_script
 
     def handle(
         self, segments: list[str], _snapshot: RenderContextSnapshot, _previous_state_segments: list[str]
     ) -> None:
         """Handle PROCESSING_UNIT_TESTS state."""
         if segments[2] == States.UNIT_TESTS_READY.value:
-            update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_RENDER_FR.value, ProgressItem.COMPLETED)
-            update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_UNIT_TEST.value, ProgressItem.PROCESSING)
+            if self.unittests_script is not None:
+                update_progress_item_status(
+                    self.tui, TUIComponents.FRID_PROGRESS_UNIT_TEST.value, ProgressItem.PROCESSING
+                )
 
             # Clear substates from completed implementation phase
-            update_progress_item_substates(
-                self.tui,
-                TUIComponents.FRID_PROGRESS_UNIT_TEST.value,
-                [Substate("Running unit tests")],
-            )
+            if self.unittests_script is not None:
+                update_progress_item_substates(
+                    self.tui,
+                    TUIComponents.FRID_PROGRESS_UNIT_TEST.value,
+                    [Substate("Running unit tests")],
+                )
+
         if segments[2] == States.UNIT_TESTS_FAILED.value:
-            update_progress_item_substates(
-                self.tui,
-                TUIComponents.FRID_PROGRESS_UNIT_TEST.value,
-                [Substate("Fixing unit tests")],
-            )
+            if self.unittests_script is not None:
+                update_progress_item_substates(
+                    self.tui,
+                    TUIComponents.FRID_PROGRESS_UNIT_TEST.value,
+                    [Substate("Fixing unit tests")],
+                )
 
 
 class RefactoringHandler(StateHandler):
     """Handler for REFACTORING_CODE state."""
 
-    def __init__(self, tui):
+    def __init__(self, tui, unittests_script: Optional[str], conformance_tests_script: Optional[str]):
         """Initialize handler with TUI instance.
 
         Args:
             tui: The Plain2CodeTUI instance
         """
         self.tui = tui
+        self.unittests_script = unittests_script
+        self.conformance_tests_script = conformance_tests_script
 
     def handle(self, segments: list[str], _snapshot: RenderContextSnapshot, previous_state_segments: list[str]) -> None:
         """Handle REFACTORING_CODE state."""
         if len(previous_state_segments) == 2 and previous_state_segments[1] == States.STEP_COMPLETED.value:
-            update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_UNIT_TEST.value, ProgressItem.COMPLETED)
             update_progress_item_status(
                 self.tui, TUIComponents.FRID_PROGRESS_REFACTORING.value, ProgressItem.PROCESSING
             )
@@ -159,21 +174,23 @@ class RefactoringHandler(StateHandler):
 class ConformanceTestsHandler(StateHandler):
     """Handler for PROCESSING_CONFORMANCE_TESTS state."""
 
-    def __init__(self, tui):
+    def __init__(self, tui, unittests_script: Optional[str], conformance_tests_script: Optional[str]):
         """Initialize handler with TUI instance.
 
         Args:
             tui: The Plain2CodeTUI instance
         """
         self.tui = tui
+        self.unittests_script = unittests_script
+        self.conformance_tests_script = conformance_tests_script
 
     def handle(self, segments: list[str], snapshot: RenderContextSnapshot, previous_state_segments: list[str]) -> None:
         """Handle PROCESSING_CONFORMANCE_TESTS state."""
         if previous_state_segments[1] == States.REFACTORING_CODE.value:
-            update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_REFACTORING.value, ProgressItem.COMPLETED)
-            update_progress_item_status(
-                self.tui, TUIComponents.FRID_PROGRESS_CONFORMANCE_TEST.value, ProgressItem.PROCESSING
-            )
+            if self.conformance_tests_script is not None:
+                update_progress_item_status(
+                    self.tui, TUIComponents.FRID_PROGRESS_CONFORMANCE_TEST.value, ProgressItem.PROCESSING
+                )
 
         if segments[2] != States.POSTPROCESSING_CONFORMANCE_TESTS.value:
             if segments[2] == States.CONFORMANCE_TESTING_INITIALISED.value:
@@ -260,19 +277,19 @@ class ScriptOutputsHandler(StateHandler):
 class FridFullyImplementedHandler(StateHandler):
     """Handler for FRID_FULLY_IMPLEMENTED state."""
 
-    def __init__(self, tui):
+    def __init__(self, tui, unittests_script: Optional[str], conformance_tests_script: Optional[str]):
         """Initialize handler with TUI instance.
 
         Args:
             tui: The Plain2CodeTUI instance
         """
         self.tui = tui
+        self.unittests_script = unittests_script
+        self.conformance_tests_script = conformance_tests_script
 
     def handle(self, _: list[str], _snapshot: RenderContextSnapshot, _previous_state_segments: list[str]) -> None:
         """Handle FRID_FULLY_IMPLEMENTED state."""
-        update_progress_item_status(
-            self.tui, TUIComponents.FRID_PROGRESS_CONFORMANCE_TEST.value, ProgressItem.COMPLETED
-        )
+        pass
 
 
 class RenderSuccessHandler:
@@ -305,3 +322,37 @@ class RenderErrorHandler:
     def handle(self, error_message: str) -> None:
         set_frid_progress_to_stopped(self.tui)
         display_error_message(self.tui, error_message)
+
+
+class StateCompletionHandler(StateHandler):
+    """Handler for state completion."""
+
+    def __init__(self, tui, unittests_script: Optional[str], conformance_tests_script: Optional[str]):
+        """Initialize handler with TUI instance.
+
+        Args:
+            tui: The Plain2CodeTUI instance
+        """
+        self.tui = tui
+        self.unittests_script = unittests_script
+        self.conformance_tests_script = conformance_tests_script
+
+    def handle(self, segments: list[str], _snapshot: RenderContextSnapshot, previous_state_segments: list[str]) -> None:
+        if len(previous_state_segments) < 2 or len(segments) < 2:
+            return
+        current_segment = segments[1]
+        previous_segment = previous_state_segments[1]
+        should_update_state = current_segment != previous_segment
+        if not should_update_state:
+            return
+
+        if previous_segment == States.READY_FOR_FRID_IMPLEMENTATION.value:
+            update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_RENDER_FR.value, ProgressItem.COMPLETED)
+        if previous_segment == States.PROCESSING_UNIT_TESTS.value:
+            update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_UNIT_TEST.value, ProgressItem.COMPLETED)
+        if previous_segment == States.REFACTORING_CODE.value:
+            update_progress_item_status(self.tui, TUIComponents.FRID_PROGRESS_REFACTORING.value, ProgressItem.COMPLETED)
+        if previous_segment == States.PROCESSING_CONFORMANCE_TESTS.value:
+            update_progress_item_status(
+                self.tui, TUIComponents.FRID_PROGRESS_CONFORMANCE_TEST.value, ProgressItem.COMPLETED
+            )
