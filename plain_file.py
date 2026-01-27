@@ -17,7 +17,13 @@ from mistletoe.utils import traverse
 import concept_utils
 import file_utils
 import plain_spec
-from plain2code_exceptions import PlainSyntaxError
+from plain2code_exceptions import (
+    InvalidPlainFileExtension,
+    LinkMustHaveTextSpecified,
+    OnlyRelativeLinksAllowed,
+    PlainModuleNotFound,
+    PlainSyntaxError,
+)
 from plain2code_nodes import Plain2CodeIncludeTag, Plain2CodeLoaderMixin
 
 RESOURCE_MARKER = "[resource]"
@@ -42,22 +48,6 @@ class PlainFileParseResult:
     plain_source_obj: frontmatter.Post
     required_modules: list[str]
     required_concepts: list[str]
-
-
-class OnlyRelativeLinksAllowed(Exception):
-    pass
-
-
-class LinkMustHaveTextSpecified(Exception):
-    pass
-
-
-class InvalidPlainFileExtension(Exception):
-    pass
-
-
-class PlainModuleNotFound(Exception):
-    pass
 
 
 class PlainRenderer(MarkdownRenderer):

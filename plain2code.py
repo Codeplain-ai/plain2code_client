@@ -17,7 +17,13 @@ from event_bus import EventBus
 from module_renderer import ModuleRenderer
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
-from plain2code_exceptions import MissingAPIKey, PlainSyntaxError
+from plain2code_exceptions import (
+    InvalidFridArgument,
+    InvalidPlainFileExtension,
+    MissingAPIKey,
+    PlainModuleNotFound,
+    PlainSyntaxError,
+)
 from plain2code_logger import (
     CrashLogHandler,
     IndentedFormatter,
@@ -44,10 +50,6 @@ MAX_ISSUE_LENGTH = 10000  # Characters.
 
 UNRECOVERABLE_ERROR_EXIT_CODES = [69]
 TIMEOUT_ERROR_EXIT_CODE = 124
-
-
-class InvalidFridArgument(Exception):
-    pass
 
 
 def get_render_range(render_range, plain_source):
@@ -227,23 +229,23 @@ def main():
 
         render(args, run_state, codeplain_api, event_bus)
     except InvalidFridArgument as e:
-        console.error(f"Error rendering plain code: {str(e)}.\n")
+        console.error(f"Invalid FRID argument: {str(e)}.\n")
         # No need to print render ID since this error is going to be thrown at the very start so user will be able to
         # see the render ID that's printed at the very start of the rendering process.
         dump_crash_logs(args)
     except FileNotFoundError as e:
-        console.error(f"Error rendering plain code: {str(e)}\n")
+        console.error(f"File not found: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
         dump_crash_logs(args)
-    except plain_file.InvalidPlainFileExtension as e:
-        console.error(f"Error rendering plain code: {str(e)}\n")
+    except InvalidPlainFileExtension as e:
+        console.error(f"Invalid plain file extension: {str(e)}\n")
         dump_crash_logs(args)
     except TemplateNotFoundError as e:
-        console.error(f"Error: Template not found: {str(e)}\n")
+        console.error(f"Template not found: {str(e)}\n")
         console.error(system_config.get_error_message("template_not_found"))
         dump_crash_logs(args)
     except PlainSyntaxError as e:
-        console.error(f"Error rendering plain code: {str(e)}\n")
+        console.error(f"Plain syntax error: {str(e)}\n")
         dump_crash_logs(args)
     except KeyboardInterrupt:
         console.error("Keyboard interrupt")
@@ -256,6 +258,9 @@ def main():
         dump_crash_logs(args)
     except MissingAPIKey as e:
         console.error(f"Missing API key: {str(e)}\n")
+    except PlainModuleNotFound as e:
+        console.error(f"Module not found: {str(e)}\n")
+        dump_crash_logs(args)
     except Exception as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
