@@ -17,13 +17,7 @@ from mistletoe.utils import traverse
 import concept_utils
 import file_utils
 import plain_spec
-from plain2code_exceptions import (
-    InvalidPlainFileExtension,
-    LinkMustHaveTextSpecified,
-    OnlyRelativeLinksAllowed,
-    PlainModuleNotFound,
-    PlainSyntaxError,
-)
+from plain2code_exceptions import PlainSyntaxError
 from plain2code_nodes import Plain2CodeIncludeTag, Plain2CodeLoaderMixin
 
 RESOURCE_MARKER = "[resource]"
@@ -85,12 +79,12 @@ def check_section_for_linked_resources(section):
     for link in traverse(section, klass=Link):
         parsed_url = urlparse(link.node.target)
         if parsed_url.scheme != "" or os.path.isabs(link.node.target):
-            raise OnlyRelativeLinksAllowed(
+            raise PlainSyntaxError(
                 f"Only relative links are allowed (text: {link.node.children[0].content}, target: {link.node.target})."
             )
 
         if len(link.node.children) != 1:
-            raise LinkMustHaveTextSpecified(f"Link must have text specified (link: {link.node.target}).")
+            raise PlainSyntaxError(f"Link must have text specified (link: {link.node.target}).")
 
         linked_resources.append({"text": link.node.children[0].content, "target": link.node.target})
 
@@ -519,7 +513,7 @@ def parse_plain_source(  # noqa: C901
 def read_module_plain_source(module_name: str, template_dirs: list[str]) -> str:
     plain_source_text = file_utils.open_from(template_dirs, module_name + PLAIN_SOURCE_FILE_EXTENSION)
     if plain_source_text is None:
-        raise PlainModuleNotFound(f"Module does not exist ({module_name}).")
+        raise PlainSyntaxError(f"Module does not exist ({module_name}).")
     return plain_source_text
 
 
@@ -556,12 +550,9 @@ def process_required_modules(
         if len(all_required_modules) > 0 and module_name == all_required_modules[-1]:
             continue
 
-        try:
-            plain_file_parse_result = parse_plain_file(
-                module_name, code_variables, template_dirs, imported_modules=[], modules_trace=[]
-            )
-        except PlainModuleNotFound:
-            raise PlainSyntaxError(f"Required module not found ({module_name}).")
+        plain_file_parse_result = parse_plain_file(
+            module_name, code_variables, template_dirs, imported_modules=[], modules_trace=[]
+        )
 
         if len(plain_file_parse_result.required_modules) == 0:
             if len(all_required_modules) > 0:
@@ -634,7 +625,7 @@ def plain_file_parser(  # noqa: C901
     # and we need to pass them to the marshalled_plain_source_tree after it's rendered
     plain_source_file_path = Path(plain_source_file_name)
     if plain_source_file_path.suffix != PLAIN_SOURCE_FILE_EXTENSION:
-        raise InvalidPlainFileExtension(
+        raise PlainSyntaxError(
             f"Invalid plain file extension: {plain_source_file_path.suffix}. Expected: {PLAIN_SOURCE_FILE_EXTENSION}."
         )
 
@@ -642,16 +633,13 @@ def plain_file_parser(  # noqa: C901
 
     code_variables = {}
 
-    try:
-        plain_file_parse_result = parse_plain_file(
-            module_name,
-            code_variables,
-            template_dirs,
-            imported_modules=[],
-            modules_trace=[],
-        )
-    except PlainModuleNotFound as e:
-        raise PlainSyntaxError(f"Module not found: {str(e)}.")
+    plain_file_parse_result = parse_plain_file(
+        module_name,
+        code_variables,
+        template_dirs,
+        imported_modules=[],
+        modules_trace=[],
+    )
 
     if len(plain_file_parse_result.required_concepts) > 0:
         missing_required_concepts_msg = "Missing required concepts: "

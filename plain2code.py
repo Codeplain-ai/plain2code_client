@@ -17,13 +17,7 @@ from event_bus import EventBus
 from module_renderer import ModuleRenderer
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
-from plain2code_exceptions import (
-    InvalidFridArgument,
-    InvalidPlainFileExtension,
-    MissingAPIKey,
-    PlainModuleNotFound,
-    PlainSyntaxError,
-)
+from plain2code_exceptions import InvalidFridArgument, MissingAPIKey, PlainSyntaxError
 from plain2code_logger import (
     CrashLogHandler,
     IndentedFormatter,
@@ -237,9 +231,6 @@ def main():
         console.error(f"File not found: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
         dump_crash_logs(args)
-    except InvalidPlainFileExtension as e:
-        console.error(f"Invalid plain file extension: {str(e)}\n")
-        dump_crash_logs(args)
     except TemplateNotFoundError as e:
         console.error(f"Template not found: {str(e)}\n")
         console.error(system_config.get_error_message("template_not_found"))
@@ -258,9 +249,6 @@ def main():
         dump_crash_logs(args)
     except MissingAPIKey as e:
         console.error(f"Missing API key: {str(e)}\n")
-    except PlainModuleNotFound as e:
-        console.error(f"Module not found: {str(e)}\n")
-        dump_crash_logs(args)
     except Exception as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
