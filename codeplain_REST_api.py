@@ -65,12 +65,6 @@ class CodeplainAPI:
                     if response_json["error_code"] == "PlainSyntaxError":
                         raise plain2code_exceptions.PlainSyntaxError(response_json["message"])
 
-                    if response_json["error_code"] == "OnlyRelativeLinksAllowed":
-                        raise plain2code_exceptions.OnlyRelativeLinksAllowed(response_json["message"])
-
-                    if response_json["error_code"] == "LinkMustHaveTextSpecified":
-                        raise plain2code_exceptions.LinkMustHaveTextSpecified(response_json["message"])
-
                     if response_json["error_code"] == "NoRenderFound":
                         raise plain2code_exceptions.NoRenderFound(response_json["message"])
 

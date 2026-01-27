@@ -25,22 +25,6 @@ class PlainSyntaxError(Exception):
     pass
 
 
-class OnlyRelativeLinksAllowed(PlainSyntaxError):
-    pass
-
-
-class LinkMustHaveTextSpecified(PlainSyntaxError):
-    pass
-
-
-class InvalidPlainFileExtension(PlainSyntaxError):
-    pass
-
-
-class PlainModuleNotFound(PlainSyntaxError):
-    pass
-
-
 class NoRenderFound(Exception):
     pass
 

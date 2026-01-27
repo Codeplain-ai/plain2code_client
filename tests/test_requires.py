@@ -1,10 +1,11 @@
 import pytest
 
 import plain_file
+from plain2code_exceptions import PlainSyntaxError
 
 
 def test_non_existent_require(get_test_data_path):
-    with pytest.raises(Exception, match="Required module not found"):
+    with pytest.raises(PlainSyntaxError, match="Module does not exist"):
         plain_file.plain_file_parser("non_existent_require.plain", [get_test_data_path("data/requires")])
 
 
