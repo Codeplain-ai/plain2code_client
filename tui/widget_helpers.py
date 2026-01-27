@@ -1,6 +1,9 @@
 """Widget update helper utilities for Plain2Code TUI."""
 
+from textual.css.query import NoMatches
 from textual.widgets import Static
+
+from plain2code_console import console
 
 from .components import FRIDProgress, ProgressItem, TUIComponents
 from .models import Substate
@@ -31,12 +34,11 @@ def update_progress_item_status(tui, widget_id: str, status: str) -> None:
     """
     try:
         widget = tui.query_one(f"#{widget_id}", ProgressItem)
-        if widget:
-            tui.call_later(_async_update_status, widget, status)
-        else:
-            raise ValueError(f"ProgressItem {widget_id} not found")
+        tui.call_later(_async_update_status, widget, status)
+    except NoMatches as e:
+        console.warning(f"ProgressItem {widget_id} not found: {e}")
     except Exception as e:
-        print(f"Error updating progress item {widget_id}: {e}")
+        console.error(f"Error updating progress item {widget_id}: {e}")
 
     if status == ProgressItem.COMPLETED:
         clear_progress_item_substates(tui, widget_id)
@@ -54,10 +56,10 @@ def update_widget_text(tui, widget_id: str, text: str) -> None:
         widget = tui.query_one(f"#{widget_id}")
         if widget and hasattr(widget, "update"):
             widget.update(text)
-        else:
-            raise ValueError(f"Widget {widget_id} not found")
+    except NoMatches as e:
+        console.warning(f"Widget {widget_id} not found: {e}")
     except Exception as e:
-        print(f"Error updating widget {widget_id}: {e}")
+        console.error(f"Error updating widget {widget_id}: {e}")
 
 
 def get_frid_progress(tui) -> FRIDProgress:
@@ -134,12 +136,11 @@ def update_progress_item_substates(tui, widget_id: str, substates: list[Substate
     """
     try:
         widget = tui.query_one(f"#{widget_id}", ProgressItem)
-        if widget:
-            tui.call_later(_async_set_substates, widget, substates)
-        else:
-            raise ValueError(f"ProgressItem {widget_id} not found")
+        tui.call_later(_async_set_substates, widget, substates)
+    except NoMatches as e:
+        console.warning(f"ProgressItem {widget_id} not found: {e}")
     except Exception as e:
-        print(f"Error updating substates for {widget_id}: {e}")
+        console.error(f"Error updating substates for {widget_id}: {e}")
 
 
 def clear_progress_item_substates(tui, widget_id: str) -> None:
@@ -151,9 +152,8 @@ def clear_progress_item_substates(tui, widget_id: str) -> None:
     """
     try:
         widget = tui.query_one(f"#{widget_id}", ProgressItem)
-        if widget:
-            tui.call_later(_async_clear_substates, widget)
-        else:
-            raise ValueError(f"ProgressItem {widget_id} not found")
+        tui.call_later(_async_clear_substates, widget)
+    except NoMatches as e:
+        console.warning(f"ProgressItem {widget_id} not found: {e}")
     except Exception as e:
-        print(f"Error clearing substates for {widget_id}: {e}")
+        console.error(f"Error clearing substates for {widget_id}: {e}")
