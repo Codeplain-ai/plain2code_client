@@ -661,7 +661,7 @@ def plain_file_parser(  # noqa: C901
             modules_trace=[],
         )
     except PlainModuleNotFound as e:
-        raise PlainSyntaxError(e.message)
+        raise PlainSyntaxError(f"Module not found: {str(e)}.")
 
     if len(plain_file_parse_result.required_concepts) > 0:
         missing_required_concepts_msg = "Missing required concepts: "
