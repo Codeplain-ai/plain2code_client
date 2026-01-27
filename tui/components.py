@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.message import Message
@@ -188,8 +189,15 @@ class FRIDProgress(Vertical):
     RENDERING_MODULE_TEXT = "Rendering module: "
     RENDERING_FUNCTIONALITY_TEXT = "Rendering functionality:"
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        unittests_script: Optional[str],
+        conformance_tests_script: Optional[str],
+        **kwargs,
+    ):
         super().__init__(**kwargs)
+        self.unittests_script = unittests_script
+        self.conformance_tests_script = conformance_tests_script
 
     def update_fr_text(self, text: str) -> None:
         try:
@@ -215,18 +223,20 @@ class FRIDProgress(Vertical):
             self.IMPLEMENTING_FUNCTIONALITY_TEXT,
             id=TUIComponents.FRID_PROGRESS_RENDER_FR.value,
         )
-        yield ProgressItem(
-            self.UNIT_TEST_VALIDATION_TEXT,
-            id=TUIComponents.FRID_PROGRESS_UNIT_TEST.value,
-        )
+        if self.unittests_script is not None:
+            yield ProgressItem(
+                self.UNIT_TEST_VALIDATION_TEXT,
+                id=TUIComponents.FRID_PROGRESS_UNIT_TEST.value,
+            )
         yield ProgressItem(
             self.REFACTORING_TEXT,
             id=TUIComponents.FRID_PROGRESS_REFACTORING.value,
         )
-        yield ProgressItem(
-            self.CONFORMANCE_TEST_VALIDATION_TEXT,
-            id=TUIComponents.FRID_PROGRESS_CONFORMANCE_TEST.value,
-        )
+        if self.conformance_tests_script is not None:
+            yield ProgressItem(
+                self.CONFORMANCE_TEST_VALIDATION_TEXT,
+                id=TUIComponents.FRID_PROGRESS_CONFORMANCE_TEST.value,
+            )
 
 
 class ClickableArrow(Static):

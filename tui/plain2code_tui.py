@@ -1,7 +1,7 @@
 import os
 import threading
 import time
-from typing import Callable
+from typing import Callable, Optional
 
 from textual.app import App, ComposeResult
 from textual.containers import Vertical, VerticalScroll
@@ -37,6 +37,7 @@ from .state_handlers import (
     RenderErrorHandler,
     RenderSuccessHandler,
     ScriptOutputsHandler,
+    StateCompletionHandler,
     StateHandler,
     UnitTestsHandler,
 )
@@ -67,21 +68,34 @@ class Plain2CodeTUI(App):
         self.event_bus = event_bus
         self.worker_fun = worker_fun
         self.render_id = render_id
-        self.unittests_script = unittests_script
-        self.conformance_tests_script = conformance_tests_script
-        self.prepare_environment_script = prepare_environment_script
+        self.unittests_script: Optional[str] = unittests_script
+        self.conformance_tests_script: Optional[str] = conformance_tests_script
+        self.prepare_environment_script: Optional[str] = prepare_environment_script
 
         # Initialize state handlers
         self._state_handlers: dict[str, StateHandler] = {
-            States.READY_FOR_FRID_IMPLEMENTATION.value: FridReadyHandler(self),
-            States.PROCESSING_UNIT_TESTS.value: UnitTestsHandler(self),
-            States.REFACTORING_CODE.value: RefactoringHandler(self),
-            States.PROCESSING_CONFORMANCE_TESTS.value: ConformanceTestsHandler(self),
-            States.FRID_FULLY_IMPLEMENTED.value: FridFullyImplementedHandler(self),
+            States.READY_FOR_FRID_IMPLEMENTATION.value: FridReadyHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
+            States.PROCESSING_UNIT_TESTS.value: UnitTestsHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
+            States.REFACTORING_CODE.value: RefactoringHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
+            States.PROCESSING_CONFORMANCE_TESTS.value: ConformanceTestsHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
+            States.FRID_FULLY_IMPLEMENTED.value: FridFullyImplementedHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
         }
         self._script_outputs_handler = ScriptOutputsHandler(self)
         self._render_error_handler = RenderErrorHandler(self)
         self._render_success_handler = RenderSuccessHandler(self)
+        self._state_completion_handler = StateCompletionHandler(
+            self, self.unittests_script, self.conformance_tests_script
+        )
 
     def get_active_script_types(self) -> list[ScriptOutputType]:
         """Get the list of active script output types based on which scripts exist.
@@ -131,7 +145,11 @@ class Plain2CodeTUI(App):
                         "Rendering in progress...",
                         id=TUIComponents.RENDER_STATUS_WIDGET.value,
                     )
-                    yield FRIDProgress(id=TUIComponents.FRID_PROGRESS.value)
+                    yield FRIDProgress(
+                        id=TUIComponents.FRID_PROGRESS.value,
+                        unittests_script=self.unittests_script,
+                        conformance_tests_script=self.conformance_tests_script,
+                    )
 
                     # Get active script types for proper label alignment
                     active_script_types = self.get_active_script_types()
@@ -230,6 +248,8 @@ class Plain2CodeTUI(App):
             handler.handle(segments, snapshot, previous_state_segments)
         if snapshot.script_execution_history.should_update_script_outputs:
             self._script_outputs_handler.handle(segments, snapshot, previous_state_segments)
+
+        self._state_completion_handler.handle(segments, snapshot, previous_state_segments)
 
     def on_render_completed(self, _event: RenderCompleted):
         """Handle successful render completion."""
