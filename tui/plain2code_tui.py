@@ -9,7 +9,6 @@ from textual.widgets import ContentSwitcher, Footer, Header, Static
 from textual.worker import Worker, WorkerState
 
 from event_bus import EventBus
-from plain2code_console import console
 from plain2code_events import (
     LogMessageEmitted,
     RenderCompleted,
@@ -20,6 +19,7 @@ from plain2code_events import (
     RenderStateUpdated,
 )
 from render_machine.states import States
+from tui.widget_helpers import log_to_widget
 
 from .components import (
     FRIDProgress,
@@ -193,7 +193,7 @@ class Plain2CodeTUI(App):
             widget = self.query_one(f"#{TUIComponents.RENDER_MODULE_NAME_WIDGET.value}", Static)
             widget.update(f"{FRIDProgress.RENDERING_MODULE_TEXT}{event.module_name}")
         except Exception as e:
-            console.debug(f"Error updating render module name: {type(e).__name__}: {e}")
+            log_to_widget(self, "WARNING", f"Error updating render module name: {type(e).__name__}: {e}")
 
     def on_render_module_completed(self, _event: RenderModuleCompleted):
         """Update TUI based on the current state machine state."""
@@ -201,7 +201,7 @@ class Plain2CodeTUI(App):
             widget = self.query_one(f"#{TUIComponents.RENDER_MODULE_NAME_WIDGET.value}", Static)
             widget.update(FRIDProgress.RENDERING_MODULE_TEXT)
         except Exception as e:
-            console.debug(f"Error resetting render module name: {type(e).__name__}: {e}")
+            log_to_widget(self, "WARNING", f"Error resetting render module name: {type(e).__name__}: {e}")
 
     def on_log_message_emitted(self, event: LogMessageEmitted):
         try:
@@ -214,7 +214,9 @@ class Plain2CodeTUI(App):
                 event.timestamp,
             )
         except Exception as e:
-            console.debug(f"Error adding log message from {event.logger_name}: {type(e).__name__}: {e}")
+            log_to_widget(
+                self, "WARNING", f"Error adding log message from {event.logger_name}: {type(e).__name__}: {e}"
+            )
 
     def on_log_filter_changed(self, event: LogFilterChanged):
         """Handle log filter changes from LogLevelFilter widget."""
@@ -222,7 +224,7 @@ class Plain2CodeTUI(App):
             log_widget = self.query_one(f"#{TUIComponents.LOG_WIDGET.value}", StructuredLogView)
             log_widget.filter_logs(event.min_level)
         except Exception as e:
-            console.debug(f"Error filtering logs to level {event.min_level}: {type(e).__name__}: {e}")
+            log_to_widget(self, "WARNING", f"Error filtering logs to level {event.min_level}: {type(e).__name__}: {e}")
 
     def on_render_state_updated(self, event: RenderStateUpdated):
         """Update TUI based on the current state machine state."""
@@ -270,7 +272,7 @@ class Plain2CodeTUI(App):
                     # It ensures terminal reset sequences are flushed before exiting.
                     self._driver.suspend_application_mode()
             except Exception as e:
-                console.debug(f"Error suspending application mode: {type(e).__name__}: {e}")
+                log_to_widget(self, "WARNING", f"Error suspending application mode: {type(e).__name__}: {e}")
             finally:
                 os._exit(0)  # Kill process immediately, no cleanup - terminates all threads
 
