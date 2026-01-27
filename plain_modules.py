@@ -7,6 +7,7 @@ from git.exc import NoSuchPathError
 
 import git_utils
 import plain_spec
+from plain2code_exceptions import ModuleDoesNotExistError
 from render_machine.implementation_code_helpers import ImplementationCodeHelpers
 
 CODEPLAIN_MEMORY_SUBFOLDER = ".memory"
@@ -14,10 +15,6 @@ CODEPLAIN_METADATA_FOLDER = ".codeplain"
 MODULE_METADATA_FILENAME = "module_metadata.json"
 MODULE_FUNCTIONALITIES = "functionalities"
 REQUIRED_MODULES_FUNCTIONALITIES = "required_modules_functionalities"
-
-
-class ModuleDoesNotExistError(Exception):
-    pass
 
 
 class PlainModule:

@@ -6,7 +6,7 @@ from mistletoe.span_token import Emphasis, RawText, Strong
 
 import plain_file
 import plain_spec
-from plain2code_exceptions import PlainSyntaxError
+from plain2code_exceptions import InvalidPlainFileExtension, PlainSyntaxError
 from plain_file import process_acceptance_tests
 
 
@@ -267,5 +267,5 @@ def test_psart_with_duplicate_acceptance_test_heading():
 
 
 def test_invalid_plain_file_extension():
-    with pytest.raises(plain_file.InvalidPlainFileExtension):
+    with pytest.raises(InvalidPlainFileExtension):
         plain_file.plain_file_parser("test.txt", [])

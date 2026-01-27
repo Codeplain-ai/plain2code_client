@@ -5,6 +5,8 @@ from typing import Optional
 
 from liquid2.filter import with_context
 
+from plain2code_exceptions import InvalidLiquidVariableName
+
 DEFINITIONS = "definitions"
 NON_FUNCTIONAL_REQUIREMENTS = "technical specs"
 TEST_REQUIREMENTS = "test specs"
@@ -21,10 +23,6 @@ ALLOWED_SPECIFICATION_HEADINGS = [
 ]
 
 ALLOWED_IMPORT_SPECIFICATION_HEADINGS = [DEFINITIONS, NON_FUNCTIONAL_REQUIREMENTS, TEST_REQUIREMENTS]
-
-
-class InvalidLiquidVariableName(Exception):
-    pass
 
 
 def collect_specification_linked_resources(specification, specification_heading, linked_resources_list):

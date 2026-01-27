@@ -4,6 +4,7 @@ from typing import Optional, Union
 from git import Repo
 
 import file_utils
+from plain2code_exceptions import InvalidGitRepositoryError
 
 FUNCTIONAL_REQUIREMENT_IMPLEMENTED_COMMIT_MESSAGE = (
     "[Codeplain] Implemented code and unit tests for functional requirement {}"
@@ -23,12 +24,6 @@ BASE_FOLDER_COMMIT_MESSAGE = "[Codeplain] Initialize build with Base Folder cont
 RENDERED_FRID_MESSAGE = "Changes related to Functional requirement ID (FRID): {}"
 MODULE_NAME_MESSAGE = "Module name: {}"
 RENDER_ID_MESSAGE = "Render ID: {}"
-
-
-class InvalidGitRepositoryError(Exception):
-    """Raised when the git repository is in an invalid state."""
-
-    pass
 
 
 def _get_full_commit_message(message, module_name, frid, render_id) -> str:

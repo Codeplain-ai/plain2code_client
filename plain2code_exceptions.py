@@ -25,11 +25,19 @@ class PlainSyntaxError(Exception):
     pass
 
 
-class OnlyRelativeLinksAllowed(Exception):
+class OnlyRelativeLinksAllowed(PlainSyntaxError):
     pass
 
 
-class LinkMustHaveTextSpecified(Exception):
+class LinkMustHaveTextSpecified(PlainSyntaxError):
+    pass
+
+
+class InvalidPlainFileExtension(PlainSyntaxError):
+    pass
+
+
+class PlainModuleNotFound(PlainSyntaxError):
     pass
 
 
@@ -46,4 +54,22 @@ class UnexpectedState(Exception):
 
 
 class MissingAPIKey(Exception):
+    pass
+
+
+class InvalidFridArgument(Exception):
+    pass
+
+
+class InvalidGitRepositoryError(Exception):
+    """Raised when the git repository is in an invalid state."""
+
+    pass
+
+
+class InvalidLiquidVariableName(Exception):
+    pass
+
+
+class ModuleDoesNotExistError(Exception):
     pass
