@@ -61,7 +61,7 @@ echo -e "${GREEN}✓${NC} the latest version of *codeplain CLI is now installed.
 echo ""
 echo -e "go to ${YELLOW}https://platform.codeplain.ai${NC} and sign up to get your API key."
 echo ""
-read -p "paste your API key here: " API_KEY
+read -r -p "paste your API key here: " API_KEY < /dev/tty
 echo ""
 
 if [ -z "$API_KEY" ]; then
