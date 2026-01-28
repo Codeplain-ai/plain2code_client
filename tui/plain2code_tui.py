@@ -1,7 +1,7 @@
 import os
 import threading
 import time
-from typing import Callable
+from typing import Callable, Optional
 
 from textual.app import App, ComposeResult
 from textual.containers import Vertical, VerticalScroll
@@ -9,7 +9,6 @@ from textual.widgets import ContentSwitcher, Footer, Header, Static
 from textual.worker import Worker, WorkerState
 
 from event_bus import EventBus
-from plain2code_console import console
 from plain2code_events import (
     LogMessageEmitted,
     RenderCompleted,
@@ -20,6 +19,7 @@ from plain2code_events import (
     RenderStateUpdated,
 )
 from render_machine.states import States
+from tui.widget_helpers import log_to_widget
 
 from .components import (
     FRIDProgress,
@@ -37,6 +37,7 @@ from .state_handlers import (
     RenderErrorHandler,
     RenderSuccessHandler,
     ScriptOutputsHandler,
+    StateCompletionHandler,
     StateHandler,
     UnitTestsHandler,
 )
@@ -67,21 +68,34 @@ class Plain2CodeTUI(App):
         self.event_bus = event_bus
         self.worker_fun = worker_fun
         self.render_id = render_id
-        self.unittests_script = unittests_script
-        self.conformance_tests_script = conformance_tests_script
-        self.prepare_environment_script = prepare_environment_script
+        self.unittests_script: Optional[str] = unittests_script
+        self.conformance_tests_script: Optional[str] = conformance_tests_script
+        self.prepare_environment_script: Optional[str] = prepare_environment_script
 
         # Initialize state handlers
         self._state_handlers: dict[str, StateHandler] = {
-            States.READY_FOR_FRID_IMPLEMENTATION.value: FridReadyHandler(self),
-            States.PROCESSING_UNIT_TESTS.value: UnitTestsHandler(self),
-            States.REFACTORING_CODE.value: RefactoringHandler(self),
-            States.PROCESSING_CONFORMANCE_TESTS.value: ConformanceTestsHandler(self),
-            States.FRID_FULLY_IMPLEMENTED.value: FridFullyImplementedHandler(self),
+            States.READY_FOR_FRID_IMPLEMENTATION.value: FridReadyHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
+            States.PROCESSING_UNIT_TESTS.value: UnitTestsHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
+            States.REFACTORING_CODE.value: RefactoringHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
+            States.PROCESSING_CONFORMANCE_TESTS.value: ConformanceTestsHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
+            States.FRID_FULLY_IMPLEMENTED.value: FridFullyImplementedHandler(
+                self, self.unittests_script, self.conformance_tests_script
+            ),
         }
         self._script_outputs_handler = ScriptOutputsHandler(self)
         self._render_error_handler = RenderErrorHandler(self)
         self._render_success_handler = RenderSuccessHandler(self)
+        self._state_completion_handler = StateCompletionHandler(
+            self, self.unittests_script, self.conformance_tests_script
+        )
 
     def get_active_script_types(self) -> list[ScriptOutputType]:
         """Get the list of active script output types based on which scripts exist.
@@ -131,7 +145,11 @@ class Plain2CodeTUI(App):
                         "Rendering in progress...",
                         id=TUIComponents.RENDER_STATUS_WIDGET.value,
                     )
-                    yield FRIDProgress(id=TUIComponents.FRID_PROGRESS.value)
+                    yield FRIDProgress(
+                        id=TUIComponents.FRID_PROGRESS.value,
+                        unittests_script=self.unittests_script,
+                        conformance_tests_script=self.conformance_tests_script,
+                    )
 
                     # Get active script types for proper label alignment
                     active_script_types = self.get_active_script_types()
@@ -175,7 +193,7 @@ class Plain2CodeTUI(App):
             widget = self.query_one(f"#{TUIComponents.RENDER_MODULE_NAME_WIDGET.value}", Static)
             widget.update(f"{FRIDProgress.RENDERING_MODULE_TEXT}{event.module_name}")
         except Exception as e:
-            console.debug(f"Error updating render module name: {type(e).__name__}: {e}")
+            log_to_widget(self, "WARNING", f"Error updating render module name: {type(e).__name__}: {e}")
 
     def on_render_module_completed(self, _event: RenderModuleCompleted):
         """Update TUI based on the current state machine state."""
@@ -183,7 +201,7 @@ class Plain2CodeTUI(App):
             widget = self.query_one(f"#{TUIComponents.RENDER_MODULE_NAME_WIDGET.value}", Static)
             widget.update(FRIDProgress.RENDERING_MODULE_TEXT)
         except Exception as e:
-            console.debug(f"Error resetting render module name: {type(e).__name__}: {e}")
+            log_to_widget(self, "WARNING", f"Error resetting render module name: {type(e).__name__}: {e}")
 
     def on_log_message_emitted(self, event: LogMessageEmitted):
         try:
@@ -196,7 +214,9 @@ class Plain2CodeTUI(App):
                 event.timestamp,
             )
         except Exception as e:
-            console.debug(f"Error adding log message from {event.logger_name}: {type(e).__name__}: {e}")
+            log_to_widget(
+                self, "WARNING", f"Error adding log message from {event.logger_name}: {type(e).__name__}: {e}"
+            )
 
     def on_log_filter_changed(self, event: LogFilterChanged):
         """Handle log filter changes from LogLevelFilter widget."""
@@ -204,7 +224,7 @@ class Plain2CodeTUI(App):
             log_widget = self.query_one(f"#{TUIComponents.LOG_WIDGET.value}", StructuredLogView)
             log_widget.filter_logs(event.min_level)
         except Exception as e:
-            console.debug(f"Error filtering logs to level {event.min_level}: {type(e).__name__}: {e}")
+            log_to_widget(self, "WARNING", f"Error filtering logs to level {event.min_level}: {type(e).__name__}: {e}")
 
     def on_render_state_updated(self, event: RenderStateUpdated):
         """Update TUI based on the current state machine state."""
@@ -231,6 +251,8 @@ class Plain2CodeTUI(App):
         if snapshot.script_execution_history.should_update_script_outputs:
             self._script_outputs_handler.handle(segments, snapshot, previous_state_segments)
 
+        self._state_completion_handler.handle(segments, snapshot, previous_state_segments)
+
     def on_render_completed(self, _event: RenderCompleted):
         """Handle successful render completion."""
         self._render_success_handler.handle()
@@ -250,7 +272,7 @@ class Plain2CodeTUI(App):
                     # It ensures terminal reset sequences are flushed before exiting.
                     self._driver.suspend_application_mode()
             except Exception as e:
-                console.debug(f"Error suspending application mode: {type(e).__name__}: {e}")
+                log_to_widget(self, "WARNING", f"Error suspending application mode: {type(e).__name__}: {e}")
             finally:
                 os._exit(0)  # Kill process immediately, no cleanup - terminates all threads
 
