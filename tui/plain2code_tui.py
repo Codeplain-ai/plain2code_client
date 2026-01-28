@@ -140,11 +140,10 @@ class Plain2CodeTUI(App):
             with Vertical(id=TUIComponents.DASHBOARD_VIEW.value):
                 with VerticalScroll():
                     yield Static(
-                        "  ___ ___   __| | ___ _ __ | | __ _(_)_ __\n"
-                        " / __/ _ \\ / _` |/ _ \\ '_ \\| |/ _` | | '_ \\\n"
-                        "| (_| (_) | (_| |  __/ |_) | | (_| | | | | |\n"
-                        " \\___\\___/ \\__,_|\\___| .__/|_|\\__,_|_|_| |_|\n"
-                        "                     |_|",
+                        "┌────────────────────────────────────────────────────────────────┐\n"
+                        "│ [#E0FF6E]*codeplain[/#E0FF6E]  │  how to get started                              │\n"
+                        "│ [#888888](v0.5.0)[/#888888]    │  [#888888]Use ctrl + l to see the logs for debuging[/#888888]       │\n"
+                        "└────────────────────────────────────────────────────────────────┘",
                         id="codeplain-header",
                         classes="codeplain-header",
                     )
