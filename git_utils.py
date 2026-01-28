@@ -259,9 +259,7 @@ def _get_commit(repo: Repo, frid: Optional[str]) -> str:
     return initial_commit
 
 
-def _get_commit_with_frid(
-    repo: Repo, frid: str, module_name: Optional[str] = None
-) -> str:
+def _get_commit_with_frid(repo: Repo, frid: str, module_name: Optional[str] = None) -> str:
     """
     Finds commit with given frid mentioned in the commit message.
 
@@ -281,9 +279,7 @@ def _get_commit_with_frid(
         return _get_commit_with_message(repo, commit_message_pattern)
 
     # Use multiple grep patterns with --all-match for AND condition
-    escaped_frid_message = commit_message_pattern.replace("[", "\\[").replace(
-        "]", "\\]"
-    )
+    escaped_frid_message = commit_message_pattern.replace("[", "\\[").replace("]", "\\]")
     module_name_pattern = MODULE_NAME_MESSAGE.format(module_name)
     escaped_module_message = module_name_pattern.replace("[", "\\[").replace("]", "\\]")
 
