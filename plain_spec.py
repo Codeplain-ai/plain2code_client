@@ -178,6 +178,26 @@ def get_previous_frid(plain_source_tree, frid):
     raise Exception(f"Functional requirement {frid} does not exist.")
 
 
+def get_frids_before(plain_source_tree, target_frid: str) -> list[str]:
+    """
+    Get all FRIDs that appear before the target FRID in the specification.
+
+    Args:
+        plain_source_tree: The plain source tree
+        target_frid: The FRID to find predecessors for
+
+    Returns:
+        List of FRIDs that appear before target_frid, in order
+    """
+    previous_frids = []
+    for frid in get_frids(plain_source_tree):
+        if frid == target_frid:
+            break
+        previous_frids.append(frid)
+
+    return previous_frids
+
+
 def get_specification_item_markdown(specification_item, code_variables, replace_code_variables):
     markdown = specification_item["markdown"]
     if "code_variables" in specification_item:
