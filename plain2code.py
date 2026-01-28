@@ -17,7 +17,12 @@ from event_bus import EventBus
 from module_renderer import ModuleRenderer
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
-from plain2code_exceptions import InvalidFridArgument, MissingAPIKey, PlainSyntaxError
+from plain2code_exceptions import (
+    InvalidFridArgument,
+    MissingAPIKey,
+    MissingPreviousFunctionalitiesError,
+    PlainSyntaxError,
+)
 from plain2code_logger import (
     CrashLogHandler,
     IndentedFormatter,
@@ -244,6 +249,10 @@ def main():
         console.debug(f"Render ID: {run_state.render_id}")
         dump_crash_logs(args)
     except RequestException as e:
+        console.error(f"Error rendering plain code: {str(e)}\n")
+        console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
+    except MissingPreviousFunctionalitiesError as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
         dump_crash_logs(args)

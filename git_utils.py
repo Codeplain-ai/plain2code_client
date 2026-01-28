@@ -247,7 +247,10 @@ def diff(repo_path: Union[str, os.PathLike], previous_frid: str = None) -> dict:
 
 def _get_commit(repo: Repo, frid: Optional[str]) -> str:
     if frid:
-        return _get_commit_with_frid(repo, frid)
+        commit_with_frid = _get_commit_with_frid(repo, frid)
+        if not commit_with_frid:
+            raise InvalidGitRepositoryError(f"No commit with frid {frid} found.")
+        return commit_with_frid
 
     base_folder_commit = _get_base_folder_commit(repo)
     initial_commit = _get_initial_commit(repo)
@@ -256,12 +259,44 @@ def _get_commit(repo: Repo, frid: Optional[str]) -> str:
     return initial_commit
 
 
-def _get_commit_with_frid(repo: Repo, frid: str) -> str:
-    """Finds commit with given frid mentioned in the commit message."""
-    commit = _get_commit_with_message(repo, FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid))
-    if not commit:
-        raise InvalidGitRepositoryError(f"No commit with frid {frid} found.")
-    return commit
+def _get_commit_with_frid(repo: Repo, frid: str, module_name: Optional[str] = None) -> str:
+    """
+    Finds commit with given frid mentioned in the commit message.
+
+    Args:
+        repo (Repo): Git repository object
+        frid (str): Functional requirement ID
+        module_name (Optional[str]): Module name to filter by. If provided, only returns
+                                      commits that have both the FRID and module name.
+
+    Returns:
+        str: Commit SHA if found, empty string otherwise
+    """
+    commit_message_pattern = FUNCTIONAL_REQUIREMENT_FINISHED_COMMIT_MESSAGE.format(frid)
+
+    # If no module name filtering is needed, use the original logic
+    if not module_name:
+        return _get_commit_with_message(repo, commit_message_pattern)
+
+    # Use multiple grep patterns with --all-match for AND condition
+    escaped_frid_message = commit_message_pattern.replace("[", "\\[").replace("]", "\\]")
+    module_name_pattern = MODULE_NAME_MESSAGE.format(module_name)
+    escaped_module_message = module_name_pattern.replace("[", "\\[").replace("]", "\\]")
+
+    return repo.git.rev_list(
+        repo.active_branch.name,
+        "--grep",
+        escaped_frid_message,
+        "--grep",
+        escaped_module_message,
+        "--all-match",
+        "-n",
+        "1",
+    )
+
+
+def has_commit_for_frid(repo_path: Union[str, os.PathLike], frid: str, module_name: Optional[str] = None) -> bool:
+    return bool(_get_commit_with_frid(Repo(repo_path), frid, module_name))
 
 
 def _get_base_folder_commit(repo: Repo) -> str:

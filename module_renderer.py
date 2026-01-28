@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import git_utils
 import plain_file
 import plain_modules
 import plain_spec
@@ -8,6 +9,7 @@ from event_bus import EventBus
 from memory_management import MemoryManager
 from plain2code_console import console
 from plain2code_events import RenderCompleted, RenderFailed
+from plain2code_exceptions import MissingPreviousFunctionalitiesError
 from plain2code_state import RunState
 from plain_modules import PlainModule
 from render_machine.code_renderer import CodeRenderer
@@ -34,6 +36,114 @@ class ModuleRenderer:
         self.args = args
         self.run_state = run_state
         self.event_bus = event_bus
+
+    def _ensure_module_folders_exist(self, module_name: str, first_render_frid: str) -> tuple[str, str]:
+        """
+        Ensure that build and conformance test folders exist for the module.
+
+        Args:
+            module_name: Name of the module being rendered
+            first_render_frid: The first FRID in the render range
+
+        Returns:
+            tuple[str, str]: (build_folder_path, conformance_tests_path)
+
+        Raises:
+            MissingPreviousFridCommitsError: If any required folders are missing
+        """
+        build_folder_path = os.path.join(self.args.build_folder, module_name)
+        conformance_tests_path = os.path.join(self.args.conformance_tests_folder, module_name)
+
+        if not os.path.exists(build_folder_path):
+            raise MissingPreviousFunctionalitiesError(
+                f"Cannot start rendering from functional spec {first_render_frid} for module '{module_name}' because the source code folder does not exist.\n\n"
+                f"To fix this, please render the module from the beginning by running:\n"
+                f"  codeplain {module_name}{plain_file.PLAIN_SOURCE_FILE_EXTENSION}"
+            )
+
+        if not os.path.exists(conformance_tests_path):
+            raise MissingPreviousFunctionalitiesError(
+                f"Cannot start rendering from functional spec {first_render_frid} for module '{module_name}' because the conformance tests folder does not exist.\n\n"
+                f"To fix this, please render the module from the beginning by running:\n"
+                f"  codeplain {module_name}{plain_file.PLAIN_SOURCE_FILE_EXTENSION}"
+            )
+
+        return build_folder_path, conformance_tests_path
+
+    def _ensure_frid_commit_exists(
+        self,
+        frid: str,
+        module_name: str,
+        build_folder_path: str,
+        conformance_tests_path: str,
+        first_render_frid: str,
+    ) -> None:
+        """
+        Ensure commit exists for a single FRID in both repositories.
+
+        Args:
+            frid: The FRID to check
+            module_name: Name of the module
+            build_folder_path: Path to the build folder
+            conformance_tests_path: Path to the conformance tests folder
+            first_render_frid: The first FRID in the render range (for error messages)
+
+        Raises:
+            MissingPreviousFridCommitsError: If the commit is missing
+        """
+        # Check in build folder
+        if not git_utils.has_commit_for_frid(build_folder_path, frid, module_name):
+            raise MissingPreviousFunctionalitiesError(
+                f"Cannot start rendering from functional spec {first_render_frid} for module '{module_name}' because the implementation of the previous functional spec ({frid}) hasn't been completed yet.\n\n"
+                f"To fix this, please render the missing functional spec first by running:\n"
+                f"  codeplain {module_name}{plain_file.PLAIN_SOURCE_FILE_EXTENSION} --render-from {frid}"
+            )
+
+        # Check in conformance tests folder (only if conformance tests are enabled)
+        if self.args.render_conformance_tests:
+            if not git_utils.has_commit_for_frid(conformance_tests_path, frid, module_name):
+                raise MissingPreviousFunctionalitiesError(
+                    f"Cannot start rendering from functional spec {first_render_frid} for module '{module_name}' because the conformance tests for the previous functional spec ({frid}) haven't been completed yet.\n\n"
+                    f"To fix this, please render the missing functional spec first by running:\n"
+                    f"  codeplain {module_name}{plain_file.PLAIN_SOURCE_FILE_EXTENSION} --render-from {frid}"
+                )
+
+    def _ensure_previous_frid_commits_exist(
+        self, module_name: str, plain_source: dict, render_range: list[str]
+    ) -> None:
+        """
+        Ensure that all FRID commits before the render_range exist.
+
+        This is a precondition check that must pass before rendering can proceed.
+        Raises an exception if any previous FRID commits are missing.
+
+        Args:
+            module_name: Name of the module being rendered
+            plain_source: The plain source tree
+            render_range: List of FRIDs to render
+
+        Raises:
+            MissingPreviousFridCommitsError: If any previous FRID commits are missing
+        """
+        first_render_frid = render_range[0]
+
+        # Get all FRIDs that should have been rendered before this one
+        previous_frids = plain_spec.get_frids_before(plain_source, first_render_frid)
+        if not previous_frids:
+            return
+
+        # Ensure the module folders exist
+        build_folder_path, conformance_tests_path = self._ensure_module_folders_exist(module_name, first_render_frid)
+
+        # Verify commits exist for all previous FRIDs
+        for prev_frid in previous_frids:
+            self._ensure_frid_commit_exists(
+                prev_frid,
+                module_name,
+                build_folder_path,
+                conformance_tests_path,
+                first_render_frid,
+            )
 
     def _build_render_context_for_module(
         self,
@@ -80,6 +190,10 @@ class ModuleRenderer:
 
         resources_list = []
         plain_spec.collect_linked_resources(plain_source, resources_list, None, True)
+
+        # Ensure that all previous FRID commits exist before proceeding with render_range
+        if render_range is not None:
+            self._ensure_previous_frid_commits_exist(module_name, plain_source, render_range)
 
         required_modules = []
         has_any_required_module_changed = False

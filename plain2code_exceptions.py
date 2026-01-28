@@ -57,3 +57,9 @@ class InvalidLiquidVariableName(Exception):
 
 class ModuleDoesNotExistError(Exception):
     pass
+
+
+class MissingPreviousFunctionalitiesError(Exception):
+    """Raised when trying to render from a FRID but previous FRID commits are missing."""
+
+    pass
