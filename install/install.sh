@@ -221,8 +221,11 @@ echo -e "${GRAY}─────────────────────�
 echo ""
 echo -e "  thank you for using *codeplain!"
 echo ""
-echo ""
 echo -e "  learn more at ${YELLOW}https://plainlang.org/${NC}"
 echo ""
 echo -e "  ${GREEN}happy development!${NC} 🚀"
 echo ""
+
+# Replace this subshell with a fresh shell that has the new environment
+# Reconnect stdin to terminal (needed when running via curl | bash)
+exec "$SHELL" < /dev/tty
