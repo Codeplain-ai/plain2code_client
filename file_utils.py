@@ -43,6 +43,8 @@ FILE_EXTENSION_MAPPING = {
     ".bat": "Batch File",
 }
 
+SYSTEM_FOLDERS = [".git", CODEPLAIN_METADATA_FOLDER, CODEPLAIN_MEMORY_SUBFOLDER]
+
 
 def get_file_type(file_name):
 
@@ -55,10 +57,9 @@ def get_file_type(file_name):
 
 def list_all_text_files(directory):
     all_files = []
-    skip_dirs = [".git", CODEPLAIN_METADATA_FOLDER, CODEPLAIN_MEMORY_SUBFOLDER]
     for root, dirs, files in os.walk(directory, topdown=True):
         # Skip directories that should not be traversed
-        for skip_dir in skip_dirs:
+        for skip_dir in SYSTEM_FOLDERS:
             if skip_dir in dirs:
                 dirs.remove(skip_dir)
 
@@ -322,5 +323,5 @@ def copy_folder_to_output(source_folder, output_folder):
     if os.path.exists(output_folder):
         delete_files_and_subfolders(output_folder)
 
-    # Copy source folder contents directly to output folder (excluding .git)
-    copy_folder_content(source_folder, output_folder, ignore_folders=[".git"])
+    # Copy source folder contents directly to output folder (excluding SYSTEM_FOLDERS)
+    copy_folder_content(source_folder, output_folder, ignore_folders=SYSTEM_FOLDERS)
