@@ -47,7 +47,7 @@ class PrepareRepositories(BaseAction):
                 )
             else:
                 if render_context.verbose:
-                    console.info("Initializing git repositories for the render folders.")
+                    console.info("Initializing git repositories for the render folders.\n")
 
                 git_utils.init_git_repo(
                     render_context.build_folder, render_context.module_name, render_context.run_state.render_id

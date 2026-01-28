@@ -1,7 +1,7 @@
 __pycache__
 .DS_Store
 
-# Plain
+
 examples/**/build*/
 examples/**/conformance_tests/
 examples/**/conformance_tests.backup/
@@ -23,10 +23,10 @@ examples/**/node_plain_modules/
 *.log
 
 .venv
-build
 dist
 *.egg-info
 
 .env
 
 .coverage
+logging_config.yaml

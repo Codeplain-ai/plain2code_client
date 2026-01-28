@@ -25,14 +25,14 @@ class RenderFunctionalRequirement(BaseAction):
         _, memory_files_content = MemoryManager.fetch_memory_files(render_context.memory_manager.memory_folder)
 
         if render_context.verbose:
-            msg = f"Module: {render_context.module_name}\n"
+            msg = "-------------------------------------\n"
+            msg += f"Module: {render_context.module_name}\n"
             msg += f"Rendering functional requirement {render_context.frid_context.frid}"
             if render_context.frid_context.functional_requirement_render_attempts > 1:
                 msg += f", attempt number {render_context.frid_context.functional_requirement_render_attempts}/{MAX_CODE_GENERATION_RETRIES}."
-            msg += f"\n[b]{render_context.frid_context.functional_requirement_text}[/b]"
-            console.info("-------------------------------------")
+            msg += f"\n{render_context.frid_context.functional_requirement_text}\n"
+            msg += "-------------------------------------\n"
             console.info(msg)
-            console.info("-------------------------------------")
 
         try:
             if render_context.verbose:
@@ -54,7 +54,7 @@ class RenderFunctionalRequirement(BaseAction):
                     render_context.run_state,
                 )
         except FunctionalRequirementTooComplex as e:
-            error_message = f"The functional requirement:\n[b]{render_context.frid_context.functional_requirement_text}[/b]\n is too complex to be implemented. Please break down the functional requirement into smaller parts ({str(e)})."
+            error_message = f"The functional requirement:\n{render_context.frid_context.functional_requirement_text}\n is too complex to be implemented. Please break down the functional requirement into smaller parts ({str(e)})."
             if e.proposed_breakdown:
                 error_message += "\nProposed breakdown:"
                 for _, part in e.proposed_breakdown["functional_requirements"].items():

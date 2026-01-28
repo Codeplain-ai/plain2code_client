@@ -9,10 +9,23 @@ from spinner import Spinner
 from .models import Substate
 
 
+class CustomFooter(Horizontal):
+    """A custom footer with keyboard shortcuts and render ID."""
+    
+    def __init__(self, render_id: str = "", **kwargs):
+        super().__init__(**kwargs)
+        self.render_id = render_id
+    
+    def compose(self):
+        yield Static("ctrl+c: quit  *  ctrl+l: toggle logs", classes="custom-footer-text")
+        if self.render_id:
+            yield Static(f"render id: {self.render_id}", classes="custom-footer-render-id")
+
+
 class ScriptOutputType(str, Enum):
-    UNIT_TEST_OUTPUT_TEXT = "Latest unit test script execution output: "
-    CONFORMANCE_TEST_OUTPUT_TEXT = "Latest conformance tests script execution output: "
-    TESTING_ENVIRONMENT_OUTPUT_TEXT = "Latest testing environment preparation script execution output: "
+    UNIT_TEST_OUTPUT_TEXT = "Unit tests: "
+    CONFORMANCE_TEST_OUTPUT_TEXT = "Conformance tests: "
+    TESTING_ENVIRONMENT_OUTPUT_TEXT = "Testing environment preparation execution output: "
 
     @staticmethod
     def get_max_label_width(active_types: list["ScriptOutputType"]) -> int:
@@ -29,16 +42,16 @@ class ScriptOutputType(str, Enum):
         return max(len(script_type.value) for script_type in active_types)
 
     def get_padded_label(self, active_types: list["ScriptOutputType"]) -> str:
-        """Get the label right-padded to align with other active labels.
+        """Get the label left-aligned (no padding).
 
         Args:
             active_types: List of ScriptOutputType enum members that are currently active
 
         Returns:
-            Right-aligned label padded to match the longest active label
+            Label without padding (left-aligned)
         """
-        max_width = ScriptOutputType.get_max_label_width(active_types)
-        return self.value.rjust(max_width)
+        # Return label as-is without padding for left alignment
+        return self.value
 
 
 class TUIComponents(str, Enum):
@@ -176,6 +189,155 @@ class ProgressItem(Vertical):
             pass
 
 
+class RenderingInfoBox(Vertical):
+    """Container with ASCII border for module and functionality information."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.module_text = ""
+        self.functionality_text = ""
+
+    def update_module(self, text: str) -> None:
+        """Update the module name and refresh the display."""
+        self.module_text = text
+        self._refresh_content()
+
+    def update_functionality(self, text: str) -> None:
+        """Update the functionality text and refresh the display."""
+        self.functionality_text = text
+        self._refresh_content()
+
+    def _refresh_content(self) -> None:
+        """Refresh the content of the box."""
+        try:
+            widget = self.query_one("#rendering-info-content", Static)
+            # Calculate the width needed for the border
+            lines = []
+            if self.module_text:
+                lines.append(f"  {self.module_text}")
+            if self.functionality_text:
+                lines.append(f"  {self.functionality_text}")
+            
+            if not lines:
+                widget.update("")
+                return
+            
+            # Find the longest line to determine border width
+            max_width = max(len(line) for line in lines) if lines else 40
+            border_width = max(max_width + 2, 42)  # At least 42 chars wide
+            
+            # Build the bordered box with title
+            title = " Currently rendering "
+            top_border = "┌[#FFFFFF]" + title + "[/#FFFFFF]" + "─" * (border_width - len(title)) + "┐"
+            bottom_border = "└" + "─" * border_width + "┘"
+            
+            content_lines = [top_border]
+            # Add top padding (empty line)
+            content_lines.append(f"│{' ' * border_width}│")
+            for line in lines:
+                padding = border_width - len(line)
+                content_lines.append(f"│{line}{' ' * padding}│")
+            # Add bottom padding (empty line)
+            content_lines.append(f"│{' ' * border_width}│")
+            content_lines.append(bottom_border)
+            
+            widget.update("\n".join(content_lines))
+        except Exception:
+            pass
+
+    def on_mount(self) -> None:
+        """Initialize the box with empty state on mount."""
+        # Set default empty labels
+        self.module_text = "Module: "
+        self.functionality_text = "Functionality:"
+        self._refresh_content()
+
+    def compose(self):
+        yield Static("", id="rendering-info-content", classes="rendering-info-box")
+
+
+class TestScriptsContainer(Vertical):
+    """Container with ASCII border for test script outputs."""
+
+    def __init__(
+        self,
+        show_unit_test: bool = True,
+        show_conformance_test: bool = True,
+        show_testing_env: bool = True,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.show_unit_test = show_unit_test
+        self.show_conformance_test = show_conformance_test
+        self.show_testing_env = show_testing_env
+        self.unit_test_text = ScriptOutputType.UNIT_TEST_OUTPUT_TEXT.value
+        self.conformance_test_text = ScriptOutputType.CONFORMANCE_TEST_OUTPUT_TEXT.value
+        self.testing_env_text = ScriptOutputType.TESTING_ENVIRONMENT_OUTPUT_TEXT.value
+
+    def update_unit_test(self, text: str) -> None:
+        """Update unit test output and refresh."""
+        self.unit_test_text = text
+        self._refresh_content()
+
+    def update_conformance_test(self, text: str) -> None:
+        """Update conformance test output and refresh."""
+        self.conformance_test_text = text
+        self._refresh_content()
+
+    def update_testing_env(self, text: str) -> None:
+        """Update testing env output and refresh."""
+        self.testing_env_text = text
+        self._refresh_content()
+
+    def _refresh_content(self) -> None:
+        """Refresh the bordered box content."""
+        try:
+            widget = self.query_one("#test-scripts-content", Static)
+            
+            # Collect lines to display
+            lines = []
+            if self.show_unit_test:
+                lines.append(f"  {self.unit_test_text}")
+            if self.show_conformance_test:
+                lines.append(f"  {self.conformance_test_text}")
+            if self.show_testing_env:
+                lines.append(f"  {self.testing_env_text}")
+            
+            if not lines:
+                widget.update("")
+                return
+            
+            # Find the longest line to determine border width
+            max_width = max(len(line) for line in lines)
+            border_width = max(max_width + 2, 80)  # Minimum width of 80 chars
+            
+            # Build the bordered box with title
+            title = " Latest test scripts "
+            top_border = "┌[#FFFFFF]" + title + "[/#FFFFFF]" + "─" * (border_width - len(title)) + "┐"
+            bottom_border = "└" + "─" * border_width + "┘"
+            
+            content_lines = [top_border]
+            # Add top padding (empty line)
+            content_lines.append(f"│{' ' * border_width}│")
+            for line in lines:
+                padding = border_width - len(line)
+                content_lines.append(f"│{line}{' ' * padding}│")
+            # Add bottom padding (empty line)
+            content_lines.append(f"│{' ' * border_width}│")
+            content_lines.append(bottom_border)
+            
+            widget.update("\n".join(content_lines))
+        except Exception:
+            pass
+
+    def on_mount(self) -> None:
+        """Initialize the box on mount."""
+        self._refresh_content()
+
+    def compose(self):
+        yield Static("", id="test-scripts-content", classes="test-scripts-box")
+
+
 class FRIDProgress(Vertical):
     """A widget to display the status of subcomponent tasks."""
 
@@ -185,16 +347,17 @@ class FRIDProgress(Vertical):
     REFACTORING_TEXT = "Refactoring"
     CONFORMANCE_TEST_VALIDATION_TEXT = "Conformance tests"
 
-    RENDERING_MODULE_TEXT = "Rendering module: "
-    RENDERING_FUNCTIONALITY_TEXT = "Rendering functionality:"
+    RENDERING_MODULE_TEXT = "Module: "
+    RENDERING_FUNCTIONALITY_TEXT = "Functionality:"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def update_fr_text(self, text: str) -> None:
         try:
-            widget = self.query_one(f"#{TUIComponents.FRID_PROGRESS_HEADER.value}", Static)
-            widget.update(text)
+            # Update the rendering info box instead
+            info_box = self.query_one(RenderingInfoBox)
+            info_box.update_functionality(text)
         except Exception:
             pass
 
@@ -209,8 +372,7 @@ class FRIDProgress(Vertical):
         self.border_title = "FRID Progress"
 
     def compose(self):
-        yield Static(self.RENDERING_MODULE_TEXT, id=TUIComponents.RENDER_MODULE_NAME_WIDGET.value)
-        yield Static(self.RENDERING_FUNCTIONALITY_TEXT, id=TUIComponents.FRID_PROGRESS_HEADER.value)
+        yield RenderingInfoBox()
         yield ProgressItem(
             self.IMPLEMENTING_FUNCTIONALITY_TEXT,
             id=TUIComponents.FRID_PROGRESS_RENDER_FR.value,
@@ -229,25 +391,8 @@ class FRIDProgress(Vertical):
         )
 
 
-class ClickableArrow(Static):
-    """A clickable arrow widget for expanding/collapsing logs."""
-
-    def __init__(self, is_expanded: bool = False, **kwargs):
-        arrow = "▼" if is_expanded else "▶"
-        super().__init__(arrow, **kwargs)
-        self.classes = "log-arrow"
-
-    def on_click(self, event):
-        """Notify parent to toggle expansion."""
-        # Bubble up to parent CollapsibleLogEntry
-        event.stop()
-        parent = self.parent
-        if isinstance(parent, CollapsibleLogEntry):
-            parent.toggle_expansion()
-
-
-class CollapsibleLogEntry(Horizontal):
-    """A single collapsible log entry that can be clicked to expand/collapse."""
+class LogEntry(Horizontal):
+    """A single log entry displayed as a table row with 4 columns."""
 
     def __init__(self, logger_name: str, level: str, message: str, timestamp: str = "", **kwargs):
         super().__init__(**kwargs)
@@ -255,40 +400,34 @@ class CollapsibleLogEntry(Horizontal):
         self.level = level
         self.message = message
         self.timestamp = timestamp
-        self.is_expanded = False
         self.classes = f"log-entry log-{level.lower()}"
 
     def compose(self):
-        # Start with collapsed view - arrow and full message text side by side
-        yield ClickableArrow(id="arrow")
-        yield Static(self.message, classes="log-summary")
-
-    def toggle_expansion(self):
-        """Toggle the expansion state of this log entry."""
-        self.is_expanded = not self.is_expanded
-        self.call_later(self.refresh_display)
-
-    async def refresh_display(self):
-        """Update the display based on expanded state."""
-        # Remove all children
-        await self.remove_children()
-
-        if self.is_expanded:
-            # Expanded view: shows arrow, full message, and structured metadata
-            await self.mount(ClickableArrow(is_expanded=True))
-            expanded_text = f"{self.message}\n"
-            expanded_text += f"   Level: {self.level}\n"
-            expanded_text += f"   Location: {self.logger_name}\n"
-            expanded_text += f"   Time: {self.timestamp}"
-            await self.mount(Static(expanded_text, classes="log-expanded"))
-        else:
-            # Collapsed view: shows arrow and full message only
-            await self.mount(ClickableArrow(is_expanded=False))
-            await self.mount(Static(self.message, classes="log-summary"))
+        # Column 1: Offset time with brackets (just the time portion, not full timestamp)
+        time_part = self.timestamp.split()[-1] if self.timestamp else ""
+        yield Static(f"[{time_part}]", classes="log-col-time")
+        
+        # Column 2: Level
+        yield Static(self.level, classes="log-col-level")
+        
+        # Column 3: Location (logger name) - truncate if longer than 20 characters
+        location = self.logger_name
+        if len(location) > 9:
+            location = location[:9] + "..."
+        yield Static(location, classes="log-col-location")
+        
+        # Column 4: Message with green checkmark for successful outcomes
+        message_text = self.message
+        # Add green checkmark for messages indicating success
+        if any(keyword in message_text.lower() for keyword in [
+            "completed", "success", "successfully", "passed", "done", "✓"
+        ]):
+            message_text = f"[green]✓[/green] {message_text}"
+        yield Static(message_text, classes="log-col-message")
 
 
 class StructuredLogView(VerticalScroll):
-    """A scrollable container for collapsible log entries."""
+    """A scrollable container for log entries displayed as a table."""
 
     # Log level hierarchy (lower number = lower priority)
     LOG_LEVELS = {
@@ -296,7 +435,6 @@ class StructuredLogView(VerticalScroll):
         "INFO": 1,
         "WARNING": 2,
         "ERROR": 3,
-        "CRITICAL": 4,
     }
 
     def __init__(self, **kwargs):
@@ -311,7 +449,17 @@ class StructuredLogView(VerticalScroll):
 
     async def add_log(self, logger_name: str, level: str, message: str, timestamp: str = ""):
         """Add a new log entry."""
-        entry = CollapsibleLogEntry(logger_name, level, message, timestamp)
+        # Check if this is a success message that should have spacing before it
+        is_success_message = any(keyword in message.lower() for keyword in [
+            "completed", "success", "successfully", "passed", "done", "✓"
+        ])
+        
+        # Add empty line before success messages
+        if is_success_message:
+            spacer = Static("", classes="log-spacer")
+            await self.mount(spacer)
+        
+        entry = LogEntry(logger_name, level, message, timestamp)
 
         # Only show if level is >= minimum level
         if not self._should_show_log(level):
@@ -326,7 +474,7 @@ class StructuredLogView(VerticalScroll):
         self.min_level = min_level
 
         # Update visibility of all existing log entries
-        for entry in self.query(CollapsibleLogEntry):
+        for entry in self.query(LogEntry):
             entry.display = self._should_show_log(entry.level)
 
 
@@ -341,17 +489,34 @@ class LogFilterChanged(Message):
 class LogLevelFilter(Horizontal):
     """Filter logs by minimum level with buttons."""
 
-    LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    LEVELS = ["debug", "info", "warning", "error"]
+    
+    # Make the widget focusable to receive keyboard events
+    can_focus = True
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.current_level = "DEBUG"
+        self.current_level = "INFO"
+        self.current_index = self.LEVELS.index(self.current_level.lower())
 
     def compose(self):
-        yield Static("Level: ", classes="filter-label")
-        for level in self.LEVELS:
-            variant = "primary" if level == self.current_level else "default"
-            yield Button(level, id=f"filter-{level.lower()}", variant=variant, classes="filter-button")  # type: ignore[arg-type]
+        yield Static("level: ", classes="filter-label")
+        with Horizontal(classes="filter-buttons-container"):
+            for level in self.LEVELS:
+                variant = "primary" if level.upper() == self.current_level else "default"
+                btn = Button(level.upper(), id=f"filter-{level.lower()}", variant=variant, classes="filter-button")  # type: ignore[arg-type]
+                btn.can_focus = False  # Prevent buttons from receiving focus
+                yield btn
+
+    def on_key(self, event):
+        """Handle tab key to cycle through levels."""
+        if event.key == "tab":
+            # Move to next level
+            self.current_index = (self.current_index + 1) % len(self.LEVELS)
+            new_level = self.LEVELS[self.current_index].upper()
+            self._update_level(new_level)
+            event.prevent_default()
+            event.stop()
 
     def on_button_pressed(self, event):
         """Handle level button press."""
@@ -359,14 +524,20 @@ class LogLevelFilter(Horizontal):
         button_id = event.button.id
         if button_id and button_id.startswith("filter-"):
             level = button_id.replace("filter-", "").upper()
-            self.current_level = level
+            self.current_index = self.LEVELS.index(level.lower())
+            self._update_level(level)
 
-            # Update button variants
-            for btn in self.query(Button):
-                if btn.id == f"filter-{level.lower()}":
-                    btn.variant = "primary"
-                else:
-                    btn.variant = "default"
+    def _update_level(self, level: str):
+        """Update the current level and button states."""
+        self.current_level = level
 
-            # Notify parent to refresh log visibility
-            self.post_message(LogFilterChanged(level))
+        # Update button variants
+        for btn in self.query(Button):
+            if btn.id == f"filter-{level.lower()}":
+                btn.variant = "primary"
+            else:
+                btn.variant = "default"
+            btn.refresh()  # Force immediate visual update
+
+        # Notify parent to refresh log visibility
+        self.post_message(LogFilterChanged(level))
