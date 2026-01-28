@@ -299,24 +299,8 @@ def _get_commit_with_frid(
     )
 
 
-def has_commit_for_frid(
-    repo_path: Union[str, os.PathLike], frid: str, module_name: Optional[str] = None
-) -> bool:
-    """
-    Check if a commit exists for the given FRID in the repository.
-
-    Args:
-        repo_path (str | os.PathLike): Path to the git repository
-        frid (str): Functional requirement ID to check
-
-    Returns:
-        bool: True if the commit exists, False otherwise
-    """
-    repo = Repo(repo_path)
-    commit_with_frid = _get_commit_with_frid(repo, frid, module_name)
-    if not commit_with_frid:
-        return False
-    return True
+def has_commit_for_frid(repo_path: Union[str, os.PathLike], frid: str, module_name: Optional[str] = None) -> bool:
+    return bool(_get_commit_with_frid(Repo(repo_path), frid, module_name))
 
 
 def _get_base_folder_commit(repo: Repo) -> str:
