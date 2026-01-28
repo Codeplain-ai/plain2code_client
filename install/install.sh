@@ -127,6 +127,9 @@ else
             sed -i "s|export CODEPLAIN_API_KEY=.*|export CODEPLAIN_API_KEY=\"$API_KEY\"|" "$SHELL_RC"
         fi
     fi
+
+    # Source the shell config to make API key available in current session
+    source "$SHELL_RC"
 fi
 
 # ASCII Art Welcome
