@@ -32,7 +32,7 @@ class RunConformanceTests(BaseAction):
 
         if render_context.verbose:
             console.info(
-                f"\nRunning conformance tests script {render_context.conformance_tests_script} "
+                f"Running conformance tests script {render_context.conformance_tests_script} "
                 + f"for {conformance_tests_folder_name} ("
                 + f"functional requirement {render_context.conformance_tests_running_context.current_testing_frid} "
                 + f"in module {render_context.conformance_tests_running_context.current_testing_module_name}"
@@ -43,6 +43,7 @@ class RunConformanceTests(BaseAction):
             [render_context.build_folder, conformance_tests_folder_name],
             render_context.verbose,
             "Conformance Tests",
+            render_context.conformance_tests_running_context.current_testing_frid,
         )
         render_context.script_execution_history.latest_conformance_test_output_path = conformance_tests_temp_file_path
         render_context.script_execution_history.should_update_script_outputs = True
