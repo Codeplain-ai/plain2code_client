@@ -63,6 +63,10 @@ class TuiLoggingHandler(logging.Handler):
                 self.event_bus.publish(event)
             else:
                 self._buffer.append(event)
+        except RuntimeError:
+            # We're going to get this crash after the TUI app is closed (forcefully).
+            # NOTE: This should be more thought out.
+            pass
         except Exception:
             self.handleError(record)
 
