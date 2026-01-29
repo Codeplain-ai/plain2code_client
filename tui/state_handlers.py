@@ -7,7 +7,7 @@ from plain2code_events import RenderContextSnapshot
 from render_machine.states import States
 
 from . import components as tui_components
-from .components import ProgressItem, ScriptOutputType, TUIComponents
+from .components import ProgressItem, ScriptOutputType, TestScriptsContainer, TUIComponents
 from .models import Substate
 from .widget_helpers import (
     display_error_message,
@@ -246,36 +246,28 @@ class ScriptOutputsHandler(StateHandler):
 
     def handle(self, _segments: list[str], snapshot: RenderContextSnapshot, previous_state_segments: list[str]) -> None:
         # Update test scripts container
-        try:
-            from .components import TestScriptsContainer
+        container = self.tui.query_one(f"#{TUIComponents.TEST_SCRIPTS_CONTAINER.value}", TestScriptsContainer)
 
-            container = self.tui.query_one("#test-scripts-container", TestScriptsContainer)
+        if any(segment == States.UNIT_TESTS_READY.value for segment in previous_state_segments):
+            if snapshot.script_execution_history.latest_unit_test_output_path:
+                container.update_unit_test(
+                    f"{ScriptOutputType.UNIT_TEST_OUTPUT_TEXT.value}{snapshot.script_execution_history.latest_unit_test_output_path}"
+                )
 
-            if any(segment == States.UNIT_TESTS_READY.value for segment in previous_state_segments):
-                if snapshot.script_execution_history.latest_unit_test_output_path:
-                    container.update_unit_test(
-                        f"{ScriptOutputType.UNIT_TEST_OUTPUT_TEXT.value}{snapshot.script_execution_history.latest_unit_test_output_path}"
-                    )
+        if len(previous_state_segments) > 2 and previous_state_segments[2] == States.CONFORMANCE_TEST_GENERATED.value:
+            if snapshot.script_execution_history.latest_testing_environment_output_path:
+                container.update_testing_env(
+                    f"{ScriptOutputType.TESTING_ENVIRONMENT_OUTPUT_TEXT.value}{snapshot.script_execution_history.latest_testing_environment_output_path}"
+                )
 
-            if (
-                len(previous_state_segments) > 2
-                and previous_state_segments[2] == States.CONFORMANCE_TEST_GENERATED.value
-            ):
-                if snapshot.script_execution_history.latest_testing_environment_output_path:
-                    container.update_testing_env(
-                        f"{ScriptOutputType.TESTING_ENVIRONMENT_OUTPUT_TEXT.value}{snapshot.script_execution_history.latest_testing_environment_output_path}"
-                    )
-
-            if (
-                len(previous_state_segments) > 2
-                and previous_state_segments[2] == States.CONFORMANCE_TEST_ENV_PREPARED.value
-            ):
-                if snapshot.script_execution_history.latest_conformance_test_output_path:
-                    container.update_conformance_test(
-                        f"{ScriptOutputType.CONFORMANCE_TEST_OUTPUT_TEXT.value}{snapshot.script_execution_history.latest_conformance_test_output_path}"
-                    )
-        except Exception:
-            pass
+        if (
+            len(previous_state_segments) > 2
+            and previous_state_segments[2] == States.CONFORMANCE_TEST_ENV_PREPARED.value
+        ):
+            if snapshot.script_execution_history.latest_conformance_test_output_path:
+                container.update_conformance_test(
+                    f"{ScriptOutputType.CONFORMANCE_TEST_OUTPUT_TEXT.value}{snapshot.script_execution_history.latest_conformance_test_output_path}"
+                )
 
 
 class FridFullyImplementedHandler(StateHandler):
