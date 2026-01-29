@@ -50,11 +50,6 @@ class TuiLoggingHandler(logging.Handler):
     def emit(self, record):
         try:
             # Extract structured data from the log record
-
-            # Original timestamp format (absolute time):
-            # timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
-
-            # Calculate offset time from start of generation
             offset_seconds = record.created - self.start_time
             minutes = int(offset_seconds // 60)
             seconds = int(offset_seconds % 60)

@@ -70,6 +70,9 @@ class TUIComponents(str, Enum):
     FRID_PROGRESS_REFACTORING = "frid-progress-refactoring"
     FRID_PROGRESS_CONFORMANCE_TEST = "frid-progress-conformance-test"
 
+    # Test scripts container widgets
+    TEST_SCRIPTS_CONTAINER = "test-scripts-container"
+
     CONTENT_SWITCHER = "content-switcher"
     DASHBOARD_VIEW = "dashboard-view"
     LOG_VIEW = "log-view"

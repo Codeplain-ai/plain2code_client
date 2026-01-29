@@ -159,7 +159,7 @@ class Plain2CodeTUI(App):
 
                     # Test scripts container with border
                     yield TestScriptsContainer(
-                        id="test-scripts-container",
+                        id=TUIComponents.TEST_SCRIPTS_CONTAINER.value,
                         show_unit_test=self.unittests_script is not None,
                         show_conformance_test=self.conformance_tests_script is not None,
                         show_testing_env=self.prepare_environment_script is not None,
