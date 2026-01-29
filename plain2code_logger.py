@@ -4,7 +4,6 @@ import time
 from typing import Optional
 
 from event_bus import EventBus
-from plain2code_console import console
 from plain2code_events import LogMessageEmitted
 
 
@@ -127,5 +126,4 @@ def dump_crash_logs(args, formatter=None):
     if crash_handler and args.filename:
         log_file_path = get_log_file_path(args.filename, args.log_file_name)
 
-        if crash_handler.dump_to_file(log_file_path, formatter):
-            console.error(f"\nLogs have been dumped to {log_file_path}")
+        crash_handler.dump_to_file(log_file_path, formatter)
