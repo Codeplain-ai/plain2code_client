@@ -29,7 +29,7 @@ def print_dry_run_output(plain_source_tree: dict, render_range: Optional[list[st
             )
             if plain_spec.ACCEPTANCE_TESTS in specifications:
                 for i, acceptance_test in enumerate(specifications[plain_spec.ACCEPTANCE_TESTS], 1):
-                    console.info(f"\nGenerating acceptance test #{i}:\n\n{acceptance_test}")
+                    console.info(f"Generating acceptance test #{i}:\n\n{acceptance_test}")
         else:
             console.info(
                 "-------------------------------------\n"

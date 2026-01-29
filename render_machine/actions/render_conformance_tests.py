@@ -149,7 +149,7 @@ class RenderConformanceTests(BaseAction):
         ]
 
         if render_context.verbose:
-            console.info("\nGenerating acceptance test:")
+            console.info("Generating acceptance test:")
             console.info(f"{acceptance_test}")
             console.info()
 

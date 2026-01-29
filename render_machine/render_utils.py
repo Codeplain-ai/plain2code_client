@@ -42,7 +42,7 @@ def print_inputs(render_context, existing_files_content, message):
 
 
 def execute_script(
-    script: str, scripts_args: list[str], verbose: bool, script_type: str
+    script: str, scripts_args: list[str], verbose: bool, script_type: str, frid: Optional[str] = None
 ) -> tuple[int, str, Optional[str]]:
     temp_file_path = None
     try:
@@ -68,14 +68,22 @@ def execute_script(
                     temp_file.write(f"{script_type} script {script} successfully passed.\n")
                 temp_file.write(f"{script_type} script execution time: {elapsed_time:.2f} seconds.\n")
 
-            console.info(f"[#888888]{script_type} script output stored in: {temp_file_path}[/#888888]")
+            console.info(f"[#888888]{script_type} script output stored in: {temp_file_path.strip()}[/#888888]")
 
             if result.returncode != 0:
-                console.info(
-                    f"[#DD5353]The {script_type} script has failed. Initiating the patching mode to automatically correct the discrepancies.[/#DD5353]\n"
-                )
+                if frid is not None:
+                    console.info(
+                        f"The {script_type} script for ID {frid} has failed. Initiating the patching mode to automatically correct the discrepancies."
+                    )
+                else:
+                    console.info(
+                        f"The {script_type} script has failed. Initiating the patching mode to automatically correct the discrepancies."
+                    )
             else:
-                console.info(f"[#79FC96]All {script_type} script passed successfully.[/#79FC96]\n")
+                if frid is not None:
+                    console.info(f"[#79FC96]The {script_type} script for ID {frid} has passed successfully.[/#79FC96]")
+                else:
+                    console.info(f"[#79FC96]All {script_type} script passed successfully.[/#79FC96]")
 
         return result.returncode, result.stdout, temp_file_path
     except subprocess.TimeoutExpired as e:
