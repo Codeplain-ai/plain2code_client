@@ -89,6 +89,7 @@ def setup_logging(
     log_to_file: bool,
     log_file_name: str,
     plain_file_path: Optional[str],
+    render_id: str,
 ):
     # Set default level to INFO for everything not explicitly configured
     logging.getLogger().setLevel(logging.INFO)
@@ -147,6 +148,8 @@ def setup_logging(
         crash_handler = CrashLogHandler()
         crash_handler.setFormatter(formatter)
         root_logger.addHandler(crash_handler)
+
+    root_logger.info(f"Render ID: {render_id}")  # Ensure render ID is logged in to codeplain.log file
 
 
 def render(args, run_state: RunState, codeplain_api, event_bus: EventBus):  # noqa: C901
@@ -207,12 +210,12 @@ def main():
 
     event_bus = EventBus()
 
-    setup_logging(args, event_bus, args.log_to_file, args.log_file_name, args.filename)
-
     if not args.api:
         args.api = "https://api.codeplain.ai"
 
     run_state = RunState(spec_filename=args.filename, replay_with=args.replay_with)
+
+    setup_logging(args, event_bus, args.log_to_file, args.log_file_name, args.filename, run_state.render_id)
 
     try:
         # Validate API key is present
@@ -221,6 +224,7 @@ def main():
                 "API key is required. Please set the CODEPLAIN_API_KEY environment variable or provide it with the --api-key argument."
             )
 
+        console.debug(f"Render ID: {run_state.render_id}")  # Ensure render ID is logged to the console
         render(args, run_state, codeplain_api, event_bus)
     except InvalidFridArgument as e:
         console.error(f"Invalid FRID argument: {str(e)}.\n")
