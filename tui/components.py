@@ -400,8 +400,8 @@ class FRIDProgress(Vertical):
             )
 
 
-class LogEntry(Horizontal):
-    """A single log entry displayed as a table row with 4 columns."""
+class LogEntry(Vertical):
+    """A single log entry that can be expanded to show details."""
 
     def __init__(self, logger_name: str, level: str, message: str, timestamp: str = "", **kwargs):
         super().__init__(**kwargs)
@@ -409,31 +409,58 @@ class LogEntry(Horizontal):
         self.level = level
         self.message = message
         self.timestamp = timestamp
+        self.is_expanded = False
         self.classes = f"log-entry log-{level.lower()}"
 
     def compose(self):
-        # Column 1: Offset time with brackets (just the time portion, not full timestamp)
-        time_part = self.timestamp.split()[-1] if self.timestamp else ""
-        yield Static(f"[{time_part}]", classes="log-col-time")
+        # Main row: just the message with a clickable indicator
+        with Horizontal(classes="log-main-row"):
+            # Expandable indicator
+            yield Static("▶", classes="log-expand-indicator")
 
-        # Column 2: Level
-        yield Static(self.level, classes="log-col-level")
+            time_part = self.timestamp.split()[-1] if self.timestamp else ""
+            time_prefix = f"[#888888][{time_part}][/#888888] " if time_part else ""
+            indent_spaces = len(f"[{time_part}] ") if time_part else 0
 
-        # Column 3: Location (logger name) - truncate if longer than 20 characters
-        location = self.logger_name
-        if len(location) > 9:
-            location = location[:9] + "..."
-        yield Static(location, classes="log-col-location")
+            message_body = self.message
+            if any(
+                keyword in self.message.lower()
+                for keyword in ["completed", "success", "successfully", "passed", "done", "✓"]
+            ):
+                message_body = f"[green]✓[/green] {message_body}"
 
-        # Column 4: Message with green checkmark for successful outcomes
-        message_text = self.message
-        # Add green checkmark for messages indicating success
-        if any(
-            keyword in message_text.lower()
-            for keyword in ["completed", "success", "successfully", "passed", "done", "✓"]
-        ):
-            message_text = f"[green]✓[/green] {message_text}"
-        yield Static(message_text, classes="log-col-message")
+            if indent_spaces and "\n" in message_body:
+                message_body = message_body.replace("\n", "\n" + " " * indent_spaces)
+
+            yield Static(f"{time_prefix}{message_body}", classes="log-col-message")
+
+        # Details row (hidden by default) - vertical layout
+        with Vertical(id=f"log-details-{id(self)}", classes="log-details-row"):
+            location = self.logger_name
+            if len(location) > 20:
+                location = location[:20] + "..."
+            yield Static(f"  [#888]level:[/#888] {self.level}", classes="log-details-text")
+            yield Static(f"  [#888]location:[/#888] {location}", classes="log-details-text")
+
+    def on_mount(self) -> None:
+        """Hide details on mount."""
+        try:
+            details = self.query_one(f"#log-details-{id(self)}")
+            details.display = False
+        except Exception:
+            pass
+
+    def on_click(self) -> None:
+        """Toggle details visibility on click."""
+        try:
+            details = self.query_one(f"#log-details-{id(self)}")
+            indicator = self.query_one(".log-expand-indicator", Static)
+
+            self.is_expanded = not self.is_expanded
+            details.display = self.is_expanded
+            indicator.update("▼" if self.is_expanded else "▶")
+        except Exception:
+            pass
 
 
 class StructuredLogView(VerticalScroll):
