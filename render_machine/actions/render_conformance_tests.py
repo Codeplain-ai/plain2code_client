@@ -149,9 +149,7 @@ class RenderConformanceTests(BaseAction):
         ]
 
         if render_context.verbose:
-            console.info("Generating acceptance test:")
-            console.info(f"{acceptance_test}")
-            console.info()
+            console.info(f"Generating acceptance test:\n  {acceptance_test}")
 
         with console.status(
             f"[{console.INFO_STYLE}]Generating acceptance test for functional requirement {render_context.frid_context.frid}...\n"
