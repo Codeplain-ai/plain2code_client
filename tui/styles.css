@@ -4,7 +4,7 @@ Screen {
 
 /* Dashboard View - main container */
 #dashboard-view {
-    margin: 0 3;
+    margin: 0 2;
 }
 
 /* Codeplain Header Box */
@@ -13,7 +13,6 @@ Screen {
     margin: 1 2;
     width: auto;
     height: auto;
-    color: #fff;
 }
 
 /*
@@ -179,7 +178,7 @@ TestScriptsContainer {
 .filter-label {
     width: auto;
     text-style: bold;
-    color: #E0FF6E;
+    color: #FFFFFF;
     padding: 0 1 0 0;
 }
 
@@ -194,7 +193,7 @@ Button.filter-button {
     width: auto;
     height: 1;
     min-width: 0;
-    padding: 0 2;
+    padding: 0 1;
     margin: 0 1;
     background: transparent;
     border: none;
@@ -222,14 +221,14 @@ Button.filter-button:focus-within {
 
 /* Primary variant - active/selected button */
 Button.filter-button.-primary {
-    background: #E0FF6E;
+    background: #FFF;
     color: #000;
     text-style: bold;
 }
 
 /* Primary focus - maintain appearance */
 Button.filter-button.-primary:focus {
-    background: #E0FF6E;
+    background: #FFF;
     color: #000;
     text-style: bold;
 }
@@ -260,11 +259,45 @@ Button.filter-button.-disabled:hover {
 .log-entry {
     height: auto;
     width: 100%;
-    padding: 0 1;
+    padding: 0;
     margin: 0;
 }
 
-/* Log Table Columns */
+.log-entry:hover {
+    background: #1A1A1A;
+}
+
+.log-main-row {
+    height: auto;
+    width: 100%;
+    padding: 0 1;
+}
+
+.log-expand-indicator {
+    width: 3;
+    color: #888;
+}
+
+.log-col-message {
+    width: 1fr;
+    color: #FFF;
+}
+
+.log-details-row {
+    height: auto;
+    width: 100%;
+    padding: 0 0 0 13;
+    margin: 0;
+}
+
+.log-details-text {
+    width: 1fr;
+    color: #888;
+    margin: 0;
+    padding: 0;
+}
+
+/* Legacy columns (keeping for compatibility) */
 .log-col-time {
     width: 14;
     color: #888;
@@ -277,11 +310,6 @@ Button.filter-button.-disabled:hover {
 .log-col-location {
     width: 12;
     color: #888;
-}
-
-.log-col-message {
-    width: 1fr;
-    color: #FFF;
 }
 
 /* Log spacer for visual separation */
