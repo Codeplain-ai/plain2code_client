@@ -17,7 +17,7 @@ from event_bus import EventBus
 from module_renderer import ModuleRenderer
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
-from plain2code_exceptions import InvalidFridArgument, MissingAPIKey, PlainSyntaxError
+from plain2code_exceptions import InternalServerError, InvalidFridArgument, MissingAPIKey, PlainSyntaxError
 from plain2code_logger import (
     CrashLogHandler,
     IndentedFormatter,
@@ -249,6 +249,12 @@ def main():
         dump_crash_logs(args)
     except MissingAPIKey as e:
         console.error(f"Missing API key: {str(e)}\n")
+    except InternalServerError:
+        console.error(
+            f"Internal server error.\n\nPlease report the error to support@codeplain.ai with the attached {args.log_file_name} file."
+        )
+        console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
     except Exception as e:
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")

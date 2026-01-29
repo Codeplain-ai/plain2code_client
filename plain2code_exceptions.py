@@ -57,3 +57,7 @@ class InvalidLiquidVariableName(Exception):
 
 class ModuleDoesNotExistError(Exception):
     pass
+
+
+class InternalServerError(Exception):
+    pass

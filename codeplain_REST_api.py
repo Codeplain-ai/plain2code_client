@@ -10,6 +10,8 @@ from plain2code_state import RunState
 MAX_RETRIES = 4
 RETRY_DELAY = 3
 
+NO_RETRY_ERROR_CODES = ["InternalServerError"]
+
 
 class CodeplainAPI:
 
@@ -34,6 +36,7 @@ class CodeplainAPI:
             self._extend_payload_with_run_state(payload, run_state)
 
         retry_delay = RETRY_DELAY
+        response_json = None
         for attempt in range(MAX_RETRIES + 1):
             try:
                 response = requests.post(endpoint_url, headers=headers, json=payload)
@@ -65,16 +68,16 @@ class CodeplainAPI:
                     if response_json["error_code"] == "PlainSyntaxError":
                         raise plain2code_exceptions.PlainSyntaxError(response_json["message"])
 
-                    if response_json["error_code"] == "NoRenderFound":
-                        raise plain2code_exceptions.NoRenderFound(response_json["message"])
-
-                    if response_json["error_code"] == "MultipleRendersFound":
-                        raise plain2code_exceptions.MultipleRendersFound(response_json["message"])
+                    if response_json["error_code"] == "InternalServerError":
+                        raise plain2code_exceptions.InternalServerError(response_json["message"])
 
                 response.raise_for_status()
                 return response_json
 
             except (ConnectionError, Timeout, RequestException) as e:
+                if response_json is not None and response_json["error_code"] in NO_RETRY_ERROR_CODES:
+                    raise plain2code_exceptions.InternalServerError(response_json["message"])
+
                 if attempt < MAX_RETRIES:
                     self.console.info(f"Connection error on attempt {attempt + 1}/{MAX_RETRIES + 1}: {e}")
                     self.console.info(f"Retrying in {retry_delay} seconds...")
