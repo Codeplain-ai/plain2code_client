@@ -10,7 +10,14 @@ from plain2code_state import RunState
 MAX_RETRIES = 4
 RETRY_DELAY = 3
 
-NO_RETRY_ERROR_CODES = ["InternalServerError"]
+NO_RETRY_ERROR_CODES = [
+    "FunctionalRequirementTooComplex",
+    "ConflictingRequirements",
+    "CreditBalanceTooLow",
+    "MissingResource",
+    "PlainSyntaxError",
+    "InternalServerError",
+]
 
 
 class CodeplainAPI:
@@ -74,9 +81,9 @@ class CodeplainAPI:
                 response.raise_for_status()
                 return response_json
 
-            except (ConnectionError, Timeout, RequestException) as e:
+            except Exception as e:
                 if response_json is not None and response_json["error_code"] in NO_RETRY_ERROR_CODES:
-                    raise plain2code_exceptions.InternalServerError(response_json["message"])
+                    raise e
 
                 if attempt < MAX_RETRIES:
                     self.console.info(f"Error on attempt {attempt + 1}/{MAX_RETRIES + 1}: {e}")
