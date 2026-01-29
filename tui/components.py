@@ -1,12 +1,12 @@
 from enum import Enum
 from typing import Optional
 
-from spinner import Spinner
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.message import Message
 from textual.widgets import Button, Static
 
 from .models import Substate
+from .spinner import Spinner
 
 
 class ScriptOutputType(str, Enum):
