@@ -17,7 +17,17 @@ from event_bus import EventBus
 from module_renderer import ModuleRenderer
 from plain2code_arguments import parse_arguments
 from plain2code_console import console
-from plain2code_exceptions import InternalServerError, InvalidFridArgument, MissingAPIKey, PlainSyntaxError
+from plain2code_exceptions import (
+    ConflictingRequirements,
+    CreditBalanceTooLow,
+    InternalServerError,
+    InvalidFridArgument,
+    LLMInternalError,
+    MissingAPIKey,
+    MissingResource,
+    PlainSyntaxError,
+    UnexpectedState,
+)
 from plain2code_logger import (
     CrashLogHandler,
     IndentedFormatter,
@@ -205,7 +215,7 @@ def render(args, run_state: RunState, codeplain_api, event_bus: EventBus):  # no
     return
 
 
-def main():
+def main():  # noqa: C901
     args = parse_arguments()
 
     event_bus = EventBus()
@@ -253,10 +263,26 @@ def main():
         dump_crash_logs(args)
     except MissingAPIKey as e:
         console.error(f"Missing API key: {str(e)}\n")
-    except InternalServerError:
+    except (InternalServerError, UnexpectedState) as e:
         console.error(
-            f"Internal server error.\n\nPlease report the error to support@codeplain.ai with the attached {args.log_file_name} file."
+            f"Internal server error: {str(e)}.\n\nPlease report the error to support@codeplain.ai with the attached {args.log_file_name} file."
         )
+        console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
+    except ConflictingRequirements as e:
+        console.error(f"Conflicting requirements: {str(e)}\n")
+        console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
+    except CreditBalanceTooLow as e:
+        console.error(f"Credit balance too low: {str(e)}\n")
+        console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
+    except LLMInternalError as e:
+        console.error(f"LLM internal error: {str(e)}\n")
+        console.debug(f"Render ID: {run_state.render_id}")
+        dump_crash_logs(args)
+    except MissingResource as e:
+        console.error(f"Missing resource: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
         dump_crash_logs(args)
     except Exception as e:

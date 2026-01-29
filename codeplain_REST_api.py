@@ -2,7 +2,6 @@ import time
 from typing import Optional
 
 import requests
-from requests.exceptions import ConnectionError, RequestException, Timeout
 
 import plain2code_exceptions
 from plain2code_state import RunState
