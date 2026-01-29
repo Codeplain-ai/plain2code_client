@@ -79,16 +79,14 @@ class CodeplainAPI:
                     raise plain2code_exceptions.InternalServerError(response_json["message"])
 
                 if attempt < MAX_RETRIES:
-                    self.console.info(f"Connection error on attempt {attempt + 1}/{MAX_RETRIES + 1}: {e}")
+                    self.console.info(f"Error on attempt {attempt + 1}/{MAX_RETRIES + 1}: {e}")
                     self.console.info(f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
                     # Exponential backoff
                     retry_delay *= 2
                 else:
                     self.console.error(f"Max retries ({MAX_RETRIES}) exceeded. Last error: {e}")
-                    raise RequestException(
-                        f"Connection error: Unable to reach the Codeplain API at {self.api_url}. Please try again or contact support."
-                    )
+                    raise e
 
     def render_functional_requirement(
         self,
