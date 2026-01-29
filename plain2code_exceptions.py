@@ -25,14 +25,6 @@ class PlainSyntaxError(Exception):
     pass
 
 
-class NoRenderFound(Exception):
-    pass
-
-
-class MultipleRendersFound(Exception):
-    pass
-
-
 class UnexpectedState(Exception):
     pass
 
