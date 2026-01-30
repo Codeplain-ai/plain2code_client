@@ -33,7 +33,7 @@ class CodeplainAPI:
         run_state.increment_call_count()
         payload["render_state"] = run_state.to_dict()
 
-    def _handle_retry_logic(self, attempt: int, retry_delay: int, error: Exception, error_type: str = "Error") -> int:
+    def _handle_retry_logic(self, attempt: int, retry_delay: int, error: Exception) -> int:
         """
         Handles retry logic with exponential backoff.
 
@@ -49,15 +49,20 @@ class CodeplainAPI:
         Raises:
             The original exception if max retries exceeded
         """
+        is_connection_error = isinstance(error, ConnectionError) or isinstance(error, Timeout)
+        connection_error_type = "Network error" if is_connection_error else "Error"
         if attempt < MAX_RETRIES:
-            self.console.info(f"{error_type} on attempt {attempt + 1}/{MAX_RETRIES + 1}: {error}")
+            self.console.info(f"{connection_error_type} on attempt {attempt + 1}/{MAX_RETRIES + 1}: {error}")
             self.console.info(f"Retrying in {retry_delay} seconds...")
             time.sleep(retry_delay)
             # Exponential backoff
             return retry_delay * 2
         else:
             self.console.error(f"Max retries ({MAX_RETRIES}) exceeded. Last error: {error}")
-            raise error
+            if is_connection_error:
+                raise plain2code_exceptions.NetworkConnectionError("Failed to connect to API server.")
+            else:
+                raise error
 
     def post_request(self, endpoint_url, headers, payload, run_state: Optional[RunState]):  # noqa: C901
         if run_state is not None:
@@ -101,17 +106,6 @@ class CodeplainAPI:
 
                 response.raise_for_status()
                 return response_json
-
-            except (ConnectionError, Timeout) as e:
-                # Network-related errors should always be retried
-                if attempt < MAX_RETRIES:
-                    retry_delay = self._handle_retry_logic(attempt, retry_delay, e, "Network error")
-                else:
-                    self.console.error(f"Max retries ({MAX_RETRIES}) exceeded. Network connection failed.")
-                    self.console.error(f"Last error: {str(e)}")
-                    raise plain2code_exceptions.NetworkConnectionError(
-                        f"Failed to connect to API server after {MAX_RETRIES + 1} attempts. "
-                    )
 
             except Exception as e:
                 # For other errors, check if they should be retried
