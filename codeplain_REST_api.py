@@ -2,6 +2,7 @@ import time
 from typing import Optional
 
 import requests
+from requests.exceptions import ConnectionError, Timeout
 
 import plain2code_exceptions
 from plain2code_state import RunState
@@ -9,7 +10,6 @@ from plain2code_state import RunState
 MAX_RETRIES = 4
 RETRY_DELAY = 3
 
-# TODO: Handle connection errors
 RETRY_ERROR_CODES = [
     "LLMInternalError",
 ]
@@ -32,6 +32,37 @@ class CodeplainAPI:
     def _extend_payload_with_run_state(self, payload: dict, run_state: RunState):
         run_state.increment_call_count()
         payload["render_state"] = run_state.to_dict()
+
+    def _handle_retry_logic(self, attempt: int, retry_delay: int, error: Exception) -> int:
+        """
+        Handles retry logic with exponential backoff.
+
+        Args:
+            attempt: Current attempt number
+            retry_delay: Current retry delay in seconds
+            error: The exception that occurred
+            error_type: Type of error for logging (e.g., "Network error", "Error")
+
+        Returns:
+            Updated retry_delay for next attempt
+
+        Raises:
+            The original exception if max retries exceeded
+        """
+        is_connection_error = isinstance(error, ConnectionError) or isinstance(error, Timeout)
+        connection_error_type = "Network error" if is_connection_error else "Error"
+        if attempt < MAX_RETRIES:
+            self.console.info(f"{connection_error_type} on attempt {attempt + 1}/{MAX_RETRIES + 1}: {error}")
+            self.console.info(f"Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+            # Exponential backoff
+            return retry_delay * 2
+        else:
+            self.console.error(f"Max retries ({MAX_RETRIES}) exceeded. Last error: {error}")
+            if is_connection_error:
+                raise plain2code_exceptions.NetworkConnectionError("Failed to connect to API server.")
+            else:
+                raise error
 
     def post_request(self, endpoint_url, headers, payload, run_state: Optional[RunState]):  # noqa: C901
         if run_state is not None:
@@ -77,19 +108,12 @@ class CodeplainAPI:
                 return response_json
 
             except Exception as e:
+                # For other errors, check if they should be retried
                 if response_json is not None and "error_code" in response_json:
                     if response_json["error_code"] not in RETRY_ERROR_CODES:
                         raise e
 
-                if attempt < MAX_RETRIES:
-                    self.console.info(f"Error on attempt {attempt + 1}/{MAX_RETRIES + 1}: {e}")
-                    self.console.info(f"Retrying in {retry_delay} seconds...")
-                    time.sleep(retry_delay)
-                    # Exponential backoff
-                    retry_delay *= 2
-                else:
-                    self.console.error(f"Max retries ({MAX_RETRIES}) exceeded. Last error: {e}")
-                    raise e
+                retry_delay = self._handle_retry_logic(attempt, retry_delay, e)
 
     def render_functional_requirement(
         self,

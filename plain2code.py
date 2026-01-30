@@ -26,6 +26,7 @@ from plain2code_exceptions import (
     MissingAPIKey,
     MissingPreviousFunctionalitiesError,
     MissingResource,
+    NetworkConnectionError,
     PlainSyntaxError,
     UnexpectedState,
 )
@@ -287,6 +288,11 @@ def main():  # noqa: C901
     except MissingResource as e:
         exc_info = sys.exc_info()
         console.error(f"Missing resource: {str(e)}\n")
+        console.debug(f"Render ID: {run_state.render_id}")
+    except NetworkConnectionError as e:
+        exc_info = sys.exc_info()
+        console.error(f"Connection error: {str(e)}\n")
+        console.error("Please check that your internet connection is working.")
         console.debug(f"Render ID: {run_state.render_id}")
     except Exception as e:
         exc_info = sys.exc_info()
