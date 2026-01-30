@@ -2,13 +2,17 @@ import time
 from typing import Optional
 
 import requests
-from requests.exceptions import ConnectionError, RequestException, Timeout
 
 import plain2code_exceptions
 from plain2code_state import RunState
 
 MAX_RETRIES = 4
 RETRY_DELAY = 3
+
+# TODO: Handle connection errors
+RETRY_ERROR_CODES = [
+    "LLMInternalError",
+]
 
 
 class CodeplainAPI:
@@ -34,6 +38,7 @@ class CodeplainAPI:
             self._extend_payload_with_run_state(payload, run_state)
 
         retry_delay = RETRY_DELAY
+        response_json = None
         for attempt in range(MAX_RETRIES + 1):
             try:
                 response = requests.post(endpoint_url, headers=headers, json=payload)
@@ -65,27 +70,26 @@ class CodeplainAPI:
                     if response_json["error_code"] == "PlainSyntaxError":
                         raise plain2code_exceptions.PlainSyntaxError(response_json["message"])
 
-                    if response_json["error_code"] == "NoRenderFound":
-                        raise plain2code_exceptions.NoRenderFound(response_json["message"])
-
-                    if response_json["error_code"] == "MultipleRendersFound":
-                        raise plain2code_exceptions.MultipleRendersFound(response_json["message"])
+                    if response_json["error_code"] == "InternalServerError":
+                        raise plain2code_exceptions.InternalServerError(response_json["message"])
 
                 response.raise_for_status()
                 return response_json
 
-            except (ConnectionError, Timeout, RequestException) as e:
+            except Exception as e:
+                if response_json is not None and "error_code" in response_json:
+                    if response_json["error_code"] not in RETRY_ERROR_CODES:
+                        raise e
+
                 if attempt < MAX_RETRIES:
-                    self.console.info(f"Connection error on attempt {attempt + 1}/{MAX_RETRIES + 1}: {e}")
+                    self.console.info(f"Error on attempt {attempt + 1}/{MAX_RETRIES + 1}: {e}")
                     self.console.info(f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
                     # Exponential backoff
                     retry_delay *= 2
                 else:
                     self.console.error(f"Max retries ({MAX_RETRIES}) exceeded. Last error: {e}")
-                    raise RequestException(
-                        f"Connection error: Unable to reach the Codeplain API at {self.api_url}. Please try again or contact support."
-                    )
+                    raise e
 
     def render_functional_requirement(
         self,

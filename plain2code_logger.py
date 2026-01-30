@@ -4,7 +4,6 @@ import time
 from typing import Optional
 
 from event_bus import EventBus
-from plain2code_console import console
 from plain2code_events import LogMessageEmitted
 
 
@@ -67,6 +66,10 @@ class TuiLoggingHandler(logging.Handler):
                 self.event_bus.publish(event)
             else:
                 self._buffer.append(event)
+        except RuntimeError:
+            # We're going to get this crash after the TUI app is closed (forcefully).
+            # NOTE: This should be more thought out.
+            pass
         except Exception:
             self.handleError(record)
 
@@ -127,5 +130,4 @@ def dump_crash_logs(args, formatter=None):
     if crash_handler and args.filename:
         log_file_path = get_log_file_path(args.filename, args.log_file_name)
 
-        if crash_handler.dump_to_file(log_file_path, formatter):
-            console.error(f"\nLogs have been dumped to {log_file_path}")
+        crash_handler.dump_to_file(log_file_path, formatter)
