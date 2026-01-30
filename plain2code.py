@@ -2,7 +2,7 @@ import importlib.resources
 import logging
 import logging.config
 import os
-import traceback
+import sys
 from typing import Optional
 
 import yaml
@@ -228,6 +228,7 @@ def main():  # noqa: C901
 
     setup_logging(args, event_bus, args.log_to_file, args.log_file_name, args.filename, run_state.render_id)
 
+    exc_info = None
     try:
         # Validate API key is present
         if not args.api_key:
@@ -238,63 +239,64 @@ def main():  # noqa: C901
         console.debug(f"Render ID: {run_state.render_id}")  # Ensure render ID is logged to the console
         render(args, run_state, codeplain_api, event_bus)
     except InvalidFridArgument as e:
+        exc_info = sys.exc_info()
         console.error(f"Invalid FRID argument: {str(e)}.\n")
-        # No need to print render ID since this error is going to be thrown at the very start so user will be able to
-        # see the render ID that's printed at the very start of the rendering process.
-        dump_crash_logs(args)
     except FileNotFoundError as e:
+        exc_info = sys.exc_info()
         console.error(f"File not found: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
-        dump_crash_logs(args)
     except TemplateNotFoundError as e:
+        exc_info = sys.exc_info()
         console.error(f"Template not found: {str(e)}\n")
         console.error(system_config.get_error_message("template_not_found"))
-        dump_crash_logs(args)
     except PlainSyntaxError as e:
+        exc_info = sys.exc_info()
         console.error(f"Plain syntax error: {str(e)}\n")
-        dump_crash_logs(args)
     except KeyboardInterrupt:
+        exc_info = sys.exc_info()
         console.error("Keyboard interrupt")
-        # Don't print the traceback here because it's going to be from keyboard interrupt and we don't really care about that
         console.debug(f"Render ID: {run_state.render_id}")
-        dump_crash_logs(args)
     except RequestException as e:
+        exc_info = sys.exc_info()
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
-        dump_crash_logs(args)
     except MissingPreviousFunctionalitiesError as e:
+        exc_info = sys.exc_info()
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
-        dump_crash_logs(args)
     except MissingAPIKey as e:
         console.error(f"Missing API key: {str(e)}\n")
     except (InternalServerError, UnexpectedState) as e:
+        exc_info = sys.exc_info()
         console.error(
             f"Internal server error: {str(e)}.\n\nPlease report the error to support@codeplain.ai with the attached {args.log_file_name} file."
         )
         console.debug(f"Render ID: {run_state.render_id}")
-        dump_crash_logs(args)
     except ConflictingRequirements as e:
+        exc_info = sys.exc_info()
         console.error(f"Conflicting requirements: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
-        dump_crash_logs(args)
     except CreditBalanceTooLow as e:
+        exc_info = sys.exc_info()
         console.error(f"Credit balance too low: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
-        dump_crash_logs(args)
     except LLMInternalError as e:
+        exc_info = sys.exc_info()
         console.error(f"LLM internal error: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
-        dump_crash_logs(args)
     except MissingResource as e:
+        exc_info = sys.exc_info()
         console.error(f"Missing resource: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
-        dump_crash_logs(args)
     except Exception as e:
+        exc_info = sys.exc_info()
         console.error(f"Error rendering plain code: {str(e)}\n")
         console.debug(f"Render ID: {run_state.render_id}")
-        traceback.print_exc()
-        dump_crash_logs(args)
+    finally:
+        if exc_info:
+            # Log traceback using the logging system
+            logging.error("Render crashed with exception:", exc_info=exc_info)
+            dump_crash_logs(args)
 
 
 if __name__ == "__main__":  # noqa: C901
