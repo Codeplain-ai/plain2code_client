@@ -266,10 +266,10 @@ def main():  # noqa: C901
         console.debug(f"Render ID: {run_state.render_id}")
     except MissingAPIKey as e:
         console.error(f"Missing API key: {str(e)}\n")
-    except (InternalServerError, UnexpectedState) as e:
+    except (InternalServerError, UnexpectedState):
         exc_info = sys.exc_info()
         console.error(
-            f"Internal server error: {str(e)}.\n\nPlease report the error to support@codeplain.ai with the attached {args.log_file_name} file."
+            f"Internal server error.\n\nPlease report the error to support@codeplain.ai with the attached {args.log_file_name} file."
         )
         console.debug(f"Render ID: {run_state.render_id}")
     except ConflictingRequirements as e:
